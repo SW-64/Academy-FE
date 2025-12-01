@@ -4,6 +4,11 @@ import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import MainPage from './pages/MainPage';
 import PlaceholderPage from './pages/PlaceholderPage';
+import AdminLayout from './pages/admin/AdminLayout';
+import ExamsPage from './pages/admin/ExamsPage';
+import MaterialsPage from './pages/admin/MaterialsPage';
+import VideosPage from './pages/admin/VideosPage';
+import UsersPage from './pages/admin/UsersPage';
 
 function App() {
   return (
@@ -70,6 +75,15 @@ function App() {
             />
           }
         />
+
+        {/* 관리자 라우트 */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="/admin/exams" replace />} />
+          <Route path="exams" element={<ExamsPage />} />
+          <Route path="materials" element={<MaterialsPage />} />
+          <Route path="videos" element={<VideosPage />} />
+          <Route path="users" element={<UsersPage />} />
+        </Route>
 
         {/* 기존 인증 관련 페이지들 */}
         <Route path="/login" element={<LoginPage />} />
