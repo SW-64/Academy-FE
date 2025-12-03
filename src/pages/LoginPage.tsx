@@ -40,26 +40,28 @@ const LoginPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative">
-      {/* 로고 - 왼쪽 맨 위 */}
-      <div className="absolute top-4 left-4 md:top-6 md:left-6">
-        {imageError ? (
-          <h1 className="text-2xl md:text-3xl font-bold text-warm-brown">
-            곽원근 수학연구소
-          </h1>
-        ) : (
-          <img
-            src="/logo.png"
-            alt="곽원근 수학연구소"
-            className="h-auto max-w-[200px] md:max-w-[250px]"
-            onError={() => setImageError(true)}
-          />
-        )}
-      </div>
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-white">
+      {/* 로고와 로그인 박스를 하나의 컨테이너로 묶어서 중앙 배치 */}
+      <div className="flex flex-col items-center w-full max-w-[403px] rounded-2xl">
+         {/* 로고 */}
+         <div className="flex justify-center pt-8 px-8">
+           {imageError ? (
+             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-warm-brown text-center">
+               곽원근 수학연구소
+             </h1>
+           ) : (
+             <img
+               src="/logo.png"
+               alt="곽원근 수학연구소"
+               className="h-auto max-w-[274px] md:max-w-[329px]"
+               onError={() => setImageError(true)}
+             />
+           )}
+         </div>
 
-      {/* 로그인 카드 */}
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* 로그인 카드 */}
+        <div className="w-full bg-white rounded-2xl p-8">
+        <form onSubmit={handleSubmit} className="space-y-6 [&>div:last-of-type]:mb-0">
           {/* 이메일 입력 */}
           <div>
             <label
@@ -81,8 +83,8 @@ const LoginPage = () => {
               className={`w-full px-4 py-3 rounded-lg border ${
                 errors.email
                   ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:border-warm-brown focus:ring-warm-brown'
-              } focus:outline-none focus:ring-2 transition-colors`}
+                  : 'border-gray-300 hover:border-[#084773] focus:border-[#084773] focus:ring-[#084773]'
+              } focus:outline-none focus:ring-1 transition-colors`}
               placeholder="이메일을 입력하세요"
               aria-invalid={!!errors.email}
               aria-describedby={errors.email ? 'email-error' : undefined}
@@ -99,7 +101,7 @@ const LoginPage = () => {
           </div>
 
           {/* 비밀번호 입력 */}
-          <div>
+          <div className="mb-10" style={{ marginBottom: '16px' }}>
             <label
               htmlFor="password"
               className="block text-sm font-medium text-gray-700 mb-2"
@@ -120,8 +122,8 @@ const LoginPage = () => {
                 className={`w-full px-4 py-3 rounded-lg border pr-12 ${
                   errors.password
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 focus:border-warm-brown focus:ring-warm-brown'
-                } focus:outline-none focus:ring-2 transition-colors`}
+                    : 'border-gray-300 hover:border-[#084773] focus:border-[#084773] focus:ring-[#084773]'
+                } focus:outline-none focus:ring-1 transition-colors`}
                 placeholder="비밀번호를 입력하세요"
                 aria-invalid={!!errors.password}
                 aria-describedby={errors.password ? 'password-error' : undefined}
@@ -129,24 +131,10 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-warm-brown focus:outline-none focus:text-warm-brown transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#084773] focus:outline-none focus:text-[#084773] transition-colors"
                 aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
               >
                 {showPassword ? (
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                    />
-                  </svg>
-                ) : (
                   <svg
                     className="w-5 h-5"
                     fill="none"
@@ -166,6 +154,20 @@ const LoginPage = () => {
                       d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                     />
                   </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                    />
+                  </svg>
                 )}
               </button>
             </div>
@@ -183,7 +185,7 @@ const LoginPage = () => {
           {/* 로그인 버튼 */}
           <button
             type="submit"
-            className="w-full bg-warm-brown text-white py-3 rounded-lg font-medium hover:bg-warm-brown-light focus:outline-none focus:ring-2 focus:ring-warm-brown focus:ring-offset-2 transition-colors"
+            className="w-full bg-[#084773] hover:bg-[#063a5a] text-white py-3 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-[#084773] focus:ring-offset-2 transition-colors"
           >
             로그인
           </button>
@@ -193,7 +195,7 @@ const LoginPage = () => {
         <div className="mt-6 space-y-3">
           <Link
             to="/signup"
-            className="block text-center text-warm-brown hover:text-warm-brown-light font-medium focus:outline-none focus:ring-2 focus:ring-warm-brown focus:ring-offset-2 rounded-lg py-2 transition-colors"
+            className="block text-center text-[#084773] hover:text-[#063a5a] font-medium focus:outline-none focus:ring-2 focus:ring-[#084773] focus:ring-offset-2 rounded-lg py-2 transition-colors"
           >
             회원가입하기
           </Link>
@@ -204,6 +206,7 @@ const LoginPage = () => {
             비밀번호를 잊어버리셨나요?
           </Link>
         </div>
+      </div>
       </div>
     </div>
   )
