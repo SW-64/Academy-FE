@@ -5,6 +5,9 @@
 @layer base {
   body {
     @apply bg-white;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
   }
 }
 
