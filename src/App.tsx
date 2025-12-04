@@ -3,11 +3,16 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import MainPage from './pages/MainPage';
-import PlaceholderPage from './pages/PlaceholderPage';
+import NoticePage from './pages/NoticePage';
+import GradesPage from './pages/GradesPage';
+import MaterialsPage from './pages/MaterialsPage';
+import VideosPage from './pages/VideosPage';
+import MyPage from './pages/MyPage';
+import IntegrationsPage from './pages/IntegrationsPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import ExamsPage from './pages/admin/ExamsPage';
-import MaterialsPage from './pages/admin/MaterialsPage';
-import VideosPage from './pages/admin/VideosPage';
+import AdminMaterialsPage from './pages/admin/MaterialsPage';
+import AdminVideosPage from './pages/admin/VideosPage';
 import UsersPage from './pages/admin/UsersPage';
 
 function App() {
@@ -20,68 +25,20 @@ function App() {
         {/* 메인 페이지 */}
         <Route path="/main" element={<MainPage />} />
 
-        {/* “준비중” 플레이스홀더 페이지들 */}
-        <Route
-          path="/notice"
-          element={
-            <PlaceholderPage
-              title="공지사항"
-              description="중요한 안내와 공지사항을 한 곳에서 확인하실 수 있도록 준비 중입니다."
-            />
-          }
-        />
-        <Route
-          path="/grades"
-          element={
-            <PlaceholderPage
-              title="성적"
-              description="이번 학기 성적과 진도 현황을 확인하실 수 있도록 준비 중입니다."
-            />
-          }
-        />
-        <Route
-          path="/materials"
-          element={
-            <PlaceholderPage
-              title="학습자료"
-              description="강의 자료와 참고 문서를 편리하게 볼 수 있도록 준비 중입니다."
-            />
-          }
-        />
-        <Route
-          path="/videos"
-          element={
-            <PlaceholderPage
-              title="영상"
-              description="강의 영상과 다시보기 기능을 제공하기 위해 준비 중입니다."
-            />
-          }
-        />
-        <Route
-          path="/mypage"
-          element={
-            <PlaceholderPage
-              title="마이페이지"
-              description="나의 정보와 학습 이력을 관리하실 수 있도록 준비 중입니다."
-            />
-          }
-        />
-        <Route
-          path="/integrations"
-          element={
-            <PlaceholderPage
-              title="연동"
-              description="다양한 서비스와 연동하여 더 편리하게 이용하실 수 있도록 준비 중입니다."
-            />
-          }
-        />
+        {/* 메인 레이아웃 페이지들 */}
+        <Route path="/notice" element={<NoticePage />} />
+        <Route path="/grades" element={<GradesPage />} />
+        <Route path="/materials" element={<MaterialsPage />} />
+        <Route path="/videos" element={<VideosPage />} />
+        <Route path="/mypage" element={<MyPage />} />
+        <Route path="/integrations" element={<IntegrationsPage />} />
 
         {/* 관리자 라우트 */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/exams" replace />} />
           <Route path="exams" element={<ExamsPage />} />
-          <Route path="materials" element={<MaterialsPage />} />
-          <Route path="videos" element={<VideosPage />} />
+          <Route path="materials" element={<AdminMaterialsPage />} />
+          <Route path="videos" element={<AdminVideosPage />} />
           <Route path="users" element={<UsersPage />} />
         </Route>
 
