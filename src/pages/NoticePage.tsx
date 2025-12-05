@@ -142,10 +142,10 @@ function NoticePage() {
       </div>
 
       {/* 공지사항 테이블 */}
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
+            <tr className="border-b border-slate-200 bg-white">
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
                 번호
               </th>

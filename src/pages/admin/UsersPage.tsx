@@ -422,7 +422,7 @@ function UsersPage() {
               <h4 className="text-xs font-semibold text-slate-800">
                 현재 연동 목록
               </h4>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto rounded-2xl">
                 <table className="min-w-full border-collapse text-xs sm:text-sm">
                   <thead>
                     <tr className="border-b border-amber-100 bg-amber-50 text-left text-[11px] font-semibold text-slate-600 sm:text-xs">
