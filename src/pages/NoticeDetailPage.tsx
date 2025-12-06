@@ -54,7 +54,7 @@ function NoticeDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           <span>목록으로</span>
         </button>
-        <h1 className="text-2xl font-semibold text-slate-900">공지사항</h1>
+        <h1 className="text-2xl font-semibold text-slate-900 text-center min-[1025px]:text-left">공지사항</h1>
       </header>
 
       {/* 공지사항 상세 */}
@@ -79,18 +79,18 @@ function NoticeDetailPage() {
         {/* 작성일/작성자 영역 */}
         <div className="px-6 pt-4">
           <div className="flex justify-end gap-6 text-sm text-slate-600">
-            <div className="hidden md:block">
+            <div>
               <span className="font-medium text-slate-700"></span>{' '}
               {notice.createdAt.split(' ')[0]}
             </div>
-            <div className="hidden lg:block">
+            <div>
               <span className="font-medium text-slate-700"></span> {notice.author}
             </div>
           </div>
         </div>
 
         {/* 내용 영역 */}
-        <div className="px-6 py-4">
+        <div className="px-6 pt-4 pb-6">
           <div className="prose prose-slate max-w-none text-slate-700 whitespace-pre-line">
             {notice.content || (
               <p className="text-slate-600">
@@ -104,7 +104,7 @@ function NoticeDetailPage() {
       {/* 이전 공지사항 */}
       {previousNotices.length > 0 && (
         <div className="mt-6">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">이전 공지사항</h3>
+          <h3 className="mb-4 text-base font-semibold text-slate-900 pl-2">이전 공지사항</h3>
           <div className="grid gap-4 md:grid-cols-2">
             {previousNotices.map(prevNotice => (
               <div
