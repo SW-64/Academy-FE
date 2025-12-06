@@ -1,22 +1,22 @@
 import { useState } from 'react';
+import { X } from 'lucide-react';
 import MainLayout from './MainLayout';
 import {
   examRecords,
   studentSummaries,
   dailyStats,
-  weeklyStats,
-  monthlyStats,
   type GradeLevel,
+  type ExamRecord,
 } from '../data/gradesData';
-
-type ViewMode = 'daily' | 'weekly' | 'monthly';
 
 // TODO: 실제 로그인한 학생 ID로 교체
 const CURRENT_STUDENT_ID = 1;
 const STUDENT_AVERAGE_SCORE = 70; // 학생 평균점수
 
 function GradesPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>('daily');
+  const [selectedMonth, setSelectedMonth] = useState<number>(2); // 기본값: 2월
+  const [selectedRecord, setSelectedRecord] = useState<ExamRecord | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // 현재 학생의 데이터만 필터링
   const currentStudent = studentSummaries.find(
@@ -45,35 +45,17 @@ function GradesPage() {
     { A: 0, B: 0, C: 0, D: 0, F: 0 } as Record<GradeLevel, number>
   );
 
-  // 최근 시험 성적 (일별/주별/월별)
-  const getRecentRecords = () => {
-    switch (viewMode) {
-      case 'daily':
-        return myRecords.slice(0, 10).reverse(); // 최근 10일을 오래된 순으로
-      case 'weekly':
-        // 주별로 그룹화
-        const weeklyGroups: typeof myRecords[] = [];
-        for (let i = 0; i < myRecords.length; i += 5) {
-          weeklyGroups.push(myRecords.slice(i, i + 5));
-        }
-        return weeklyGroups.slice(-4).map(week => ({
-          ...week[week.length - 1],
-          weekAverage:
-            Math.round(
-              (week.reduce((sum, r) => sum + r.score, 0) / week.length) * 10
-            ) / 10,
-        }));
-      case 'monthly':
-        return [
-          {
-            ...myRecords[myRecords.length - 1],
-            monthAverage: currentStudent.latestAverage,
-          },
-        ];
-      default:
-        return [];
-    }
+  // 선택된 월에 해당하는 성적 필터링
+  const getFilteredRecords = () => {
+    return myRecords
+      .filter(record => {
+        const recordDate = new Date(record.date);
+        return recordDate.getMonth() + 1 === selectedMonth && recordDate.getFullYear() === 2025;
+      })
+      .reverse(); // 오래된 순으로 정렬
   };
+
+  const filteredRecords = getFilteredRecords();
 
   // 등급별 색상
   const getGradeColor = (grade: GradeLevel) => {
@@ -105,7 +87,7 @@ function GradesPage() {
       </header>
 
       {/* 나의 성적 정보 카드 */}
-      <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="mb-24 grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* 나의 성적 현황 */}
         <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70">
           <h3 className="mb-4 text-lg font-semibold text-slate-900">
@@ -167,53 +149,31 @@ function GradesPage() {
         </div>
       </div>
 
-      {/* 뷰 모드 선택 */}
-      <div className="mb-6 flex gap-2">
-        <button
-          type="button"
-          onClick={() => setViewMode('daily')}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-            viewMode === 'daily'
-              ? 'bg-[#084773] text-white'
-              : 'bg-white text-slate-700 hover:bg-slate-50'
-          }`}
-        >
-          일별
-        </button>
-        <button
-          type="button"
-          onClick={() => setViewMode('weekly')}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-            viewMode === 'weekly'
-              ? 'bg-[#084773] text-white'
-              : 'bg-white text-slate-700 hover:bg-slate-50'
-          }`}
-        >
-          주별
-        </button>
-        <button
-          type="button"
-          onClick={() => setViewMode('monthly')}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-            viewMode === 'monthly'
-              ? 'bg-[#084773] text-white'
-              : 'bg-white text-slate-700 hover:bg-slate-50'
-          }`}
-        >
-          월별
-        </button>
+      {/* 년도 및 월 선택 */}
+      <div className="mb-6 flex items-center gap-4">
+        <span className="text-lg font-semibold text-slate-900">2025년</span>
+        <div className="flex flex-wrap gap-2">
+          {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+            <button
+              key={month}
+              type="button"
+              onClick={() => setSelectedMonth(month)}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                selectedMonth === month
+                  ? 'bg-[#084773] text-white'
+                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
+              }`}
+            >
+              {month}월
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 최근 시험 성적 */}
       <section className="mb-6">
         <h2 className="mb-4 text-lg font-semibold text-slate-900">
-          최근 시험 성적 (
-          {viewMode === 'daily'
-            ? '일별'
-            : viewMode === 'weekly'
-            ? '주별'
-            : '월별'}
-          )
+          최근 시험 성적
         </h2>
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
           <div className="overflow-x-auto">
@@ -224,31 +184,31 @@ function GradesPage() {
                     날짜
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                    {viewMode === 'daily' ? '점수' : '평균 점수'}
+                    점수
                   </th>
-                  {viewMode === 'daily' && (
-                    <>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                        전체 학생 평균
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                        등급
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                        전체 학생 평균 대비
-                      </th>
-                    </>
-                  )}
-                  {viewMode !== 'daily' && (
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                      등급
-                    </th>
-                  )}
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
+                    전체 학생 평균
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
+                    등급
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
+                    전체 학생 평균 대비
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {viewMode === 'daily' &&
-                  getRecentRecords().map((record, index) => {
+                {filteredRecords.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-4 py-8 text-center text-sm text-slate-500"
+                    >
+                      {selectedMonth}월에 해당하는 시험 기록이 없습니다.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRecords.map((record, index) => {
                     // 해당 날짜의 전체 학생 평균 찾기
                     const dailyStat = dailyStats.find(
                       stat => stat.date === record.date
@@ -261,7 +221,11 @@ function GradesPage() {
                     return (
                       <tr
                         key={index}
-                        className="border-b border-slate-100 transition-colors hover:bg-slate-50"
+                        onClick={() => {
+                          setSelectedRecord(record);
+                          setIsModalOpen(true);
+                        }}
+                        className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50"
                       >
                         <td className="px-4 py-3 text-sm text-slate-900">
                           {record.dateFormatted}
@@ -293,57 +257,8 @@ function GradesPage() {
                         </td>
                       </tr>
                     );
-                  })}
-                {viewMode === 'weekly' &&
-                  getRecentRecords().map((record: any, index) => {
-                    return (
-                      <tr
-                        key={index}
-                        className="border-b border-slate-100 transition-colors hover:bg-slate-50"
-                      >
-                        <td className="px-4 py-3 text-sm text-slate-900">
-                          {record.dateFormatted}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-medium text-slate-900">
-                          {record.weekAverage}점
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`rounded-full px-2 py-1 text-xs font-medium ${getGradeColor(
-                              record.grade
-                            )}`}
-                          >
-                            {record.grade}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                {viewMode === 'monthly' &&
-                  getRecentRecords().map((record: any, index) => {
-                    return (
-                      <tr
-                        key={index}
-                        className="border-b border-slate-100 transition-colors hover:bg-slate-50"
-                      >
-                        <td className="px-4 py-3 text-sm text-slate-900">
-                          2025년 2월
-                        </td>
-                        <td className="px-4 py-3 text-sm font-medium text-slate-900">
-                          {record.monthAverage}점
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`rounded-full px-2 py-1 text-xs font-medium ${getGradeColor(
-                              record.grade
-                            )}`}
-                          >
-                            {record.grade}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -357,99 +272,256 @@ function GradesPage() {
         </h2>
         <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70">
           <div className="relative h-64 w-full">
-            <svg
-              className="h-full w-full"
-              viewBox="0 0 800 300"
-              preserveAspectRatio="none"
-            >
-              {/* 그리드 라인 (60~100 범위) */}
-              {[60, 70, 80, 90, 100].map(score => {
-                const y = 250 - ((score - 60) / 40) * 200;
-                return (
-                  <line
-                    key={score}
-                    x1="50"
-                    y1={y}
-                    x2="750"
-                    y2={y}
-                    stroke="#e2e8f0"
-                    strokeWidth="1"
-                    strokeDasharray="4 4"
+            {filteredRecords.length > 0 ? (
+              <>
+                <svg
+                  className="h-full w-full"
+                  viewBox="0 0 800 300"
+                  preserveAspectRatio="none"
+                >
+                  {/* 그리드 라인 (60~100 범위) */}
+                  {[60, 70, 80, 90, 100].map(score => {
+                    const y = 250 - ((score - 60) / 40) * 200;
+                    return (
+                      <line
+                        key={score}
+                        x1="50"
+                        y1={y}
+                        x2="750"
+                        y2={y}
+                        stroke="#e2e8f0"
+                        strokeWidth="1"
+                        strokeDasharray="4 4"
+                      />
+                    );
+                  })}
+                  {/* 전체 학생 평균점수 라인 (날짜별) */}
+                  {(() => {
+                    const reversedRecords = [...filteredRecords].reverse();
+                    const averagePoints = reversedRecords.map((record, index) => {
+                      const dailyStat = dailyStats.find(
+                        stat => stat.date === record.date
+                      );
+                      const allStudentsAverage = dailyStat
+                        ? dailyStat.averageScore
+                        : 0;
+                      const reversedLength = filteredRecords.length;
+                      const x =
+                        reversedLength > 1
+                          ? 50 + (index / (reversedLength - 1)) * 700
+                          : 50;
+                      const y = 250 - ((allStudentsAverage - 60) / 40) * 200;
+                      return { x, y };
+                    });
+
+                    return (
+                      <polyline
+                        points={averagePoints
+                          .map(point => `${point.x},${point.y}`)
+                          .join(' ')}
+                        fill="none"
+                        stroke="#f59e0b"
+                        strokeWidth="2"
+                        strokeDasharray="8 4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    );
+                  })()}
+                  {/* 점수 선 */}
+                  <polyline
+                    points={[...filteredRecords]
+                      .reverse()
+                      .map((record, index) => {
+                        const reversedLength = filteredRecords.length;
+                        const x =
+                          reversedLength > 1
+                            ? 50 + (index / (reversedLength - 1)) * 700
+                            : 50;
+                        const y = 250 - ((record.score - 60) / 40) * 200;
+                        return `${x},${y}`;
+                      })
+                      .join(' ')}
+                    fill="none"
+                    stroke="#084773"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
-                );
-              })}
-              {/* 평균점수 라인 */}
-              <line
-                x1="50"
-                y1={250 - ((STUDENT_AVERAGE_SCORE - 60) / 40) * 200}
-                x2="750"
-                y2={250 - ((STUDENT_AVERAGE_SCORE - 60) / 40) * 200}
-                stroke="#f59e0b"
-                strokeWidth="2"
-                strokeDasharray="8 4"
-              />
-              {/* 점수 선 */}
-              <polyline
-                points={myRecords
-                  .map((record, index) => {
-                    const x = 50 + (index / (myRecords.length - 1)) * 700;
+                  {/* 데이터 포인트 */}
+                  {[...filteredRecords].reverse().map((record, index) => {
+                    const reversedLength = filteredRecords.length;
+                    const x =
+                      reversedLength > 1
+                        ? 50 + (index / (reversedLength - 1)) * 700
+                        : 50;
                     const y = 250 - ((record.score - 60) / 40) * 200;
-                    return `${x},${y}`;
-                  })
-                  .join(' ')}
-                fill="none"
-                stroke="#084773"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {/* 데이터 포인트 */}
-              {myRecords.map((record, index) => {
-                const x = 50 + (index / (myRecords.length - 1)) * 700;
-                const y = 250 - ((record.score - 60) / 40) * 200;
-                return (
-                  <circle
-                    key={index}
-                    cx={x}
-                    cy={y}
-                    r="4"
-                    fill="#084773"
-                  />
-                );
-              })}
-            </svg>
-            {/* 범례 */}
-            <div className="absolute right-6 top-6 flex flex-col gap-2 rounded-lg bg-white p-3 shadow-sm">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-8 bg-[#084773]"></div>
-                <span className="text-xs text-slate-600">시험 점수</span>
+                    return (
+                      <circle
+                        key={index}
+                        cx={x}
+                        cy={y}
+                        r="4"
+                        fill="#084773"
+                      />
+                    );
+                  })}
+                </svg>
+                {/* 범례 */}
+                <div className="absolute right-6 top-6 flex flex-col gap-2 rounded-lg bg-white p-3 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-8 bg-[#084773]"></div>
+                    <span className="text-xs text-slate-600">시험 점수</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-8 border-2 border-dashed border-amber-500"></div>
+                    <span className="text-xs text-slate-600">
+                      전체 학생 평균점수
+                    </span>
+                  </div>
+                </div>
+                {/* Y축 레이블 (60~100) */}
+                <div className="absolute left-0 top-0 flex h-full flex-col justify-between py-2">
+                  {[100, 90, 80, 70, 60].map(score => (
+                    <span key={score} className="text-xs text-slate-500">
+                      {score}
+                    </span>
+                  ))}
+                </div>
+                {/* X축 레이블 */}
+                <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2">
+                  {[...filteredRecords]
+                    .reverse()
+                    .filter(
+                      (_, index) =>
+                        index % Math.max(1, Math.floor(filteredRecords.length / 5)) ===
+                          0 || index === filteredRecords.length - 1
+                    )
+                    .map((record, index) => (
+                      <span key={index} className="text-[10px] text-slate-500">
+                        {record.dateFormatted}
+                      </span>
+                    ))}
+                </div>
+              </>
+            ) : (
+              <div className="flex h-full items-center justify-center text-slate-500">
+                {selectedMonth}월에 해당하는 시험 기록이 없습니다.
               </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-8 border-2 border-dashed border-amber-500"></div>
-                <span className="text-xs text-slate-600">평균점수</span>
-              </div>
-            </div>
-            {/* Y축 레이블 (60~100) */}
-            <div className="absolute left-0 top-0 flex h-full flex-col justify-between py-2">
-              {[100, 90, 80, 70, 60].map(score => (
-                <span key={score} className="text-xs text-slate-500">
-                  {score}
-                </span>
-              ))}
-            </div>
-            {/* X축 레이블 */}
-            <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2">
-              {myRecords
-                .filter((_, index) => index % 5 === 0 || index === myRecords.length - 1)
-                .map((record, index) => (
-                  <span key={index} className="text-[10px] text-slate-500">
-                    {record.dateFormatted}
-                  </span>
-                ))}
-            </div>
+            )}
           </div>
         </div>
       </section>
+
+      {/* 상세 정보 모달 */}
+      {isModalOpen && selectedRecord && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-2xl rounded-xl bg-white p-6 shadow-lg"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute right-4 top-4 rounded-full bg-slate-100 p-1 text-slate-600 transition-colors hover:bg-slate-200"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="mb-4 text-xl font-semibold text-slate-900">
+              시험 상세 정보
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">학생 이름</p>
+                  <p className="mt-1 text-base text-slate-900">
+                    {selectedRecord.studentName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-600">시험 날짜</p>
+                  <p className="mt-1 text-base text-slate-900">
+                    {selectedRecord.date}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-600">점수</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">
+                    {selectedRecord.score}점
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-600">등급</p>
+                  <p className="mt-1">
+                    <span
+                      className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${getGradeColor(
+                        selectedRecord.grade
+                      )}`}
+                    >
+                      {selectedRecord.grade}
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-600">
+                    전체 학생 평균
+                  </p>
+                  <p className="mt-1 text-base text-slate-900">
+                    {dailyStats.find(stat => stat.date === selectedRecord.date)
+                      ?.averageScore.toFixed(1) || '0.0'}
+                    점
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-600">
+                    전체 학생 평균 대비
+                  </p>
+                  <p
+                    className={`mt-1 text-base font-medium ${
+                      (selectedRecord.score -
+                        (dailyStats.find(stat => stat.date === selectedRecord.date)
+                          ?.averageScore || 0)) >=
+                      0
+                        ? 'text-emerald-600'
+                        : 'text-red-600'
+                    }`}
+                  >
+                    {(
+                      selectedRecord.score -
+                      (dailyStats.find(stat => stat.date === selectedRecord.date)
+                        ?.averageScore || 0)
+                    ) >= 0
+                      ? '+'
+                      : ''}
+                    {(
+                      selectedRecord.score -
+                      (dailyStats.find(stat => stat.date === selectedRecord.date)
+                        ?.averageScore || 0)
+                    ).toFixed(1)}
+                    점
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 border-t border-slate-200 pt-4">
+                <p className="mb-2 text-sm font-medium text-slate-600">
+                  선생님 코멘트
+                </p>
+                <p className="text-base leading-relaxed text-slate-700">
+                  {selectedRecord.score >= 90
+                    ? '이번 시험에서 매우 우수한 성적을 거두셨습니다. 지속적인 노력과 집중력이 돋보였으며, 특히 문제 해결 과정에서 논리적 사고력이 뛰어났습니다. 앞으로도 현재의 학습 태도를 유지하시면서 더욱 발전하시길 바랍니다. 다음 시험에서도 좋은 결과를 기대하겠습니다.'
+                    : selectedRecord.score >= 80
+                    ? '전반적으로 좋은 성적을 보여주셨습니다. 기본 개념에 대한 이해가 탄탄하며, 문제 해결 능력도 양호합니다. 다만 일부 응용 문제에서 실수가 있었으니, 다양한 유형의 문제를 더 많이 풀어보시면 도움이 될 것 같습니다. 꾸준한 연습을 통해 더 높은 점수를 목표로 하시기 바랍니다.'
+                    : selectedRecord.score >= 70
+                    ? '기본적인 내용은 이해하고 계시지만, 더 많은 연습이 필요해 보입니다. 특히 계산 실수나 문제 이해 부분에서 개선의 여지가 있습니다. 매일 조금씩이라도 문제를 풀어보시고, 틀린 문제는 반드시 복습하시기 바랍니다. 꾸준한 노력으로 점차 향상될 수 있을 것입니다.'
+                    : '이번 시험 결과를 바탕으로 학습 방법을 점검해보시기 바랍니다. 기본 개념부터 다시 정리하시고, 매일 일정한 시간을 할애하여 학습하시는 것이 중요합니다. 어려운 부분이 있다면 선생님께 질문하시거나 추가 설명을 요청하시기 바랍니다. 포기하지 마시고 꾸준히 노력하시면 분명히 좋은 결과가 있을 것입니다.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 }
