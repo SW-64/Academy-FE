@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home,
@@ -9,6 +9,8 @@ import {
   UserCircle2,
   ChevronLeft,
   ChevronRight,
+  Menu,
+  X,
 } from 'lucide-react';
 
 const menuItems = [
@@ -128,19 +130,70 @@ type MainLayoutProps = {
 function MainLayout({ children, showCalendar = true }: MainLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    // 1025px 이하에서는 기본적으로 닫혀있고, 그 이상에서는 열려있도록
+    return window.innerWidth > 1025;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      // 1025px 초과로 변경되면 사이드바 열기, 1025px 이하로 변경되면 닫기
+      if (window.innerWidth > 1025) {
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-gradient-to-b from-blue-50 via-sky-50 to-blue-100">
+      {/* 사이드바 토글 버튼 (사이드바가 닫혀있을 때만 표시) */}
+      {!isSidebarOpen && (
+        <button
+          type="button"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="fixed right-2 top-2 z-50 rounded-lg bg-white p-2 shadow-md ring-1 ring-blue-100/70 lg:right-4 lg:top-4"
+        >
+          <Menu className="h-5 w-5 text-slate-700" />
+        </button>
+      )}
+
+      {/* 모바일 오버레이 */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 min-[1025px]:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* 왼쪽 사이드바 */}
-      <aside className="hidden md:block w-64 flex-shrink-0 bg-white shadow-sm ring-1 ring-blue-100/70">
+      <aside className={`w-64 flex-shrink-0 bg-white shadow-sm ring-1 ring-blue-100/70 transition-transform duration-300 ${
+        isSidebarOpen 
+          ? 'translate-x-0' 
+          : 'translate-x-full min-[1025px]:translate-x-0'
+      } fixed min-[1025px]:static inset-y-0 right-0 min-[1025px]:left-0 z-40 min-[1025px]:z-auto`}>
         {/* 사이드바 상단 로고 및 타이틀 */}
-        <div className="flex items-center gap-2 border-b border-blue-100/70 px-4 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#084773]">
-            <Home className="h-5 w-5 text-white" />
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 lg:gap-2 border-b border-blue-100/70 px-2 sm:px-3 lg:px-4 py-3 sm:py-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-2 flex-1 min-w-0">
+            <div className="flex h-7 w-7 sm:h-8 sm:w-8 lg:h-8 lg:w-8 items-center justify-center rounded-full bg-[#084773] flex-shrink-0">
+              <Home className="h-4 w-4 sm:h-5 sm:w-5 lg:h-5 lg:w-5 text-white" />
+            </div>
+            <span className="text-xs sm:text-sm lg:text-sm font-semibold text-[#084773] truncate">
+              학습 관리 프로그램
+            </span>
           </div>
-          <span className="text-sm font-semibold text-[#084773]">
-            학습 관리 프로그램
-          </span>
+          {/* X 버튼 */}
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(false)}
+            className="flex-shrink-0 rounded-lg p-1 text-slate-600 hover:bg-slate-100 transition-colors min-[1025px]:hidden"
+          >
+            <X className="h-5 w-5 text-slate-700" />
+          </button>
         </div>
 
         {/* 메뉴 항목 */}
@@ -153,18 +206,18 @@ function MainLayout({ children, showCalendar = true }: MainLayoutProps) {
                 key={item.id}
                 type="button"
                 onClick={() => navigate(item.path)}
-                className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${
+                className={`flex w-full items-center gap-2 sm:gap-3 lg:gap-3 px-2 sm:px-3 lg:px-4 py-2 sm:py-3 lg:py-3 text-left transition-colors ${
                   isActive
                     ? 'bg-blue-50 text-[#084773]'
                     : 'text-slate-700 hover:bg-blue-50/50 hover:text-[#084773]'
                 }`}
               >
                 <Icon
-                  className={`h-5 w-5 ${
+                  className={`h-4 w-4 sm:h-5 sm:w-5 lg:h-5 lg:w-5 flex-shrink-0 ${
                     isActive ? 'text-[#084773]' : 'text-slate-500'
                   }`}
                 />
-                <span className="text-sm font-medium">{item.label}</span>
+                <span className="text-xs sm:text-sm lg:text-sm font-medium truncate">{item.label}</span>
               </button>
             );
           })}
@@ -172,15 +225,15 @@ function MainLayout({ children, showCalendar = true }: MainLayoutProps) {
       </aside>
 
       {/* 메인 콘텐츠 영역 */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
+      <main className="flex-1 overflow-y-auto min-w-0">
+        <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 pt-12 lg:pt-6">
           {children}
         </div>
       </main>
 
-      {/* 오른쪽 캘린더 */}
+      {/* 오른쪽 캘린더 - 데스크탑에서만 표시 */}
       {showCalendar && (
-        <aside className="w-80 flex-shrink-0 border-l border-blue-100/70 bg-white/50 p-6">
+        <aside className="hidden xl:block w-80 flex-shrink-0 border-l border-blue-100/70 bg-white/50 p-6">
           <Calendar />
         </aside>
       )}

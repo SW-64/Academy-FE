@@ -54,7 +54,7 @@ function NoticeDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           <span>목록으로</span>
         </button>
-        <h1 className="text-2xl font-semibold text-slate-900">공지사항</h1>
+        <h1 className="text-2xl font-semibold text-slate-900 text-center min-[1025px]:text-left">공지사항</h1>
       </header>
 
       {/* 공지사항 상세 */}
@@ -104,7 +104,7 @@ function NoticeDetailPage() {
       {/* 이전 공지사항 */}
       {previousNotices.length > 0 && (
         <div className="mt-6">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">이전 공지사항</h3>
+          <h3 className="mb-4 text-base font-semibold text-slate-900 pl-2">이전 공지사항</h3>
           <div className="grid gap-4 md:grid-cols-2">
             {previousNotices.map(prevNotice => (
               <div
