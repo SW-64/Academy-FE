@@ -42,7 +42,7 @@ function ExamsPage() {
       </div>
 
       {/* Dummy table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-2xl">
         <table className="min-w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-amber-100 bg-amber-50/80 text-left text-xs font-semibold text-slate-600">

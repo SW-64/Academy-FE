@@ -1,105 +1,121 @@
-import { useState } from 'react';
-import { Calendar, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import MainLayout from './MainLayout';
-
-type Notice = {
-  id: number;
-  number: number | 'important';
-  title: string;
-  hasNewTag: boolean;
-  author: string;
-  createdAt: string;
-  views: number;
-};
-
-const dummyNotices: Notice[] = [
-  {
-    id: 1,
-    number: 'important',
-    title: '2018년도 직장인 건강검진 안내',
-    hasNewTag: true,
-    author: '박혜진',
-    createdAt: '2018.05.04 14:16',
-    views: 4,
-  },
-  {
-    id: 2,
-    number: 'important',
-    title: '5월 사내행사 일정 안내',
-    hasNewTag: false,
-    author: '박혜진',
-    createdAt: '2018.04.20 15:31',
-    views: 7,
-  },
-  {
-    id: 3,
-    number: 9,
-    title: '임직원 영어교육비 지원제도 안내',
-    hasNewTag: true,
-    author: '박혜진',
-    createdAt: '2018.05.04 14:40',
-    views: 8,
-  },
-  {
-    id: 4,
-    number: 8,
-    title: '회사 소개자료 공유',
-    hasNewTag: true,
-    author: '박혜진',
-    createdAt: '2018.05.04 14:40',
-    views: 0,
-  },
-  {
-    id: 5,
-    number: 7,
-    title: '5월 구내식당 메뉴안내',
-    hasNewTag: true,
-    author: '박혜진',
-    createdAt: '2018.05.04 14:39',
-    views: 1,
-  },
-  {
-    id: 6,
-    number: 6,
-    title: '성희롱 예방 교육 자료 게시',
-    hasNewTag: false,
-    author: '박혜진',
-    createdAt: '2018.05.04 14:38',
-    views: 0,
-  },
-  {
-    id: 7,
-    number: 5,
-    title: '더존ICT그룹 2018년 4월 인사발령',
-    hasNewTag: true,
-    author: '박혜진',
-    createdAt: '2018.05.04 14:38',
-    views: 0,
-  },
-  {
-    id: 8,
-    number: 4,
-    title: '2018년 어린이날 대체공휴일 휴무안내',
-    hasNewTag: true,
-    author: '박혜진',
-    createdAt: '2018.05.04 14:17',
-    views: 0,
-  },
-];
+import { dummyNotices, type Notice } from '../data/noticesData';
 
 function NoticePage() {
-  const [startDate, setStartDate] = useState('2017.05.04');
-  const [endDate, setEndDate] = useState('2018.05.04');
+  const navigate = useNavigate();
+  const [searchTitle, setSearchTitle] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showCalendar, setShowCalendar] = useState(false);
   const itemsPerPage = 10;
-  const totalPages = Math.ceil(dummyNotices.length / itemsPerPage);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setShowCalendar(window.innerWidth >= 1350);
+    };
+
+    handleResize(); // 초기 체크
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // 고정 공지와 일반 공지 분리
+  const pinnedNotices = dummyNotices.filter(notice => notice.isPinned);
+  // 일반 리스트는 id 기준 내림차순 정렬 (낮은 번호가 밑으로)
+  const sortedNotices = [...dummyNotices].sort((a, b) => b.id - a.id);
+  
+  // 제목 검색 필터링
+  const filteredNotices = searchTitle
+    ? sortedNotices.filter(notice =>
+        notice.title.toLowerCase().includes(searchTitle.toLowerCase())
+      )
+    : sortedNotices;
+  
+  // 검색어가 변경되면 첫 페이지로 리셋
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTitle]);
+  
+  const totalPages = Math.ceil(filteredNotices.length / itemsPerPage);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentNotices = dummyNotices.slice(startIndex, endIndex);
+  const currentNotices = filteredNotices.slice(startIndex, endIndex);
+  
+  // 테이블 행 렌더링 함수 (고정 공지 섹션용)
+  const renderPinnedNoticeRow = (notice: Notice) => (
+    <tr
+      key={notice.id}
+      className="border-b border-slate-100 transition-colors hover:bg-slate-50"
+    >
+      <td className="pl-6 pr-1 py-3">
+        <span className="inline-flex rounded bg-emerald-500 px-2 py-0.5 text-xs font-medium text-white">
+          공지
+        </span>
+      </td>
+      <td className="pl-1 pr-4 py-3">
+        <div className="flex items-center gap-2">
+          <span 
+            className="text-sm text-slate-900 cursor-pointer hover:text-[#084773] hover:underline"
+            onClick={() => navigate(`/notice/${notice.id}`)}
+          >
+            {notice.title}
+          </span>
+          {notice.hasNewTag && (
+            <span className="inline-flex rounded bg-blue-500 px-1.5 py-0.5 text-[10px] font-medium text-white">
+              N
+            </span>
+          )}
+        </div>
+      </td>
+      <td className="pl-4 pr-1 py-3 text-sm text-slate-700">
+        {notice.createdAt.split(' ')[0]}
+      </td>
+      <td className="pl-1 pr-4 py-3 text-sm text-slate-700">
+        {notice.author}
+      </td>
+    </tr>
+  );
+  
+  // 테이블 행 렌더링 함수 (일반 리스트용)
+  const renderNoticeRow = (notice: Notice) => (
+    <tr
+      key={notice.id}
+      className="border-b border-slate-100 transition-colors hover:bg-slate-50"
+    >
+      <td className="pl-8 pr-0 py-3">
+        <span className="text-sm text-slate-700">
+          {notice.id}
+        </span>
+      </td>
+      <td className="pl-1 pr-4 py-3">
+        <div className="flex items-center gap-2">
+          <span 
+            className="text-sm text-slate-900 cursor-pointer hover:text-[#084773] hover:underline"
+            onClick={() => navigate(`/notice/${notice.id}`)}
+          >
+            {notice.title}
+          </span>
+          {notice.hasNewTag && (
+            <span className="inline-flex rounded bg-blue-500 px-1.5 py-0.5 text-[10px] font-medium text-white">
+              N
+            </span>
+          )}
+        </div>
+      </td>
+      <td className="pl-4 pr-1 py-3 text-sm text-slate-700">
+        {notice.createdAt.split(' ')[0]}
+      </td>
+      <td className="pl-1 pr-4 py-3 text-sm text-slate-700">
+        {notice.author}
+      </td>
+    </tr>
+  );
 
   return (
-    <MainLayout showCalendar={false}>
+    <MainLayout showCalendar={showCalendar}>
       {/* 헤더 */}
       <header className="mb-6">
         <h1 className="text-2xl font-semibold text-slate-900">공지사항</h1>
@@ -108,30 +124,25 @@ function NoticePage() {
         </p>
       </header>
 
-      {/* 날짜 필터 및 검색 */}
-      <div className="mb-6 flex items-center justify-end gap-2">
+      {/* 검색 및 전체 공지 건수 */}
+      <div className="mb-6 flex items-center justify-between gap-2">
+        <div className="pl-4 pt-3 text-sm text-slate-600">
+          전체 {searchTitle ? filteredNotices.length : dummyNotices.length}건
+        </div>
+        
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <input
-              type="text"
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-              className="w-32 rounded-lg border border-slate-300 px-3 py-2 pr-8 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-              placeholder="시작일"
-            />
-            <Calendar className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          </div>
-          <span className="text-slate-400">~</span>
-          <div className="relative">
-            <input
-              type="text"
-              value={endDate}
-              onChange={e => setEndDate(e.target.value)}
-              className="w-32 rounded-lg border border-slate-300 px-3 py-2 pr-8 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-              placeholder="종료일"
-            />
-            <Calendar className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          </div>
+          <input
+            type="text"
+            value={searchTitle}
+            onChange={e => setSearchTitle(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+              }
+            }}
+            className="w-48 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+            placeholder="제목 검색"
+          />
           <button
             type="button"
             className="flex items-center justify-center rounded-lg bg-[#084773] p-2 text-white transition-colors hover:bg-[#063a5a]"
@@ -142,67 +153,33 @@ function NoticePage() {
       </div>
 
       {/* 공지사항 테이블 */}
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
+          {/* <thead>
+            <tr className="border-b border-slate-200 bg-white">
+              <th className="pl-6 pr-1 py-3 text-left text-xs font-semibold text-slate-700">
                 번호
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
+              <th className="pl-1 pr-4 py-3 text-left text-xs font-semibold text-slate-700">
                 제목
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                작성자
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
+              <th className="pl-4 pr-1 py-3 text-left text-xs font-semibold text-slate-700">
                 작성날짜
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                조회수
+              <th className="pl-1 pr-4 py-3 text-left text-xs font-semibold text-slate-700">
+                작성자
               </th>
             </tr>
-          </thead>
+          </thead> */}
           <tbody>
-            {currentNotices.map(notice => (
-              <tr
-                key={notice.id}
-                className="border-b border-slate-100 transition-colors hover:bg-slate-50"
-              >
-                <td className="px-4 py-3">
-                  {notice.number === 'important' ? (
-                    <span className="inline-flex rounded bg-emerald-500 px-2 py-0.5 text-xs font-medium text-white">
-                      중요
-                    </span>
-                  ) : (
-                    <span className="text-sm text-slate-700">
-                      {notice.number}
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-900">
-                      {notice.title}
-                    </span>
-                    {notice.hasNewTag && (
-                      <span className="inline-flex rounded bg-blue-500 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                        N
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-sm text-slate-700">
-                  {notice.author}
-                </td>
-                <td className="px-4 py-3 text-sm text-slate-700">
-                  {notice.createdAt}
-                </td>
-                <td className="px-4 py-3 text-sm text-slate-700">
-                  {notice.views}
-                </td>
-              </tr>
-            ))}
+            {/* 고정 공지 섹션 */}
+            {pinnedNotices.length > 0 && (
+              <>
+                {pinnedNotices.map(notice => renderPinnedNoticeRow(notice))}
+              </>
+            )}
+            {/* 일반 공지 리스트 */}
+            {currentNotices.map(notice => renderNoticeRow(notice))}
           </tbody>
         </table>
       </div>

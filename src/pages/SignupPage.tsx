@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import ConsentModal from '../components/ConsentModal'
 
 const SignupPage = () => {
+
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [role, setRole] = useState<'student' | 'parent' | ''>('')
