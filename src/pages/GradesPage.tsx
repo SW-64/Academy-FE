@@ -79,18 +79,18 @@ function GradesPage() {
   return (
     <MainLayout>
       {/* 헤더 */}
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900">나의 성적</h1>
-        <p className="mt-1 text-sm text-slate-600">
+      <header className="mb-3 sm:mb-4 md:mb-6">
+        <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-900">나의 성적</h1>
+        <p className="mt-1 text-xs sm:text-sm text-slate-600">
           {currentStudent.studentName}님의 수학 시험 성적을 확인하실 수 있습니다.
         </p>
       </header>
 
       {/* 나의 성적 정보 카드 */}
-      <div className="mb-24 grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="mb-12 sm:mb-24 grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         {/* 나의 성적 현황 */}
-        <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70">
-          <h3 className="mb-4 text-lg font-semibold text-slate-900">
+        <div className="rounded-xl bg-white p-4 sm:p-6 shadow-sm ring-1 ring-blue-100/70">
+          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-slate-900">
             나의 성적 현황
           </h3>
           <div className="space-y-3">
@@ -120,26 +120,26 @@ function GradesPage() {
         </div>
 
         {/* 나의 등급 분포 */}
-        <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70">
-          <h3 className="mb-4 text-lg font-semibold text-slate-900">
+        <div className="rounded-xl bg-white p-4 sm:p-6 shadow-sm ring-1 ring-blue-100/70">
+          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-slate-900">
             나의 등급 분포
           </h3>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-5 gap-2 sm:gap-3">
             {Object.entries(myGradeDistribution).map(([grade, count]) => {
               const percentage = (count / myRecords.length) * 100;
               return (
                 <div key={grade} className="text-center">
                   <div
-                    className={`mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold ${getGradeColor(
+                    className={`mx-auto mb-1 sm:mb-2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full text-base sm:text-lg font-bold ${getGradeColor(
                       grade as GradeLevel
                     )}`}
                   >
                     {grade}
                   </div>
-                  <p className="text-xs font-medium text-slate-900">
+                  <p className="text-[10px] sm:text-xs font-medium text-slate-900">
                     {count}회
                   </p>
-                  <p className="text-xs text-slate-600">
+                  <p className="text-[10px] sm:text-xs text-slate-600">
                     {percentage.toFixed(1)}%
                   </p>
                 </div>
@@ -150,59 +150,98 @@ function GradesPage() {
       </div>
 
       {/* 년도 및 월 선택 */}
-      <div className="mb-6 flex items-center gap-4">
-        <span className="text-lg font-semibold text-slate-900">2025년</span>
-        <div className="flex flex-wrap gap-2">
-          {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-            <button
-              key={month}
-              type="button"
-              onClick={() => setSelectedMonth(month)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                selectedMonth === month
-                  ? 'bg-[#084773] text-white'
-                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
-              }`}
-            >
-              {month}월
-            </button>
-          ))}
+      <div className="mb-4 sm:mb-6">
+        <div className="mb-3 sm:mb-0 sm:flex sm:items-center sm:gap-4">
+          <span className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-0 block sm:inline">2025년</span>
+          {/* 모바일/태블릿: 2줄 배치 */}
+          <div className="lg:hidden flex flex-col gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              {Array.from({ length: 7 }, (_, i) => i + 1).map(month => (
+                <button
+                  key={month}
+                  type="button"
+                  onClick={() => setSelectedMonth(month)}
+                  className={`rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
+                    selectedMonth === month
+                      ? 'bg-[#084773] text-white'
+                      : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
+                  }`}
+                >
+                  {month}월
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              {Array.from({ length: 5 }, (_, i) => i + 8).map(month => (
+                <button
+                  key={month}
+                  type="button"
+                  onClick={() => setSelectedMonth(month)}
+                  className={`rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
+                    selectedMonth === month
+                      ? 'bg-[#084773] text-white'
+                      : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
+                  }`}
+                >
+                  {month}월
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* 데스크탑: 1줄 배치 */}
+          <div className="hidden lg:flex flex-wrap gap-2">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+              <button
+                key={month}
+                type="button"
+                onClick={() => setSelectedMonth(month)}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  selectedMonth === month
+                    ? 'bg-[#084773] text-white'
+                    : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
+                }`}
+              >
+                {month}월
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* 최근 시험 성적 */}
-      <section className="mb-6">
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">
+      <section className="mb-4 sm:mb-6">
+        <h2 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-slate-900">
           최근 시험 성적
         </h2>
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                    날짜
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                    점수
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                    전체 학생 평균
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                    등급
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                    전체 학생 평균 대비
-                  </th>
-                </tr>
-              </thead>
+            <div className="inline-block min-w-full align-middle">
+              <table className="min-w-[600px] sm:min-w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                      날짜
+                    </th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                      점수
+                    </th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                      전체 학생 평균
+                    </th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                      등급
+                    </th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                      전체 학생 평균 대비
+                    </th>
+                  </tr>
+                </thead>
               <tbody>
                 {filteredRecords.length === 0 ? (
                   <tr>
                     <td
                       colSpan={5}
-                      className="px-4 py-8 text-center text-sm text-slate-500"
+                      className="px-4 py-8 text-center text-xs sm:text-sm text-slate-500"
                     >
                       {selectedMonth}월에 해당하는 시험 기록이 없습니다.
                     </td>
@@ -227,18 +266,18 @@ function GradesPage() {
                         }}
                         className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50"
                       >
-                        <td className="px-4 py-3 text-sm text-slate-900">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-900 whitespace-nowrap">
                           {record.dateFormatted}
                         </td>
-                        <td className="px-4 py-3 text-sm font-medium text-slate-900">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-slate-900 whitespace-nowrap">
                           {record.score}점
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-600">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-600 whitespace-nowrap">
                           {allStudentsAverage}점
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap">
                           <span
-                            className={`rounded-full px-2 py-1 text-xs font-medium ${getGradeColor(
+                            className={`inline-block rounded-full px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium ${getGradeColor(
                               record.grade
                             )}`}
                           >
@@ -246,7 +285,7 @@ function GradesPage() {
                           </span>
                         </td>
                         <td
-                          className={`px-4 py-3 text-sm font-medium ${
+                          className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium whitespace-nowrap ${
                             differenceFromAllStudentsAverage >= 0
                               ? 'text-emerald-600'
                               : 'text-red-600'
@@ -260,18 +299,19 @@ function GradesPage() {
                   })
                 )}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         </div>
       </section>
 
       {/* 성적 변화 그래프 */}
-      <section className="mb-6">
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">
+      <section className="mb-4 sm:mb-6">
+        <h2 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-slate-900">
           성적 변화
         </h2>
-        <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70">
-          <div className="relative h-64 w-full">
+        <div className="rounded-xl bg-white p-2 sm:p-3 md:p-6 shadow-sm ring-1 ring-blue-100/70">
+          <div className="relative h-40 sm:h-48 md:h-64 w-full overflow-x-auto">
             {filteredRecords.length > 0 ? (
               <>
                 <svg
@@ -368,28 +408,28 @@ function GradesPage() {
                   })}
                 </svg>
                 {/* 범례 */}
-                <div className="absolute right-6 top-6 flex flex-col gap-2 rounded-lg bg-white p-3 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-8 bg-[#084773]"></div>
-                    <span className="text-xs text-slate-600">시험 점수</span>
+                <div className="absolute right-2 sm:right-6 top-2 sm:top-6 flex flex-col gap-1 sm:gap-2 rounded-lg bg-white p-2 sm:p-3 shadow-sm">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="h-2.5 sm:h-3 w-6 sm:w-8 bg-[#084773]"></div>
+                    <span className="text-[10px] sm:text-xs text-slate-600">시험 점수</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-8 border-2 border-dashed border-amber-500"></div>
-                    <span className="text-xs text-slate-600">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="h-2.5 sm:h-3 w-6 sm:w-8 border-2 border-dashed border-amber-500"></div>
+                    <span className="text-[10px] sm:text-xs text-slate-600">
                       전체 학생 평균점수
                     </span>
                   </div>
                 </div>
                 {/* Y축 레이블 (60~100) */}
-                <div className="absolute left-0 top-0 flex h-full flex-col justify-between py-2">
+                <div className="absolute left-0 top-0 flex h-full flex-col justify-between py-1 sm:py-2">
                   {[100, 90, 80, 70, 60].map(score => (
-                    <span key={score} className="text-xs text-slate-500">
+                    <span key={score} className="text-[10px] sm:text-xs text-slate-500">
                       {score}
                     </span>
                   ))}
                 </div>
                 {/* X축 레이블 */}
-                <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2">
+                <div className="absolute bottom-0 left-0 right-0 flex justify-between px-1 sm:px-2">
                   {[...filteredRecords]
                     .reverse()
                     .filter(
@@ -398,7 +438,7 @@ function GradesPage() {
                           0 || index === filteredRecords.length - 1
                     )
                     .map((record, index) => (
-                      <span key={index} className="text-[10px] text-slate-500">
+                      <span key={index} className="text-[8px] sm:text-[10px] text-slate-500">
                         {record.dateFormatted}
                       </span>
                     ))}
@@ -416,24 +456,24 @@ function GradesPage() {
       {/* 상세 정보 모달 */}
       {isModalOpen && selectedRecord && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-3 sm:p-4"
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-2xl rounded-xl bg-white p-6 shadow-lg"
+            className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white p-4 sm:p-6 shadow-lg"
             onClick={e => e.stopPropagation()}
           >
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute right-4 top-4 rounded-full bg-slate-100 p-1 text-slate-600 transition-colors hover:bg-slate-200"
+              className="absolute right-3 sm:right-4 top-3 sm:top-4 rounded-full bg-slate-100 p-1 text-slate-600 transition-colors hover:bg-slate-200"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
-            <h3 className="mb-4 text-xl font-semibold text-slate-900">
+            <h3 className="mb-3 sm:mb-4 text-lg sm:text-xl font-semibold text-slate-900">
               시험 상세 정보
             </h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <p className="text-sm font-medium text-slate-600">학생 이름</p>
                   <p className="mt-1 text-base text-slate-900">
@@ -504,11 +544,11 @@ function GradesPage() {
                   </p>
                 </div>
               </div>
-              <div className="mt-6 border-t border-slate-200 pt-4">
-                <p className="mb-2 text-sm font-medium text-slate-600">
+              <div className="mt-4 sm:mt-6 border-t border-slate-200 pt-3 sm:pt-4">
+                <p className="mb-2 text-xs sm:text-sm font-medium text-slate-600">
                   선생님 코멘트
                 </p>
-                <p className="text-base leading-relaxed text-slate-700">
+                <p className="text-sm sm:text-base leading-relaxed text-slate-700">
                   {selectedRecord.score >= 90
                     ? '이번 시험에서 매우 우수한 성적을 거두셨습니다. 지속적인 노력과 집중력이 돋보였으며, 특히 문제 해결 과정에서 논리적 사고력이 뛰어났습니다. 앞으로도 현재의 학습 태도를 유지하시면서 더욱 발전하시길 바랍니다. 다음 시험에서도 좋은 결과를 기대하겠습니다.'
                     : selectedRecord.score >= 80
