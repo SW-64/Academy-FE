@@ -153,6 +153,87 @@ students.forEach(student => {
   });
 });
 
+// 학생 1번에 대한 추가 데이터 (1월, 3월, 4월)
+const student1 = students.find(s => s.id === 1);
+if (student1) {
+  // 학생 1번의 기존 점수 기록 (누적 평균 계산용)
+  const student1ExistingRecords = examRecords.filter(r => r.studentId === 1);
+  let cumulativeSum = student1ExistingRecords.reduce((sum, r) => sum + r.score, 0);
+  let recordCount = student1ExistingRecords.length;
+
+  // 1월 데이터 4개 (2025-01-06, 2025-01-07, 2025-01-08, 2025-01-09)
+  const januaryDates = [
+    '2025-01-06',
+    '2025-01-07',
+    '2025-01-08',
+    '2025-01-09',
+  ];
+  januaryDates.forEach((date, index) => {
+    const score = generateScore(student1.id, recordCount + index, student1.targetScore);
+    cumulativeSum += score;
+    recordCount++;
+    const average = Math.round((cumulativeSum / recordCount) * 10) / 10;
+    const dateObj = new Date(date);
+    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+
+    examRecords.push({
+      studentId: 1,
+      studentName: student1.name,
+      date,
+      dateFormatted,
+      score,
+      average,
+      grade: calculateGrade(score),
+      targetScore: student1.targetScore,
+      differenceFromTarget: score - student1.targetScore,
+    });
+  });
+
+  // 3월 데이터 1개 (2025-03-03)
+  const marchDate = '2025-03-03';
+  const marchScore = generateScore(student1.id, recordCount, student1.targetScore);
+  cumulativeSum += marchScore;
+  recordCount++;
+  const marchAverage = Math.round((cumulativeSum / recordCount) * 10) / 10;
+  const marchDateObj = new Date(marchDate);
+  const marchDateFormatted = `${String(marchDateObj.getMonth() + 1).padStart(2, '0')}/${String(marchDateObj.getDate()).padStart(2, '0')}`;
+
+  examRecords.push({
+    studentId: 1,
+    studentName: student1.name,
+    date: marchDate,
+    dateFormatted: marchDateFormatted,
+    score: marchScore,
+    average: marchAverage,
+    grade: calculateGrade(marchScore),
+    targetScore: student1.targetScore,
+    differenceFromTarget: marchScore - student1.targetScore,
+  });
+
+  // 4월 데이터 3개 (2025-04-01, 2025-04-02, 2025-04-03)
+  const aprilDates = ['2025-04-01', '2025-04-02', '2025-04-03'];
+  aprilDates.forEach((date, index) => {
+    const score = generateScore(student1.id, recordCount + index, student1.targetScore);
+    cumulativeSum += score;
+    recordCount++;
+    const average = Math.round((cumulativeSum / recordCount) * 10) / 10;
+    const dateObj = new Date(date);
+    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+
+    examRecords.push({
+      studentId: 1,
+      studentName: student1.name,
+      date,
+      dateFormatted,
+      score,
+      average,
+      grade: calculateGrade(score),
+      targetScore: student1.targetScore,
+      differenceFromTarget: score - student1.targetScore,
+    });
+  });
+}
+
 // 학생별 요약 데이터
 export interface StudentSummary {
   studentId: number;
@@ -216,8 +297,34 @@ export interface DailyStats {
   gradeDistribution: Record<GradeLevel, number>;
 }
 
-export const dailyStats: DailyStats[] = examDates.map(date => {
+// 모든 시험 날짜 수집 (2월 + 추가된 1월, 3월, 4월)
+const allExamDates = [
+  ...examDates,
+  '2025-01-06',
+  '2025-01-07',
+  '2025-01-08',
+  '2025-01-09',
+  '2025-03-03',
+  '2025-04-01',
+  '2025-04-02',
+  '2025-04-03',
+];
+
+export const dailyStats: DailyStats[] = allExamDates.map(date => {
   const dateRecords = examRecords.filter(r => r.date === date);
+  if (dateRecords.length === 0) {
+    // 해당 날짜에 데이터가 없으면 기본값 반환
+    const dateObj = new Date(date);
+    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+    return {
+      date,
+      dateFormatted,
+      averageScore: 0,
+      totalStudents: 0,
+      gradeDistribution: { A: 0, B: 0, C: 0, D: 0, F: 0 },
+    };
+  }
+
   const averageScore =
     Math.round((dateRecords.reduce((sum, r) => sum + r.score, 0) / dateRecords.length) * 10) / 10;
 
@@ -289,5 +396,6 @@ export const monthlyStats = {
     { A: 0, B: 0, C: 0, D: 0, F: 0 } as Record<GradeLevel, number>
   ),
 };
+
 
 
