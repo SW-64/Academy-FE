@@ -173,14 +173,14 @@ function MainLayout({ children, showCalendar = true }: MainLayoutProps) {
 
       {/* 메인 콘텐츠 영역 */}
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </div>
       </main>
 
       {/* 오른쪽 캘린더 */}
       {showCalendar && (
-        <aside className="hidden lg:block w-80 flex-shrink-0 border-l border-blue-100/70 bg-white/50 p-6">
+        <aside className="w-80 flex-shrink-0 border-l border-blue-100/70 bg-white/50 p-6">
           <Calendar />
         </aside>
       )}

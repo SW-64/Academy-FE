@@ -4,6 +4,7 @@ import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import MainPage from './pages/MainPage';
 import NoticePage from './pages/NoticePage';
+import NoticeDetailPage from './pages/NoticeDetailPage';
 import GradesPage from './pages/GradesPage';
 import MaterialsPage from './pages/MaterialsPage';
 import VideosPage from './pages/VideosPage';
@@ -27,6 +28,7 @@ function App() {
 
         {/* 메인 레이아웃 페이지들 */}
         <Route path="/notice" element={<NoticePage />} />
+        <Route path="/notice/:id" element={<NoticeDetailPage />} />
         <Route path="/grades" element={<GradesPage />} />
         <Route path="/materials" element={<MaterialsPage />} />
         <Route path="/videos" element={<VideosPage />} />
