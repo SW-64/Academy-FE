@@ -70,10 +70,10 @@ function NoticePage() {
           )}
         </div>
       </td>
-      <td className="pl-4 pr-1 py-3 text-sm text-slate-700">
+      <td className="hidden min-[431px]:table-cell pl-4 pr-1 py-3 text-sm text-slate-700">
         {notice.createdAt.split(' ')[0]}
       </td>
-      <td className="pl-1 pr-4 py-3 text-sm text-slate-700">
+      <td className="hidden min-[601px]:table-cell pl-1 pr-4 py-3 text-sm text-slate-700">
         {notice.author}
       </td>
     </tr>
@@ -105,10 +105,10 @@ function NoticePage() {
           )}
         </div>
       </td>
-      <td className="pl-4 pr-1 py-3 text-sm text-slate-700">
+      <td className="hidden min-[431px]:table-cell pl-4 pr-1 py-3 text-sm text-slate-700">
         {notice.createdAt.split(' ')[0]}
       </td>
-      <td className="pl-1 pr-4 py-3 text-sm text-slate-700">
+      <td className="hidden min-[601px]:table-cell pl-1 pr-4 py-3 text-sm text-slate-700">
         {notice.author}
       </td>
     </tr>
@@ -126,7 +126,7 @@ function NoticePage() {
 
       {/* 검색 및 전체 공지 건수 */}
       <div className="mb-6 flex items-center justify-between gap-2">
-        <div className="pl-4 pt-3 text-sm text-slate-600">
+        <div className="pl-4 pt-3 text-sm max-[355px]:text-xs text-slate-600">
           전체 {searchTitle ? filteredNotices.length : dummyNotices.length}건
         </div>
         

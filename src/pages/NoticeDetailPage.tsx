@@ -79,18 +79,18 @@ function NoticeDetailPage() {
         {/* 작성일/작성자 영역 */}
         <div className="px-6 pt-4">
           <div className="flex justify-end gap-6 text-sm text-slate-600">
-            <div className="hidden md:block">
+            <div>
               <span className="font-medium text-slate-700"></span>{' '}
               {notice.createdAt.split(' ')[0]}
             </div>
-            <div className="hidden lg:block">
+            <div>
               <span className="font-medium text-slate-700"></span> {notice.author}
             </div>
           </div>
         </div>
 
         {/* 내용 영역 */}
-        <div className="px-6 py-4">
+        <div className="px-6 pt-4 pb-6">
           <div className="prose prose-slate max-w-none text-slate-700 whitespace-pre-line">
             {notice.content || (
               <p className="text-slate-600">

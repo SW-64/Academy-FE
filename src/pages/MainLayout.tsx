@@ -132,7 +132,7 @@ function MainLayout({ children, showCalendar = true }: MainLayoutProps) {
   return (
     <div className="flex min-h-screen bg-gradient-to-b from-blue-50 via-sky-50 to-blue-100">
       {/* 왼쪽 사이드바 */}
-      <aside className="w-64 flex-shrink-0 bg-white shadow-sm ring-1 ring-blue-100/70">
+      <aside className="hidden md:block w-64 flex-shrink-0 bg-white shadow-sm ring-1 ring-blue-100/70">
         {/* 사이드바 상단 로고 및 타이틀 */}
         <div className="flex items-center gap-2 border-b border-blue-100/70 px-4 py-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#084773]">
