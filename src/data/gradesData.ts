@@ -64,10 +64,10 @@ function calculateGrade(score: number): GradeLevel {
   return 'F';
 }
 
-// 2025년 2월의 평일 날짜 생성 (월~금만)
-function generateWeekdaysInFebruary2025(): string[] {
+// 2026년 2월의 평일 날짜 생성 (월~금만)
+function generateWeekdaysInFebruary2026(): string[] {
   const dates: string[] = [];
-  const year = 2025;
+  const year = 2026;
   const month = 1; // 0-based, 1 = February
 
   // 2월 1일부터 시작
@@ -121,7 +121,7 @@ export const students: Student[] = studentNames.map((name, index) => ({
 }));
 
 // 시험 날짜 목록
-const examDates = generateWeekdaysInFebruary2025();
+const examDates = generateWeekdaysInFebruary2026();
 
 // 전체 시험 기록 생성
 export const examRecords: ExamRecord[] = [];
@@ -161,12 +161,12 @@ if (student1) {
   let cumulativeSum = student1ExistingRecords.reduce((sum, r) => sum + r.score, 0);
   let recordCount = student1ExistingRecords.length;
 
-  // 1월 데이터 4개 (2025-01-06, 2025-01-07, 2025-01-08, 2025-01-09)
+  // 1월 데이터 4개 (2026-01-06, 2026-01-07, 2026-01-08, 2026-01-09)
   const januaryDates = [
-    '2025-01-06',
-    '2025-01-07',
-    '2025-01-08',
-    '2025-01-09',
+    '2026-01-06',
+    '2026-01-07',
+    '2026-01-08',
+    '2026-01-09',
   ];
   januaryDates.forEach((date, index) => {
     const score = generateScore(student1.id, recordCount + index, student1.targetScore);
@@ -189,8 +189,8 @@ if (student1) {
     });
   });
 
-  // 3월 데이터 1개 (2025-03-03)
-  const marchDate = '2025-03-03';
+  // 3월 데이터 1개 (2026-03-03)
+  const marchDate = '2026-03-03';
   const marchScore = generateScore(student1.id, recordCount, student1.targetScore);
   cumulativeSum += marchScore;
   recordCount++;
@@ -210,8 +210,8 @@ if (student1) {
     differenceFromTarget: marchScore - student1.targetScore,
   });
 
-  // 4월 데이터 3개 (2025-04-01, 2025-04-02, 2025-04-03)
-  const aprilDates = ['2025-04-01', '2025-04-02', '2025-04-03'];
+  // 4월 데이터 3개 (2026-04-01, 2026-04-02, 2026-04-03)
+  const aprilDates = ['2026-04-01', '2026-04-02', '2026-04-03'];
   aprilDates.forEach((date, index) => {
     const score = generateScore(student1.id, recordCount + index, student1.targetScore);
     cumulativeSum += score;
@@ -300,14 +300,14 @@ export interface DailyStats {
 // 모든 시험 날짜 수집 (2월 + 추가된 1월, 3월, 4월)
 const allExamDates = [
   ...examDates,
-  '2025-01-06',
-  '2025-01-07',
-  '2025-01-08',
-  '2025-01-09',
-  '2025-03-03',
-  '2025-04-01',
-  '2025-04-02',
-  '2025-04-03',
+  '2026-01-06',
+  '2026-01-07',
+  '2026-01-08',
+  '2026-01-09',
+  '2026-03-03',
+  '2026-04-01',
+  '2026-04-02',
+  '2026-04-03',
 ];
 
 export const dailyStats: DailyStats[] = allExamDates.map(date => {
@@ -383,7 +383,7 @@ for (let week = 0; week < weeks; week++) {
 
 // 월별 통계
 export const monthlyStats = {
-  month: '2025-02',
+  month: '2026-02',
   totalStudents: students.length,
   totalExams: examRecords.length,
   averageScore:
@@ -396,6 +396,7 @@ export const monthlyStats = {
     { A: 0, B: 0, C: 0, D: 0, F: 0 } as Record<GradeLevel, number>
   ),
 };
+
 
 
 

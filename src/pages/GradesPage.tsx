@@ -11,7 +11,6 @@ import {
 
 // TODO: 실제 로그인한 학생 ID로 교체
 const CURRENT_STUDENT_ID = 1;
-const STUDENT_AVERAGE_SCORE = 70; // 학생 평균점수
 
 function GradesPage() {
   const [selectedMonth, setSelectedMonth] = useState<number>(2); // 기본값: 2월
@@ -50,7 +49,7 @@ function GradesPage() {
     return myRecords
       .filter(record => {
         const recordDate = new Date(record.date);
-        return recordDate.getMonth() + 1 === selectedMonth && recordDate.getFullYear() === 2025;
+        return recordDate.getMonth() + 1 === selectedMonth && recordDate.getFullYear() === 2026;
       })
       .reverse(); // 오래된 순으로 정렬
   };
@@ -86,73 +85,10 @@ function GradesPage() {
         </p>
       </header>
 
-      {/* 나의 성적 정보 카드 */}
-      <div className="mb-12 sm:mb-24 grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-        {/* 나의 성적 현황 */}
-        <div className="rounded-xl bg-white p-4 sm:p-6 shadow-sm ring-1 ring-blue-100/70">
-          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-slate-900">
-            나의 성적 현황
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-600">이름</span>
-              <span className="font-medium text-slate-900">
-                {currentStudent.studentName}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-600">최근 등급</span>
-              <span
-                className={`rounded-full px-3 py-1 text-sm font-medium ${getGradeColor(
-                  currentStudent.latestGrade
-                )}`}
-              >
-                {currentStudent.latestGrade}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-600">학생 평균점수</span>
-              <span className="font-medium text-slate-900">
-                {STUDENT_AVERAGE_SCORE}점
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* 나의 등급 분포 */}
-        <div className="rounded-xl bg-white p-4 sm:p-6 shadow-sm ring-1 ring-blue-100/70">
-          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-slate-900">
-            나의 등급 분포
-          </h3>
-          <div className="grid grid-cols-5 gap-2 sm:gap-3">
-            {Object.entries(myGradeDistribution).map(([grade, count]) => {
-              const percentage = (count / myRecords.length) * 100;
-              return (
-                <div key={grade} className="text-center">
-                  <div
-                    className={`mx-auto mb-1 sm:mb-2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full text-base sm:text-lg font-bold ${getGradeColor(
-                      grade as GradeLevel
-                    )}`}
-                  >
-                    {grade}
-                  </div>
-                  <p className="text-[10px] sm:text-xs font-medium text-slate-900">
-                    {count}회
-                  </p>
-                  <p className="text-[10px] sm:text-xs text-slate-600">
-                    {percentage.toFixed(1)}%
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
       {/* 년도 및 월 선택 */}
       <div className="mb-4 sm:mb-6">
         <div className="mb-3 sm:mb-0 sm:flex sm:items-center sm:gap-4">
-          <span className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-0 block sm:inline">2025년</span>
+          <span className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-0 block sm:inline">2026년</span>
           {/* 모바일/태블릿: 2줄 배치 */}
           <div className="lg:hidden flex flex-col gap-2">
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
@@ -204,6 +140,63 @@ function GradesPage() {
                 {month}월
               </button>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 나의 성적 정보 카드 */}
+      <div className="mb-12 sm:mb-24 grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
+        {/* 나의 성적 현황 */}
+        <div className="rounded-xl bg-white p-4 sm:p-6 shadow-sm ring-1 ring-blue-100/70">
+          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-slate-900">
+            나의 성적 현황
+          </h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-600">이름</span>
+              <span className="font-medium text-slate-900">
+                {currentStudent.studentName}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-600">최근 등급</span>
+              <span
+                className={`rounded-full px-3 py-1 text-sm font-medium ${getGradeColor(
+                  currentStudent.latestGrade
+                )}`}
+              >
+                {currentStudent.latestGrade}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 나의 등급 분포 */}
+        <div className="rounded-xl bg-white p-4 sm:p-6 shadow-sm ring-1 ring-blue-100/70">
+          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-slate-900">
+            나의 등급 분포
+          </h3>
+          <div className="grid grid-cols-5 gap-2 sm:gap-3">
+            {Object.entries(myGradeDistribution).map(([grade, count]) => {
+              const percentage = (count / myRecords.length) * 100;
+              return (
+                <div key={grade} className="text-center">
+                  <div
+                    className={`mx-auto mb-1 sm:mb-2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full text-base sm:text-lg font-bold ${getGradeColor(
+                      grade as GradeLevel
+                    )}`}
+                  >
+                    {grade}
+                  </div>
+                  <p className="text-[10px] sm:text-xs font-medium text-slate-900">
+                    {count}회
+                  </p>
+                  <p className="text-[10px] sm:text-xs text-slate-600">
+                    {percentage.toFixed(1)}%
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
