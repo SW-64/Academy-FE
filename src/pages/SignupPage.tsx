@@ -1,8 +1,9 @@
 import { useState, FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import ConsentModal from '../components/ConsentModal'
 
 const SignupPage = () => {
+  const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
@@ -70,7 +71,9 @@ const SignupPage = () => {
 
     // TODO: 여기서 실제 API 호출
     console.log('회원가입 데이터:', signupData)
-    alert('회원가입 준비중입니다')
+    
+    // 회원가입 완료 페이지로 이동
+    navigate('/signup/complete')
   }
 
   // 폼 제출 핸들러 (유효성 검사 후 모달 열기)
