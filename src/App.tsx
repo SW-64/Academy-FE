@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import SignupCompletePage from './pages/SignupCompletePage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import MainPage from './pages/MainPage';
 import NoticePage from './pages/NoticePage';
@@ -47,6 +48,7 @@ function App() {
         {/* 기존 인증 관련 페이지들 */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/signup/complete" element={<SignupCompletePage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* 정의되지 않은 경로는 메인으로 */}
