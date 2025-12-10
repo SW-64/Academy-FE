@@ -11,11 +11,9 @@ import MaterialsPage from './pages/MaterialsPage';
 import VideosPage from './pages/VideosPage';
 import MyPage from './pages/MyPage';
 import IntegrationsPage from './pages/IntegrationsPage';
-import AdminLayout from './pages/admin/AdminLayout';
-import ExamsPage from './pages/admin/ExamsPage';
-import AdminMaterialsPage from './pages/admin/MaterialsPage';
-import AdminVideosPage from './pages/admin/VideosPage';
-import UsersPage from './pages/admin/UsersPage';
+import AdminPage from './pages/admin/AdminPage';
+import AdminNoticePage from './pages/admin/AdminNoticePage';
+import AdminGradesPage from './pages/admin/AdminGradesPage';
 
 function App() {
   return (
@@ -37,13 +35,12 @@ function App() {
         <Route path="/integrations" element={<IntegrationsPage />} />
 
         {/* 관리자 라우트 */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Navigate to="/admin/exams" replace />} />
-          <Route path="exams" element={<ExamsPage />} />
-          <Route path="materials" element={<AdminMaterialsPage />} />
-          <Route path="videos" element={<AdminVideosPage />} />
-          <Route path="users" element={<UsersPage />} />
-        </Route>
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin/notice" element={<AdminNoticePage />} />
+        <Route path="/admin/grades" element={<AdminGradesPage />} />
+        <Route path="/admin/materials" element={<MaterialsPage />} />
+        <Route path="/admin/videos" element={<VideosPage />} />
+        <Route path="/admin/mypage" element={<MyPage />} />
 
         {/* 기존 인증 관련 페이지들 */}
         <Route path="/login" element={<LoginPage />} />
