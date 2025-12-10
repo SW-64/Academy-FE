@@ -120,7 +120,7 @@ function NoticePage() {
       <header className="mb-6">
         <h1 className="text-2xl font-semibold text-slate-900 text-center md:text-left">공지사항</h1>
         <p className="mt-1 text-sm text-slate-600 text-center md:text-left">
-          회사 공지사항을 조회합니다.
+          공지사항을 조회합니다.
         </p>
       </header>
 

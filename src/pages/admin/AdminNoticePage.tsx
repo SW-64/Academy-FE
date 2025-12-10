@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, X, Trash2, Save } from 'lucide-react';
 import MainLayout from '../MainLayout';
 import { dummyNotices } from '../../data/noticesData';
@@ -6,6 +6,8 @@ import type { Notice } from '../../data/noticesData';
 
 function AdminNoticePage() {
   const [notices, setNotices] = useState<Notice[]>(dummyNotices);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
@@ -90,22 +92,43 @@ function AdminNoticePage() {
   // 고정 공지와 일반 공지 분리
   const pinnedNotices = notices.filter(notice => notice.isPinned);
   const sortedNotices = [...notices].sort((a, b) => b.id - a.id);
+  const itemsPerPage = 10;
+  const generalNotices = sortedNotices.filter(notice => !notice.isPinned);
+  const totalPages = Math.max(1, Math.ceil(generalNotices.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentNotices = generalNotices.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setShowCalendar(window.innerWidth >= 1350);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    // 공지 삭제/추가 시 현재 페이지가 범위를 벗어나지 않도록 보정
+    setCurrentPage(prev => Math.min(prev, totalPages));
+  }, [totalPages]);
 
   return (
-    <MainLayout showCalendar={false} isAdmin={true}>
+    <MainLayout showCalendar={showCalendar} isAdmin={true}>
       {/* 헤더 */}
       <header className="mb-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="text-center md:text-left">
             <h1 className="text-2xl font-semibold text-slate-900">공지사항 관리</h1>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-slate-600 hidden min-[761px]:block">
               공지사항을 작성하고 관리할 수 있습니다.
             </p>
           </div>
           <button
             type="button"
             onClick={() => setIsWriteModalOpen(true)}
-            className="flex items-center gap-2 rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
+            className="flex items-center gap-2 rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a] self-center md:self-auto w-auto max-[760px]:scale-90"
           >
             <Plus className="h-4 w-4" />
             글쓰기
@@ -129,10 +152,10 @@ function AdminNoticePage() {
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
                       제목
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    <th className="hidden min-[431px]:table-cell px-4 py-3 text-left text-sm font-semibold text-slate-900">
                       작성일
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    <th className="hidden min-[601px]:table-cell px-4 py-3 text-left text-sm font-semibold text-slate-900">
                       작성자
                     </th>
                   </tr>
@@ -152,10 +175,10 @@ function AdminNoticePage() {
                       <td className="px-4 py-3 text-sm text-slate-900">
                         {notice.title}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
+                      <td className="hidden min-[431px]:table-cell px-4 py-3 text-sm text-slate-600">
                         {notice.createdAt.split(' ')[0]}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
+                      <td className="hidden min-[601px]:table-cell px-4 py-3 text-sm text-slate-600">
                         {notice.author}
                       </td>
                     </tr>
@@ -173,47 +196,79 @@ function AdminNoticePage() {
             <table className="min-w-full border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
                     번호
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
                     제목
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    <th className="hidden min-[431px]:table-cell px-4 py-3 text-left text-sm font-semibold text-slate-900">
                     작성일
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    <th className="hidden min-[601px]:table-cell px-4 py-3 text-left text-sm font-semibold text-slate-900">
                     작성자
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {sortedNotices
-                  .filter(notice => !notice.isPinned)
-                  .map(notice => (
-                    <tr
-                      key={notice.id}
-                      className="border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors"
-                      onClick={() => handleNoticeClick(notice)}
-                    >
+                {currentNotices.map(notice => (
+                  <tr
+                    key={notice.id}
+                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors"
+                    onClick={() => handleNoticeClick(notice)}
+                  >
                       <td className="px-4 py-3 text-sm text-slate-900">
                         {notice.id}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-900">
                         {notice.title}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
+                      <td className="hidden min-[431px]:table-cell px-4 py-3 text-sm text-slate-600">
                         {notice.createdAt.split(' ')[0]}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
+                      <td className="hidden min-[601px]:table-cell px-4 py-3 text-sm text-slate-600">
                         {notice.author}
                       </td>
-                    </tr>
-                  ))}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </section>
+
+        {/* 페이지네이션 */}
+        <div className="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="flex items-center justify-center rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            이전
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button
+              key={page}
+              type="button"
+              onClick={() => setCurrentPage(page)}
+              className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                currentPage === page
+                  ? 'bg-[#084773] text-white'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            className="flex items-center justify-center rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            다음
+          </button>
+        </div>
       </div>
 
       {/* 글쓰기 모달 */}
