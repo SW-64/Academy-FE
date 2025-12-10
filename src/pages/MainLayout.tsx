@@ -22,6 +22,15 @@ const menuItems = [
   { id: 'mypage', label: '마이페이지', icon: UserCircle2, path: '/mypage' },
 ];
 
+const adminMenuItems = [
+  { id: 'students', label: '학생 관리', icon: GraduationCap, path: '/admin' },
+  { id: 'notice', label: '공지사항', icon: Megaphone, path: '/admin/notice' },
+  { id: 'grades', label: '성적', icon: GraduationCap, path: '/admin/grades' },
+  { id: 'materials', label: '학습자료', icon: BookOpen, path: '/admin/materials' },
+  { id: 'videos', label: '영상', icon: PlayCircle, path: '/admin/videos' },
+  { id: 'mypage', label: '마이페이지', icon: UserCircle2, path: '/admin/mypage' },
+];
+
 function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -125,11 +134,14 @@ function Calendar() {
 type MainLayoutProps = {
   children: ReactNode;
   showCalendar?: boolean;
+  isAdmin?: boolean;
 };
 
-function MainLayout({ children, showCalendar = true }: MainLayoutProps) {
+function MainLayout({ children, showCalendar = true, isAdmin: propIsAdmin = false }: MainLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  // 경로가 /admin으로 시작하면 자동으로 관리자 모드로 설정
+  const isAdmin = propIsAdmin || location.pathname.startsWith('/admin');
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     // 1025px 이하에서는 기본적으로 닫혀있고, 그 이상에서는 열려있도록
     return window.innerWidth > 1025;
@@ -182,9 +194,16 @@ function MainLayout({ children, showCalendar = true }: MainLayoutProps) {
             <div className="flex h-7 w-7 sm:h-8 sm:w-8 lg:h-8 lg:w-8 items-center justify-center rounded-full bg-[#084773] flex-shrink-0">
               <Home className="h-4 w-4 sm:h-5 sm:w-5 lg:h-5 lg:w-5 text-white" />
             </div>
-            <span className="text-xs sm:text-sm lg:text-sm font-semibold text-[#084773] truncate">
-              학습 관리 프로그램
-            </span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs sm:text-sm lg:text-sm font-semibold text-[#084773] truncate">
+                학습 관리 프로그램
+              </span>
+              {isAdmin && (
+                <span className="text-[10px] sm:text-xs text-slate-500">
+                  관리자용
+                </span>
+              )}
+            </div>
           </div>
           {/* X 버튼 */}
           <button
@@ -198,9 +217,13 @@ function MainLayout({ children, showCalendar = true }: MainLayoutProps) {
 
         {/* 메뉴 항목 */}
         <nav className="py-2">
-          {menuItems.map(item => {
+          {(isAdmin ? adminMenuItems : menuItems).map(item => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path;
+            const isActive = isAdmin
+              ? location.pathname === item.path || 
+                (item.path === '/admin' && location.pathname === '/admin') ||
+                (item.path !== '/admin' && location.pathname.startsWith(item.path))
+              : location.pathname === item.path;
             return (
               <button
                 key={item.id}
