@@ -48,7 +48,7 @@ function AdminGradesPage() {
   const allExamsByDate = uniqueExamDates.map(date => {
     const records = examRecordsState.filter(record => record.date === date);
     const dateObj = new Date(date);
-    const dateFormatted = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`;
+    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
     
     return {
       date,
@@ -266,23 +266,6 @@ function AdminGradesPage() {
     });
   };
 
-  const getGradeColor = (grade: string) => {
-    switch (grade) {
-      case 'A':
-        return 'bg-emerald-100 text-emerald-700';
-      case 'B':
-        return 'bg-blue-100 text-blue-700';
-      case 'C':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'D':
-        return 'bg-orange-100 text-orange-700';
-      case 'F':
-        return 'bg-red-100 text-red-700';
-      default:
-        return 'bg-slate-100 text-slate-700';
-    }
-  };
-
   return (
     <MainLayout showCalendar={false} isAdmin={true}>
       {/* 헤더 */}
@@ -366,36 +349,63 @@ function AdminGradesPage() {
         </div>
       </div>
 
-      {/* 시험 목록 */}
-      {filteredExams.length === 0 ? (
-        <div className="rounded-xl bg-white p-8 text-center shadow-sm ring-1 ring-blue-100/70">
-          <p className="text-slate-600">
-            {selectedMonth}월에 시험 기록이 없습니다.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredExams.map(exam => (
-            <div
-              key={exam.date}
-              className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-blue-100/70 transition-shadow hover:shadow-md cursor-pointer"
-              onClick={() => handleExamClick(exam)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <h3 className="text-base font-semibold text-slate-900">
-                    {exam.dateFormatted}
-                  </h3>
-                  <div className="mt-1 flex items-center gap-4 text-sm text-slate-600">
-                    <span>평균 점수: {exam.averageScore}점</span>
-                    <span>참여 학생: {exam.totalStudents}명</span>
-                  </div>
-                </div>
-              </div>
+      {/* 시험 목록 테이블 */}
+      <section className="mb-4 sm:mb-6">
+        <h2 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-slate-900">
+          시험 목록
+        </h2>
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+          <div className="overflow-x-auto">
+            <div className="inline-block min-w-full align-middle">
+              <table className="min-w-[600px] sm:min-w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                      날짜
+                    </th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                      평균 점수
+                    </th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                      참여 학생
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredExams.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={3}
+                        className="px-4 py-8 text-center text-xs sm:text-sm text-slate-500"
+                      >
+                        {selectedMonth}월에 시험 기록이 없습니다.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredExams.map(exam => (
+                      <tr
+                        key={exam.date}
+                        onClick={() => handleExamClick(exam)}
+                        className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50"
+                      >
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-900 whitespace-nowrap">
+                          {exam.dateFormatted}
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-slate-900 whitespace-nowrap">
+                          {exam.averageScore}점
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-600 whitespace-nowrap">
+                          {exam.totalStudents}명
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          ))}
+          </div>
         </div>
-      )}
+      </section>
 
       {/* 시험 추가 모달 */}
       {isAddExamModalOpen && (
@@ -482,30 +492,44 @@ function AdminGradesPage() {
                 <div>
                   <h3 className="mb-3 text-sm font-semibold text-slate-900">추가된 학생 목록</h3>
                   <div className="space-y-2">
-                    {newExam.students.map(({ studentId, score }) => {
+                    {newExam.students.map(({ studentId, score }, index) => {
                       const student = students.find(s => s.id === studentId);
                       return (
                         <div
                           key={studentId}
-                          className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-2"
+                          className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2"
                         >
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm font-medium text-slate-900">
-                              {student?.name}
-                            </span>
-                            <span className="text-sm text-slate-600">{score}점</span>
-                            <span
-                              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getGradeColor(
-                                calculateGrade(score)
-                              )}`}
-                            >
-                              {calculateGrade(score)}
+                          <span className="text-sm font-medium text-slate-900 flex-shrink-0">
+                            {student?.name}
+                          </span>
+                          <div className="flex items-center gap-2 flex-1 max-w-xs">
+                            <input
+                              type="number"
+                              value={score}
+                              onChange={e => {
+                                const newScore = Number(e.target.value);
+                                if (!isNaN(newScore) && newScore >= 0 && newScore <= 100) {
+                                  const updatedStudents = [...newExam.students];
+                                  updatedStudents[index] = { ...updatedStudents[index], score: newScore };
+                                  setNewExam({ ...newExam, students: updatedStudents });
+                                }
+                              }}
+                              min="0"
+                              max="100"
+                              className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                            />
+                            <span className="text-sm text-slate-600">점</span>
+                            <span className="text-sm text-slate-500 ml-6">
+                              {studentId <= 3 
+                                ? ['010-1111-2222', '010-3333-4444', '010-5555-6666'][studentId - 1]
+                                : `010-${String(studentId).padStart(4, '0')}-${String(studentId * 1111).slice(-4)}`
+                              }
                             </span>
                           </div>
                           <button
                             type="button"
                             onClick={() => handleRemoveStudentFromExam(studentId)}
-                            className="rounded-lg bg-red-50 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                            className="rounded-lg bg-red-50 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 flex-shrink-0"
                           >
                             제거
                           </button>
@@ -599,43 +623,94 @@ function AdminGradesPage() {
                 <tbody>
                   {selectedExam.records
                     .sort((a, b) => b.score - a.score)
-                    .map(record => (
-                      <tr
-                        key={`${record.studentId}-${record.date}`}
-                        className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
-                      >
-                        <td className="px-4 py-3 text-sm text-slate-900">
-                          {record.studentName}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-slate-900 font-medium">
-                          {record.score}점
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getGradeColor(
-                              record.grade
-                            )}`}
-                          >
-                            {record.grade}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveStudentFromDetail(record.studentId);
-                              }}
-                              className="flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                    .map((record, index) => {
+                      const phoneNumber = record.studentId <= 3 
+                        ? ['010-1111-2222', '010-3333-4444', '010-5555-6666'][record.studentId - 1]
+                        : `010-${String(record.studentId).padStart(4, '0')}-${String(record.studentId * 1111).slice(-4)}`;
+                      
+                      return (
+                        <tr
+                          key={`${record.studentId}-${record.date}`}
+                          className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
+                        >
+                          <td className="px-4 py-3 text-sm text-slate-900">
+                            {record.studentName}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                value={record.score}
+                                onChange={e => {
+                                  const newScore = Number(e.target.value);
+                                  if (!isNaN(newScore) && newScore >= 0 && newScore <= 100) {
+                                    const updatedRecords = [...selectedExam.records];
+                                    updatedRecords[index] = {
+                                      ...updatedRecords[index],
+                                      score: newScore,
+                                      grade: calculateGrade(newScore),
+                                    };
+                                    const averageScore = Math.round(
+                                      (updatedRecords.reduce((sum, r) => sum + r.score, 0) / updatedRecords.length) * 10
+                                    ) / 10;
+                                    setSelectedExam({
+                                      ...selectedExam,
+                                      records: updatedRecords,
+                                      averageScore,
+                                    });
+                                    // examRecordsState도 업데이트
+                                    setExamRecordsState(prev => 
+                                      prev.map(r => 
+                                        r.date === selectedExam.date && r.studentId === record.studentId
+                                          ? { ...r, score: newScore, grade: calculateGrade(newScore) }
+                                          : r
+                                      )
+                                    );
+                                  }
+                                }}
+                                min="0"
+                                max="100"
+                                className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                              />
+                              <span className="text-sm text-slate-900 font-medium">점</span>
+                              <span className="text-sm text-slate-500 ml-6">{phoneNumber}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                                record.grade === 'A'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : record.grade === 'B'
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : record.grade === 'C'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : record.grade === 'D'
+                                  ? 'bg-orange-100 text-orange-700'
+                                  : 'bg-red-100 text-red-700'
+                              }`}
                             >
-                              <UserMinus className="h-3 w-3" />
-                              학생 빼기
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              {record.grade}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveStudentFromDetail(record.studentId);
+                                }}
+                                className="flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                              >
+                                <UserMinus className="h-3 w-3" />
+                                학생 빼기
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
