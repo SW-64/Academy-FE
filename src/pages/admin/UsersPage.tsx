@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import MainLayout from '../MainLayout';
 
 type UserRole = '학생' | '학부모';
 type UserStatus = '대기' | '승인' | '반려';
@@ -83,6 +84,7 @@ type UserTabKey = 'approval' | 'edit' | 'link';
 
 function UsersPage() {
   const [activeTab, setActiveTab] = useState<UserTabKey>('approval');
+  const [showCalendar, setShowCalendar] = useState(false);
   const [pendingUsers, setPendingUsers] =
     useState<PendingUser[]>(dummyPendingUsers);
   const [selectedUserId, setSelectedUserId] = useState<number | ''>('');
@@ -93,6 +95,17 @@ function UsersPage() {
   const [parentId, setParentId] = useState<number | ''>('');
   const [childId, setChildId] = useState<number | ''>('');
   const [links, setLinks] = useState<LinkRelation[]>(dummyLinks);
+
+  // 캘린더 표시 여부 설정 (너비 1350px 이상일 때 표시)
+  useEffect(() => {
+    const handleResize = () => {
+      setShowCalendar(window.innerWidth >= 1350);
+    };
+
+    handleResize(); // 초기 체크
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const selectedUser = useMemo(
     () => dummyUsers.find(u => u.id === selectedUserId) ?? null,
@@ -162,7 +175,8 @@ function UsersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <MainLayout showCalendar={showCalendar} isAdmin={true}>
+      <div className="space-y-6">
       <header className="space-y-1">
         <h2 className="text-lg font-semibold text-slate-900">유저 관리</h2>
         <p className="text-sm text-slate-600">
@@ -465,7 +479,8 @@ function UsersPage() {
           </div>
         </section>
       )}
-    </div>
+      </div>
+    </MainLayout>
   );
 }
 

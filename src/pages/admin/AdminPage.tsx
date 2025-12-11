@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import MainLayout from '../MainLayout';
 
@@ -85,9 +85,21 @@ type Parent = {
 
 function AdminPage() {
   const [activeTab, setActiveTab] = useState<TabType>('students');
+  const [showCalendar, setShowCalendar] = useState(false);
   const [pendingUsers, setPendingUsers] = useState(dummyPendingUsers);
   const [students, setStudents] = useState<Student[]>(initialStudents);
   const [parents, setParents] = useState<Parent[]>(initialParents);
+
+  // 캘린더 표시 여부 설정 (너비 1350px 이상일 때 표시)
+  useEffect(() => {
+    const handleResize = () => {
+      setShowCalendar(window.innerWidth >= 1350);
+    };
+
+    handleResize(); // 초기 체크
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // 수정 모달 상태
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -174,7 +186,7 @@ function AdminPage() {
   };
 
   return (
-    <MainLayout showCalendar={false} isAdmin={true}>
+    <MainLayout showCalendar={showCalendar} isAdmin={true}>
       {/* 헤더 */}
       <header className="mb-6">
         <div className="mb-2">
