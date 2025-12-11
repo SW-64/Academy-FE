@@ -209,22 +209,25 @@ function GradesPage() {
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
           <div className="overflow-x-auto">
             <div className="inline-block min-w-full align-middle">
-              <table className="min-w-[600px] sm:min-w-full border-collapse">
+              <table className="min-w-[700px] sm:min-w-full border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
                       날짜
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
                       점수
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
                       전체 학생 평균
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                      순위
+                    </th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
                       등급
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
                       전체 학생 평균 대비
                     </th>
                   </tr>
@@ -233,7 +236,7 @@ function GradesPage() {
                 {filteredRecords.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className="px-4 py-8 text-center text-xs sm:text-sm text-slate-500"
                     >
                       {selectedMonth}월에 해당하는 시험 기록이 없습니다.
@@ -250,6 +253,19 @@ function GradesPage() {
                       : 0;
                     const differenceFromAllStudentsAverage =
                       record.score - allStudentsAverage;
+                    
+                    // 해당 날짜의 모든 학생 점수 가져와서 순위 계산
+                    const sameDateRecords = examRecords.filter(
+                      r => r.date === record.date
+                    );
+                    const sortedByScore = [...sameDateRecords].sort(
+                      (a, b) => b.score - a.score
+                    );
+                    const rank = sortedByScore.findIndex(
+                      r => r.studentId === CURRENT_STUDENT_ID
+                    ) + 1;
+                    const totalStudents = sameDateRecords.length;
+                    
                     return (
                       <tr
                         key={index}
@@ -259,16 +275,19 @@ function GradesPage() {
                         }}
                         className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50"
                       >
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-900 whitespace-nowrap">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm text-slate-900 whitespace-nowrap">
                           {record.dateFormatted}
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-slate-900 whitespace-nowrap">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm font-medium text-slate-900 whitespace-nowrap">
                           {record.score}점
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-600 whitespace-nowrap">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm text-slate-600 whitespace-nowrap">
                           {allStudentsAverage}점
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm text-slate-900 whitespace-nowrap">
+                          {rank}위 / {totalStudents}명
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-center whitespace-nowrap">
                           <span
                             className={`inline-block rounded-full px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium ${getGradeColor(
                               record.grade
@@ -278,7 +297,7 @@ function GradesPage() {
                           </span>
                         </td>
                         <td
-                          className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium whitespace-nowrap ${
+                          className={`px-2 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm font-medium whitespace-nowrap ${
                             differenceFromAllStudentsAverage >= 0
                               ? 'text-emerald-600'
                               : 'text-red-600'
@@ -505,6 +524,24 @@ function GradesPage() {
                     {dailyStats.find(stat => stat.date === selectedRecord.date)
                       ?.averageScore.toFixed(1) || '0.0'}
                     점
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-600">순위</p>
+                  <p className="mt-1 text-base text-slate-900">
+                    {(() => {
+                      const sameDateRecords = examRecords.filter(
+                        r => r.date === selectedRecord.date
+                      );
+                      const sortedByScore = [...sameDateRecords].sort(
+                        (a, b) => b.score - a.score
+                      );
+                      const rank = sortedByScore.findIndex(
+                        r => r.studentId === CURRENT_STUDENT_ID
+                      ) + 1;
+                      const totalStudents = sameDateRecords.length;
+                      return `${rank}위 / ${totalStudents}명`;
+                    })()}
                   </p>
                 </div>
                 <div>

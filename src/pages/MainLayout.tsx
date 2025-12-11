@@ -256,7 +256,7 @@ function MainLayout({ children, showCalendar = true, isAdmin: propIsAdmin = fals
 
       {/* 오른쪽 캘린더 - 데스크탑에서만 표시 */}
       {showCalendar && (
-        <aside className="hidden xl:block w-80 flex-shrink-0 border-l border-blue-100/70 bg-white/50 p-6">
+        <aside className="hidden min-[1350px]:block w-80 flex-shrink-0 border-l border-blue-100/70 bg-white/50 p-6">
           <Calendar />
         </aside>
       )}

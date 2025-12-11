@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Plus, UserPlus, UserMinus } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Plus, UserPlus, UserMinus, ChevronDown } from 'lucide-react';
 import MainLayout from '../MainLayout';
 import { examRecords, students } from '../../data/gradesData';
 import type { ExamRecord, GradeLevel } from '../../data/gradesData';
@@ -13,8 +13,17 @@ function calculateGrade(score: number): GradeLevel {
   return 'F';
 }
 
+type SortOption = 'latest' | 'avgScore';
+type StudentSortOption = 'name' | 'score';
+
 function AdminGradesPage() {
   const [selectedMonth, setSelectedMonth] = useState<number>(2); // 기본값: 2월
+  const [sortOption, setSortOption] = useState<SortOption>('latest');
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [useMonthDropdown, setUseMonthDropdown] = useState(false);
+  const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
+  const monthDropdownRef = useRef<HTMLDivElement>(null);
+  const [studentSortOption, setStudentSortOption] = useState<StudentSortOption>('name'); // 기본값: 이름순
   const [selectedExam, setSelectedExam] = useState<{
     date: string;
     dateFormatted: string;
@@ -27,6 +36,7 @@ function AdminGradesPage() {
   const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
   const [examRecordsState, setExamRecordsState] = useState<ExamRecord[]>(examRecords);
   
+  
   // 새 시험 추가 폼
   const [newExam, setNewExam] = useState({
     date: '',
@@ -38,6 +48,35 @@ function AdminGradesPage() {
     studentId: '',
     score: '',
   });
+
+  // 캘린더 표시 여부 설정 (너비 1350px 이상일 때 표시)
+  useEffect(() => {
+    const handleResize = () => {
+      setShowCalendar(window.innerWidth >= 1350);
+      setUseMonthDropdown(window.innerWidth <= 500);
+    };
+
+    handleResize(); // 초기 체크
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // 드롭다운 외부 클릭 감지
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (monthDropdownRef.current && !monthDropdownRef.current.contains(event.target as Node)) {
+        setIsMonthDropdownOpen(false);
+      }
+    };
+
+    if (isMonthDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMonthDropdownOpen]);
 
   // 고유한 시험 날짜 목록 추출
   const uniqueExamDates = Array.from(
@@ -61,21 +100,58 @@ function AdminGradesPage() {
     };
   });
 
-  // 선택된 월에 해당하는 시험만 필터링하고 최신순에서 오래된 순으로 정렬
+  // 선택된 월에 해당하는 시험만 필터링
   const filteredExams = allExamsByDate
     .filter(exam => {
       const examDate = new Date(exam.date);
       return examDate.getMonth() + 1 === selectedMonth && examDate.getFullYear() === 2026;
     })
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // 최신순에서 오래된 순
+    .sort((a, b) => {
+      if (sortOption === 'latest') {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      } else {
+        return b.averageScore - a.averageScore;
+      }
+    });
+
+  // 이번 달 요약 데이터 계산
+  const currentMonthExams = allExamsByDate.filter(exam => {
+    const examDate = new Date(exam.date);
+    return examDate.getMonth() + 1 === selectedMonth && examDate.getFullYear() === 2026;
+  });
+
+  const currentMonthStats = {
+    examCount: currentMonthExams.length,
+    averageScore: currentMonthExams.length > 0
+      ? Math.round(
+          (currentMonthExams.reduce((sum, e) => sum + e.averageScore, 0) / currentMonthExams.length) * 10
+        ) / 10
+      : 0,
+    totalStudents: 30, // 고정값
+    previousMonthChange: selectedMonth > 1
+      ? (() => {
+          const prevMonthExams = allExamsByDate.filter(exam => {
+            const examDate = new Date(exam.date);
+            return examDate.getMonth() + 1 === selectedMonth - 1 && examDate.getFullYear() === 2026;
+          });
+          const prevAvg = prevMonthExams.length > 0
+            ? prevMonthExams.reduce((sum, e) => sum + e.averageScore, 0) / prevMonthExams.length
+            : 0;
+          const currentAvg = currentMonthExams.length > 0
+            ? currentMonthExams.reduce((sum, e) => sum + e.averageScore, 0) / currentMonthExams.length
+            : 0;
+          return Math.round((currentAvg - prevAvg) * 10) / 10;
+        })()
+      : 0,
+  };
 
   const handleExamClick = (exam: typeof allExamsByDate[0]) => {
     setSelectedExam(exam);
+    setStudentSortOption('name'); // 모달 열 때 기본값으로 리셋
     setIsModalOpen(true);
   };
 
   const handleAddExam = () => {
-    // 선택된 월의 첫 번째 날짜를 기본값으로 설정
     const year = 2026;
     const month = selectedMonth;
     const defaultDate = `${year}-${String(month).padStart(2, '0')}-01`;
@@ -100,7 +176,6 @@ function AdminGradesPage() {
       const student = students.find(s => s.id === studentId);
       if (!student) return null as any;
 
-      // 해당 학생의 기존 기록들로 누적 평균 계산
       const existingRecords = examRecordsState.filter(r => r.studentId === studentId);
       const cumulativeSum = existingRecords.reduce((sum, r) => sum + r.score, 0) + score;
       const average = Math.round((cumulativeSum / (existingRecords.length + 1)) * 10) / 10;
@@ -203,7 +278,6 @@ function AdminGradesPage() {
     const dateObj = new Date(selectedExam.date);
     const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
 
-    // 해당 학생의 기존 기록들로 누적 평균 계산
     const existingRecords = examRecordsState.filter(r => r.studentId === studentId);
     const cumulativeSum = existingRecords.reduce((sum, r) => sum + r.score, 0) + score;
     const average = Math.round((cumulativeSum / (existingRecords.length + 1)) * 10) / 10;
@@ -222,7 +296,6 @@ function AdminGradesPage() {
 
     setExamRecordsState(prev => [...prev, newRecord]);
     
-    // 모달의 selectedExam 업데이트
     setSelectedExam(prev => {
       if (!prev) return null;
       const updatedRecords = [...prev.records, newRecord];
@@ -266,8 +339,10 @@ function AdminGradesPage() {
     });
   };
 
+
+``
   return (
-    <MainLayout showCalendar={false} isAdmin={true}>
+    <MainLayout showCalendar={showCalendar} isAdmin={true}>
       {/* 헤더 */}
       <header className="mb-6">
         <div className="mb-2">
@@ -278,70 +353,128 @@ function AdminGradesPage() {
         </div>
       </header>
 
+      요약 카드
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs font-medium text-slate-600 mb-1">이번 달 시험 수</div>
+          <div className="text-2xl font-bold text-slate-900">{currentMonthStats.examCount}개</div>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs font-medium text-slate-600 mb-1">이번 달 평균 점수</div>
+          <div className="text-2xl font-bold text-slate-900">{currentMonthStats.averageScore}점</div>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs font-medium text-slate-600 mb-1">참여 학생 수</div>
+          <div className="text-2xl font-bold text-slate-900">{currentMonthStats.totalStudents}명</div>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs font-medium text-slate-600 mb-1">전월 대비 증감</div>
+          <div className={`text-2xl font-bold ${currentMonthStats.previousMonthChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+            {currentMonthStats.previousMonthChange >= 0 ? '+' : ''}{currentMonthStats.previousMonthChange}점
+          </div>
+        </div>
+      </div>
+
       {/* 년도 및 월 선택 */}
       <div className="mb-4 sm:mb-6">
-        <div className="mb-3 sm:mb-0 sm:flex sm:items-center sm:justify-between sm:gap-4">
+        <div className="mb-3 sm:mb-0 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <span className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-0 block sm:inline">
+            <span className="text-base sm:text-lg font-semibold text-slate-900">
               2026년
             </span>
-            {/* 모바일/태블릿: 2줄 배치 */}
-            <div className="lg:hidden flex flex-col gap-2">
-              <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                {Array.from({ length: 7 }, (_, i) => i + 1).map(month => (
-                  <button
-                    key={month}
-                    type="button"
-                    onClick={() => setSelectedMonth(month)}
-                    className={`rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
-                      selectedMonth === month
-                        ? 'bg-[#084773] text-white'
-                        : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
-                    }`}
-                  >
-                    {month}월
-                  </button>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                {Array.from({ length: 5 }, (_, i) => i + 8).map(month => (
-                  <button
-                    key={month}
-                    type="button"
-                    onClick={() => setSelectedMonth(month)}
-                    className={`rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
-                      selectedMonth === month
-                        ? 'bg-[#084773] text-white'
-                        : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
-                    }`}
-                  >
-                    {month}월
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* 데스크탑: 1줄 배치 */}
-            <div className="hidden lg:flex flex-wrap gap-2">
-              {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+            {useMonthDropdown ? (
+              <div className="relative" ref={monthDropdownRef}>
                 <button
-                  key={month}
                   type="button"
-                  onClick={() => setSelectedMonth(month)}
-                  className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                    selectedMonth === month
-                      ? 'bg-[#084773] text-white'
-                      : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
-                  }`}
+                  onClick={() => setIsMonthDropdownOpen(!isMonthDropdownOpen)}
+                  className="flex w-17 items-center justify-between rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:bg-slate-50 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                 >
-                  {month}월
+                  <span>{selectedMonth}월</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isMonthDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
-              ))}
-            </div>
+                {isMonthDropdownOpen && (
+                  <div className="absolute left-0 top-full z-50 mt-1 w-17 rounded-xl border border-slate-300 bg-white shadow-lg">
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                      <button
+                        key={month}
+                        type="button"
+                        onClick={() => {
+                          setSelectedMonth(month);
+                          setIsMonthDropdownOpen(false);
+                        }}
+                        className={`w-full px-3 py-2 text-left text-sm transition-colors first:rounded-t-xl last:rounded-b-xl ${
+                          selectedMonth === month
+                            ? 'bg-[#084773] text-white'
+                            : 'text-slate-800 hover:bg-slate-50'
+                        }`}
+                      >
+                        {month}월
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* 1260px 이하: 2줄 배치 (1~6월, 7~12월) */}
+                <div className="min-[1261px]:hidden flex flex-col gap-2">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                    {Array.from({ length: 6 }, (_, i) => i + 1).map(month => (
+                      <button
+                        key={month}
+                        type="button"
+                        onClick={() => setSelectedMonth(month)}
+                        className={`rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
+                          selectedMonth === month
+                            ? 'bg-[#084773] text-white'
+                            : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
+                        }`}
+                      >
+                        {month}월
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                    {Array.from({ length: 6 }, (_, i) => i + 7).map(month => (
+                      <button
+                        key={month}
+                        type="button"
+                        onClick={() => setSelectedMonth(month)}
+                        className={`rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
+                          selectedMonth === month
+                            ? 'bg-[#084773] text-white'
+                            : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
+                        }`}
+                      >
+                        {month}월
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* 1261px 이상: 1줄 배치 */}
+                <div className="hidden min-[1261px]:flex flex-wrap gap-2">
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                    <button
+                      key={month}
+                      type="button"
+                      onClick={() => setSelectedMonth(month)}
+                      className={`rounded-lg ${month >= 10 ? 'px-3' : 'px-4'} py-2 text-sm font-medium transition-colors ${
+                        selectedMonth === month
+                          ? 'bg-[#084773] text-white'
+                          : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
+                      }`}
+                    >
+                      {month}월
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
           <button
             type="button"
             onClick={handleAddExam}
-            className="flex items-center gap-2 rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a] mt-3 sm:mt-0"
+            className="flex items-center gap-2 rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a] flex-shrink-0"
           >
             <Plus className="h-4 w-4" />
             시험 추가
@@ -351,22 +484,32 @@ function AdminGradesPage() {
 
       {/* 시험 목록 테이블 */}
       <section className="mb-4 sm:mb-6">
-        <h2 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-slate-900">
-          시험 목록
-        </h2>
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-          <div className="overflow-x-auto">
-            <div className="inline-block min-w-full align-middle">
-              <table className="min-w-[600px] sm:min-w-full border-collapse">
+        <div className="mb-3 sm:mb-4 flex items-center justify-between">
+          <h2 className="text-base sm:text-lg font-semibold text-slate-900">
+            시험 목록
+          </h2>
+          <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value as SortOption)}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773] bg-white"
+          >
+            <option value="latest">최신순</option>
+            <option value="avgScore">평균점수 높은순</option>
+          </select>
+        </div>
+        <div className="flex justify-center">
+          <div className="w-full max-w-[1200px] overflow-hidden rounded-lg border border-slate-200 bg-white">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                  <tr className="border-b border-slate-200 bg-white">
+                    <th className="px-4 py-3 text-left text-sm font-bold text-slate-900">
                       날짜
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                    <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
                       평균 점수
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
+                    <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
                       참여 학생
                     </th>
                   </tr>
@@ -376,7 +519,7 @@ function AdminGradesPage() {
                     <tr>
                       <td
                         colSpan={3}
-                        className="px-4 py-8 text-center text-xs sm:text-sm text-slate-500"
+                        className="px-4 py-8 text-center text-sm text-slate-500"
                       >
                         {selectedMonth}월에 시험 기록이 없습니다.
                       </td>
@@ -388,13 +531,13 @@ function AdminGradesPage() {
                         onClick={() => handleExamClick(exam)}
                         className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50"
                       >
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-900 whitespace-nowrap">
+                        <td className="px-4 py-3 text-sm text-slate-900">
                           {exam.dateFormatted}
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-slate-900 whitespace-nowrap">
+                        <td className="px-4 py-3 text-sm font-medium text-slate-900 text-right">
                           {exam.averageScore}점
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-600 whitespace-nowrap">
+                        <td className="px-4 py-3 text-sm text-slate-600 text-right">
                           {exam.totalStudents}명
                         </td>
                       </tr>
@@ -519,12 +662,6 @@ function AdminGradesPage() {
                               className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                             />
                             <span className="text-sm text-slate-600">점</span>
-                            <span className="text-sm text-slate-500 ml-6">
-                              {studentId <= 3 
-                                ? ['010-1111-2222', '010-3333-4444', '010-5555-6666'][studentId - 1]
-                                : `010-${String(studentId).padStart(4, '0')}-${String(studentId * 1111).slice(-4)}`
-                              }
-                            </span>
                           </div>
                           <button
                             type="button"
@@ -591,14 +728,24 @@ function AdminGradesPage() {
                 <span>평균 점수: {selectedExam.averageScore}점</span>
                 <span>참여 학생: {selectedExam.totalStudents}명</span>
               </div>
-              <button
-                type="button"
-                onClick={handleAddStudentToDetail}
-                className="flex items-center gap-2 rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
-              >
-                <UserPlus className="h-4 w-4" />
-                학생 추가
-              </button>
+              <div className="flex items-center gap-2">
+                <select
+                  value={studentSortOption}
+                  onChange={(e) => setStudentSortOption(e.target.value as StudentSortOption)}
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773] bg-white"
+                >
+                  <option value="name">이름순</option>
+                  <option value="score">성적순</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={handleAddStudentToDetail}
+                  className="flex items-center gap-2 rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  학생 추가
+                </button>
+              </div>
             </div>
 
             {/* 학생별 성적 테이블 */}
@@ -622,7 +769,13 @@ function AdminGradesPage() {
                 </thead>
                 <tbody>
                   {selectedExam.records
-                    .sort((a, b) => b.score - a.score)
+                    .sort((a, b) => {
+                      if (studentSortOption === 'name') {
+                        return a.studentName.localeCompare(b.studentName, 'ko');
+                      } else {
+                        return b.score - a.score;
+                      }
+                    })
                     .map((record, index) => {
                       const phoneNumber = record.studentId <= 3 
                         ? ['010-1111-2222', '010-3333-4444', '010-5555-6666'][record.studentId - 1]
@@ -797,6 +950,7 @@ function AdminGradesPage() {
           </div>
         </div>
       )}
+
     </MainLayout>
   );
 }
