@@ -1,51 +1,37 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import MainLayout from '../MainLayout';
 
-// 더미 데이터
-const initialStudents = [
-  {
-    id: 1,
-    name: '김학생',
-    email: 'student1@example.com',
-    phone: '010-1111-2222',
-    school: '서울고등학교',
-    grade: '1학년',
-  },
-  {
-    id: 2,
-    name: '박학생',
-    email: 'student2@example.com',
-    phone: '010-3333-4444',
-    school: '부산고등학교',
-    grade: '2학년',
-  },
-  {
-    id: 3,
-    name: '이학생',
-    email: 'student3@example.com',
-    phone: '010-5555-6666',
-    school: '대전고등학교',
-    grade: '3학년',
-  },
-];
+// 더미 데이터 - 학생 20명
+const initialStudents = Array.from({ length: 20 }, (_, i) => ({
+  id: i + 1,
+  name: `학생${i + 1}`,
+  email: `student${i + 1}@example.com`,
+  phone: `010-${String(i + 1).padStart(4, '0')}-${String(i + 1).padStart(
+    4,
+    '0'
+  )}`,
+  school: [
+    '서울고등학교',
+    '부산고등학교',
+    '대전고등학교',
+    '인천고등학교',
+    '광주고등학교',
+  ][i % 5],
+  grade: `${(i % 3) + 1}학년`,
+}));
 
-const initialParents = [
-  {
-    id: 1,
-    name: '김학부모',
-    email: 'parent1@example.com',
-    phone: '010-7777-8888',
-    linkedStudent: '김학생',
-  },
-  {
-    id: 2,
-    name: '박학부모',
-    email: 'parent2@example.com',
-    phone: '010-9999-0000',
-    linkedStudent: '박학생',
-  },
-];
+// 더미 데이터 - 학부모 20명
+const initialParents = Array.from({ length: 20 }, (_, i) => ({
+  id: i + 1,
+  name: `학부모${i + 1}`,
+  email: `parent${i + 1}@example.com`,
+  phone: `010-${String(i + 21).padStart(4, '0')}-${String(i + 21).padStart(
+    4,
+    '0'
+  )}`,
+  linkedStudent: `학생${i + 1}`,
+}));
 
 const dummyPendingUsers = [
   {
@@ -89,6 +75,9 @@ function AdminPage() {
   const [pendingUsers, setPendingUsers] = useState(dummyPendingUsers);
   const [students, setStudents] = useState<Student[]>(initialStudents);
   const [parents, setParents] = useState<Parent[]>(initialParents);
+  const [studentPage, setStudentPage] = useState(1);
+  const [parentPage, setParentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // 캘린더 표시 여부 설정 (너비 1350px 이상일 때 표시)
   useEffect(() => {
@@ -101,14 +90,26 @@ function AdminPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // 탭 변경 시 페이지 리셋
+  useEffect(() => {
+    setStudentPage(1);
+    setParentPage(1);
+  }, [activeTab]);
+
   // 수정 모달 상태
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [editingParent, setEditingParent] = useState<Parent | null>(null);
   const [editForm, setEditForm] = useState({
     name: '',
     school: '',
     phone: '',
     grade: '',
+  });
+  const [editParentForm, setEditParentForm] = useState({
+    name: '',
+    phone: '',
+    linkedStudent: '',
   });
 
   // 삭제 확인 모달 상태
@@ -143,24 +144,48 @@ function AdminPage() {
   };
 
   const handleSaveEdit = () => {
-    if (!editingStudent) return;
-
-    setStudents(prev =>
-      prev.map(s =>
-        s.id === editingStudent.id
-          ? {
-              ...s,
-              name: editForm.name,
-              school: editForm.school,
-              phone: editForm.phone,
-              grade: editForm.grade,
-            }
-          : s
-      )
-    );
-
+    if (editingStudent) {
+      setStudents(prev =>
+        prev.map(s =>
+          s.id === editingStudent.id
+            ? {
+                ...s,
+                name: editForm.name,
+                school: editForm.school,
+                phone: editForm.phone,
+                grade: editForm.grade,
+              }
+            : s
+        )
+      );
+      setEditingStudent(null);
+    }
+    if (editingParent) {
+      setParents(prev =>
+        prev.map(p =>
+          p.id === editingParent.id
+            ? {
+                ...p,
+                name: editParentForm.name,
+                phone: editParentForm.phone,
+                linkedStudent: editParentForm.linkedStudent,
+              }
+            : p
+        )
+      );
+      setEditingParent(null);
+    }
     setEditModalOpen(false);
-    setEditingStudent(null);
+  };
+
+  const handleEditParent = (parent: Parent) => {
+    setEditingParent(parent);
+    setEditParentForm({
+      name: parent.name,
+      phone: parent.phone,
+      linkedStudent: parent.linkedStudent,
+    });
+    setEditModalOpen(true);
   };
 
   const handleDeleteStudent = (student: Student) => {
@@ -192,7 +217,8 @@ function AdminPage() {
         <div className="mb-2">
           <h1 className="text-2xl font-semibold text-slate-900">학생 관리</h1>
           <p className="mt-1 text-sm text-slate-600">
-            전체 학생 및 학부모 목록을 관리하고 미승인 유저를 승인할 수 있습니다.
+            전체 학생 및 학부모 목록을 관리하고 미승인 유저를 승인할 수
+            있습니다.
           </p>
         </div>
       </header>
@@ -260,55 +286,107 @@ function AdminPage() {
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
                       학년
                     </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-900">
+                    <th className="pl-4 pr-6 py-3 text-right text-sm font-semibold text-slate-900">
                       관리
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {students.map(student => (
-                    <tr
-                      key={student.id}
-                      className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
-                    >
-                      <td className="px-4 py-3 text-sm text-slate-900">
-                        {student.name}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {student.email}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {student.school}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {student.phone}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {student.grade}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleEditStudent(student)}
-                            className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
-                          >
-                            수정
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteStudent(student)}
-                            className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {(() => {
+                    const startIndex = (studentPage - 1) * itemsPerPage;
+                    const endIndex = startIndex + itemsPerPage;
+                    const currentStudents = students.slice(
+                      startIndex,
+                      endIndex
+                    );
+                    return currentStudents.map(student => (
+                      <tr
+                        key={student.id}
+                        className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
+                      >
+                        <td className="px-4 py-3 text-sm text-slate-900">
+                          {student.name}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {student.email}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {student.school}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {student.phone}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {student.grade}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleEditStudent(student)}
+                              className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                            >
+                              수정
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteStudent(student)}
+                              className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>
+            {/* 학생 페이지네이션 */}
+            {(() => {
+              const totalPages = Math.ceil(students.length / itemsPerPage);
+              return (
+                <div className="mt-6 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setStudentPage(prev => Math.max(1, prev - 1))
+                    }
+                    disabled={studentPage === 1}
+                    className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    page => (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => setStudentPage(page)}
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                          studentPage === page
+                            ? 'bg-[#084773] text-white'
+                            : 'text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setStudentPage(prev => Math.min(totalPages, prev + 1))
+                    }
+                    disabled={studentPage === totalPages}
+                    className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              );
+            })()}
           </section>
         </div>
       )}
@@ -336,45 +414,99 @@ function AdminPage() {
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
                       연동 학생
                     </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-900">
+                    <th className="pl-4 pr-6 py-3 text-right text-sm font-semibold text-slate-900">
                       관리
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {parents.map(parent => (
-                    <tr
-                      key={parent.id}
-                      className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
-                    >
-                      <td className="px-4 py-3 text-sm text-slate-900">
-                        {parent.name}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {parent.email}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {parent.phone}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {parent.linkedStudent}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteParent(parent)}
-                            className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {(() => {
+                    const startIndex = (parentPage - 1) * itemsPerPage;
+                    const endIndex = startIndex + itemsPerPage;
+                    const currentParents = parents.slice(startIndex, endIndex);
+                    return currentParents.map(parent => (
+                      <tr
+                        key={parent.id}
+                        className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
+                      >
+                        <td className="px-4 py-3 text-sm text-slate-900">
+                          {parent.name}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {parent.email}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {parent.phone}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {parent.linkedStudent}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleEditParent(parent)}
+                              className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                            >
+                              수정
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteParent(parent)}
+                              className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>
+            {/* 학부모 페이지네이션 */}
+            {(() => {
+              const totalPages = Math.ceil(parents.length / itemsPerPage);
+              return (
+                <div className="mt-6 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setParentPage(prev => Math.max(1, prev - 1))}
+                    disabled={parentPage === 1}
+                    className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    page => (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => setParentPage(page)}
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                          parentPage === page
+                            ? 'bg-[#084773] text-white'
+                            : 'text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setParentPage(prev => Math.min(totalPages, prev + 1))
+                    }
+                    disabled={parentPage === totalPages}
+                    className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              );
+            })()}
           </section>
         </div>
       )}
@@ -458,7 +590,11 @@ function AdminPage() {
       {editModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setEditModalOpen(false)}
+          onClick={() => {
+            setEditModalOpen(false);
+            setEditingStudent(null);
+            setEditingParent(null);
+          }}
         >
           <div
             className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
@@ -466,14 +602,18 @@ function AdminPage() {
           >
             <button
               type="button"
-              onClick={() => setEditModalOpen(false)}
+              onClick={() => {
+                setEditModalOpen(false);
+                setEditingStudent(null);
+                setEditingParent(null);
+              }}
               className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
             >
               <X className="h-5 w-5" />
             </button>
 
             <h2 className="mb-4 text-xl font-semibold text-slate-900">
-              학생 정보 수정
+              {editingStudent ? '학생 정보 수정' : '학부모 정보 수정'}
             </h2>
 
             <div className="space-y-4">
@@ -483,61 +623,110 @@ function AdminPage() {
                 </label>
                 <input
                   type="text"
-                  value={editForm.name}
+                  value={editingStudent ? editForm.name : editParentForm.name}
                   onChange={e =>
-                    setEditForm({ ...editForm, name: e.target.value })
+                    editingStudent
+                      ? setEditForm({ ...editForm, name: e.target.value })
+                      : setEditParentForm({
+                          ...editParentForm,
+                          name: e.target.value,
+                        })
                   }
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  학교
-                </label>
-                <input
-                  type="text"
-                  value={editForm.school}
-                  onChange={e =>
-                    setEditForm({ ...editForm, school: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                />
-              </div>
+              {editingStudent ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      학교
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.school}
+                      onChange={e =>
+                        setEditForm({ ...editForm, school: e.target.value })
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  연락처
-                </label>
-                <input
-                  type="text"
-                  value={editForm.phone}
-                  onChange={e =>
-                    setEditForm({ ...editForm, phone: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      연락처
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.phone}
+                      onChange={e =>
+                        setEditForm({ ...editForm, phone: e.target.value })
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  학년
-                </label>
-                <input
-                  type="text"
-                  value={editForm.grade}
-                  onChange={e =>
-                    setEditForm({ ...editForm, grade: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      학년
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.grade}
+                      onChange={e =>
+                        setEditForm({ ...editForm, grade: e.target.value })
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      연락처
+                    </label>
+                    <input
+                      type="text"
+                      value={editParentForm.phone}
+                      onChange={e =>
+                        setEditParentForm({
+                          ...editParentForm,
+                          phone: e.target.value,
+                        })
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      연동 학생
+                    </label>
+                    <input
+                      type="text"
+                      value={editParentForm.linkedStudent}
+                      onChange={e =>
+                        setEditParentForm({
+                          ...editParentForm,
+                          linkedStudent: e.target.value,
+                        })
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setEditModalOpen(false)}
+                onClick={() => {
+                  setEditModalOpen(false);
+                  setEditingStudent(null);
+                  setEditingParent(null);
+                }}
                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
               >
                 취소

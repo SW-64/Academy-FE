@@ -8,19 +8,22 @@ import NoticePage from './pages/NoticePage';
 import NoticeDetailPage from './pages/NoticeDetailPage';
 import GradesPage from './pages/GradesPage';
 import MaterialsPage from './pages/MaterialsPage';
+import MaterialsDetailPage from './pages/MaterialsDetailPage';
 import VideosPage from './pages/VideosPage';
 import MyPage from './pages/MyPage';
 import IntegrationsPage from './pages/IntegrationsPage';
 import AdminPage from './pages/admin/AdminPage';
 import AdminNoticePage from './pages/admin/AdminNoticePage';
 import AdminGradesPage from './pages/admin/AdminGradesPage';
+import AdminMaterialsPage from './pages/admin/MaterialsPage';
+import AdminVideosPage from './pages/admin/VideosPage';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 초기 진입은 /main 으로 리다이렉트 */}
-        <Route path="/" element={<Navigate to="/main" replace />} />
+        {/* 초기 진입은 /login 으로 리다이렉트 */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
 
         {/* 메인 페이지 */}
         <Route path="/main" element={<MainPage />} />
@@ -30,6 +33,7 @@ function App() {
         <Route path="/notice/:id" element={<NoticeDetailPage />} />
         <Route path="/grades" element={<GradesPage />} />
         <Route path="/materials" element={<MaterialsPage />} />
+        <Route path="/materials/:id" element={<MaterialsDetailPage />} />
         <Route path="/videos" element={<VideosPage />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/integrations" element={<IntegrationsPage />} />
@@ -38,8 +42,8 @@ function App() {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/notice" element={<AdminNoticePage />} />
         <Route path="/admin/grades" element={<AdminGradesPage />} />
-        <Route path="/admin/materials" element={<MaterialsPage />} />
-        <Route path="/admin/videos" element={<VideosPage />} />
+        <Route path="/admin/materials" element={<AdminMaterialsPage />} />
+        <Route path="/admin/videos" element={<AdminVideosPage />} />
         <Route path="/admin/mypage" element={<MyPage />} />
 
         {/* 기존 인증 관련 페이지들 */}

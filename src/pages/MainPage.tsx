@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import MainLayout from './MainLayout';
+import { examRecords, dailyStats } from '../data/gradesData';
 
 // TODO: API 연결 시 이 더미 데이터를 실제 API 호출로 교체
 const dummyNotices = [
@@ -29,51 +30,8 @@ const dummyNotices = [
 ];
 
 // TODO: API 연결 시 이 더미 데이터를 실제 API 호출로 교체
-// 날짜는 오래된 순서대로 정렬 (왼쪽에서 오른쪽으로 최신순)
-const dummyGrades = [
-  {
-    id: 1,
-    subject: '수학',
-    score: 70,
-    date: '02/07',
-  },
-  {
-    id: 2,
-    subject: '수학',
-    score: 75,
-    date: '02/08',
-  },
-  {
-    id: 3,
-    subject: '수학',
-    score: 80,
-    date: '02/09',
-  },
-  {
-    id: 4,
-    subject: '수학',
-    score: 85,
-    date: '02/10',
-  },
-  {
-    id: 5,
-    subject: '수학',
-    score: 90,
-    date: '02/11',
-  },
-  {
-    id: 6,
-    subject: '수학',
-    score: 95,
-    date: '02/12',
-  },
-  {
-    id: 7,
-    subject: '수학',
-    score: 100,
-    date: '02/13',
-  },
-];
+// 현재 학생 ID (실제로는 로그인한 학생 ID로 교체)
+const CURRENT_STUDENT_ID = 1;
 
 const dummyMaterials = [
   {
@@ -106,103 +64,179 @@ const dummyVideos = [
 ];
 
 function GradeChart({ isModal = false }: { isModal?: boolean }) {
-  const minScore = 70;
+  // 현재 학생의 2월 27일 이후 데이터 가져오기 (최근 7개 기록)
+  const cutoffDate = new Date('2026-02-27');
+  const myRecords = examRecords
+    .filter(r => {
+      const recordDate = new Date(r.date);
+      return r.studentId === CURRENT_STUDENT_ID && recordDate > cutoffDate;
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 7); // 최대 7개만
+
+  const minScore = 60;
   const maxScore = 100;
   const scoreRange = maxScore - minScore;
-  const padding = 20; // SVG 패딩
-  const chartWidth = 400;
-  const chartHeight = 200;
-  const innerWidth = chartWidth - padding * 2;
-  const innerHeight = chartHeight - padding * 2;
+  const chartWidth = 800;
+  const chartHeight = 300;
+  const padding = 50;
+
+  if (myRecords.length === 0) {
+    return (
+      <div
+        className={`flex items-center justify-center ${
+          isModal ? 'h-[500px]' : 'h-[280px]'
+        }`}
+      >
+        <p className="text-sm text-slate-500">표시할 성적 데이터가 없습니다.</p>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative w-full ${isModal ? 'h-[500px]' : 'h-[280px]'}`}>
-      <svg
-        className="h-full w-full"
-        viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-        preserveAspectRatio="none"
-      >
-        {/* 그리드 라인 (70-100 범위) */}
-        {[70, 75, 80, 85, 90, 95, 100].map(score => {
-          const y =
-            padding +
-            innerHeight -
-            ((score - minScore) / scoreRange) * innerHeight;
-          return (
-            <line
-              key={score}
-              x1={padding}
-              y1={y}
-              x2={chartWidth - padding}
-              y2={y}
-              stroke="#e2e8f0"
-              strokeWidth="1"
-              strokeDasharray="4 4"
-            />
-          );
-        })}
-        {/* 데이터 포인트와 선 */}
-        <polyline
-          points={dummyGrades
-            .map((grade, index) => {
+      <div className="relative h-full w-full overflow-x-auto">
+        <svg
+          className="h-full w-full"
+          viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+          preserveAspectRatio="none"
+        >
+          {/* 그리드 라인 (70-100 범위) */}
+          {[70, 80, 90, 100].map(score => {
+            const y = 250 - ((score - minScore) / scoreRange) * 200;
+            return (
+              <line
+                key={score}
+                x1={padding}
+                y1={y}
+                x2={chartWidth - padding}
+                y2={y}
+                stroke="#e2e8f0"
+                strokeWidth="1"
+                strokeDasharray="4 4"
+              />
+            );
+          })}
+          {/* 전체 학생 평균점수 라인 */}
+          {(() => {
+            const averagePoints = myRecords.map((record, index) => {
+              const dailyStat = dailyStats.find(
+                stat => stat.date === record.date
+              );
+              const allStudentsAverage = dailyStat ? dailyStat.averageScore : 0;
+              const recordsLength = myRecords.length;
               const x =
-                padding + (index / (dummyGrades.length - 1)) * innerWidth;
+                recordsLength > 1
+                  ? padding +
+                    (index / (recordsLength - 1)) * (chartWidth - padding * 2)
+                  : padding;
               const y =
-                padding +
-                innerHeight -
-                ((grade.score - minScore) / scoreRange) * innerHeight;
-              return `${x},${y}`;
-            })
-            .join(' ')}
-          fill="none"
-          stroke="#084773"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {/* 데이터 포인트 */}
-        {dummyGrades.map((grade, index) => {
-          const x = padding + (index / (dummyGrades.length - 1)) * innerWidth;
-          const y =
-            padding +
-            innerHeight -
-            ((grade.score - minScore) / scoreRange) * innerHeight;
-          return (
-            <g key={grade.id}>
-              <circle
-                cx={x}
-                cy={y}
-                r="5"
-                fill="#084773"
-                className="transition-all hover:r-7"
+                250 - ((allStudentsAverage - minScore) / scoreRange) * 200;
+              return { x, y };
+            });
+
+            return (
+              <polyline
+                points={averagePoints
+                  .map(point => `${point.x},${point.y}`)
+                  .join(' ')}
+                fill="none"
+                stroke="#f59e0b"
+                strokeWidth="2"
+                strokeDasharray="8 4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               />
-              <circle
-                cx={x}
-                cy={y}
-                r="8"
-                fill="#084773"
-                fillOpacity="0.2"
-                className="transition-all"
-              />
-            </g>
-          );
-        })}
-      </svg>
-      {/* X축 레이블 (날짜) */}
-      <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2">
-        {dummyGrades.map(grade => (
-          <span key={grade.id} className="text-[10px] text-slate-500">
-            {grade.date}
-          </span>
-        ))}
-      </div>
-      {/* Y축 레이블 (점수 70-100) */}
-      <div className="absolute left-0 top-0 flex h-full flex-col justify-between py-2">
-        {[100, 95, 90, 85, 80, 75, 70].map(score => (
-          <span key={score} className="text-[10px] text-slate-500">
-            {score}
-          </span>
-        ))}
+            );
+          })()}
+          {/* 시험 점수 선 */}
+          <polyline
+            points={myRecords
+              .map((record, index) => {
+                const recordsLength = myRecords.length;
+                const x =
+                  recordsLength > 1
+                    ? padding +
+                      (index / (recordsLength - 1)) * (chartWidth - padding * 2)
+                    : padding;
+                const y = 250 - ((record.score - minScore) / scoreRange) * 200;
+                return `${x},${y}`;
+              })
+              .join(' ')}
+            fill="none"
+            stroke="#084773"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* 데이터 포인트 */}
+          {myRecords.map((record, index) => {
+            const recordsLength = myRecords.length;
+            const x =
+              recordsLength > 1
+                ? padding +
+                  (index / (recordsLength - 1)) * (chartWidth - padding * 2)
+                : padding;
+            const y = 250 - ((record.score - minScore) / scoreRange) * 200;
+            return <circle key={index} cx={x} cy={y} r="4" fill="#084773" />;
+          })}
+        </svg>
+        {/* 범례 */}
+        <div
+          className={`absolute ${
+            isModal ? 'right-6 top-6' : 'right-2 top-2'
+          } flex flex-col gap-1 sm:gap-2 rounded-lg bg-white p-2 sm:p-3 shadow-sm`}
+        >
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="h-2.5 sm:h-3 w-6 sm:w-8 bg-[#084773]"></div>
+            <span className="text-[10px] sm:text-xs text-slate-600">
+              시험 점수
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="h-2.5 sm:h-3 w-6 sm:w-8 border-2 border-dashed border-amber-500"></div>
+            <span className="text-[10px] sm:text-xs text-slate-600">
+              전체 학생 평균점수
+            </span>
+          </div>
+        </div>
+        {/* Y축 레이블 (70-100) */}
+        <div className="absolute left-0 top-0 flex h-full flex-col justify-between py-1 sm:py-2">
+          {[100, 90, 80, 70].map(score => (
+            <span key={score} className="text-[10px] sm:text-xs text-slate-500">
+              {score}
+            </span>
+          ))}
+        </div>
+        {/* X축 레이블 - 모든 날짜 표시 (데이터 포인트 위치에 맞춰 배치) */}
+        <div
+          className="absolute bottom-0 left-0 right-0"
+          style={{ height: '20px' }}
+        >
+          {myRecords.map((record, index) => {
+            const recordsLength = myRecords.length;
+            const xPercent =
+              recordsLength > 1
+                ? ((padding +
+                    (index / (recordsLength - 1)) *
+                      (chartWidth - padding * 2)) /
+                    chartWidth) *
+                  100
+                : (padding / chartWidth) * 100;
+            return (
+              <span
+                key={index}
+                className="absolute text-[8px] sm:text-[10px] text-slate-500"
+                style={{
+                  left: `${xPercent}%`,
+                  transform: 'translateX(-50%)',
+                }}
+              >
+                {record.dateFormatted}
+              </span>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -217,9 +251,6 @@ function MainPage() {
       {/* 헤더 */}
       <header className="mb-6">
         <h1 className="text-2xl font-semibold text-slate-900">홈 화면</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          최신 정보를 한눈에 확인하세요
-        </p>
       </header>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
