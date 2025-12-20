@@ -191,9 +191,6 @@ function MaterialsPage() {
         <h1 className="text-2xl font-semibold text-slate-900 text-center md:text-left">
           학습자료
         </h1>
-        <p className="mt-1 text-sm text-slate-600 text-center md:text-left">
-          학습자료를 조회합니다.
-        </p>
       </header>
 
       {/* 검색 및 전체 자료 건수 */}

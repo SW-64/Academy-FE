@@ -6,9 +6,6 @@ function MyPage() {
       {/* 헤더 */}
       <header className="mb-6">
         <h1 className="text-2xl font-semibold text-slate-900">마이페이지</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          나의 정보와 학습 이력을 확인하실 수 있습니다.
-        </p>
       </header>
 
       {/* 사용자 정보 카드 */}

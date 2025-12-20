@@ -160,9 +160,6 @@ function AdminMaterialsPage() {
             <h1 className="text-2xl font-semibold text-slate-900">
               학습자료 관리
             </h1>
-            <p className="mt-1 text-sm text-slate-600 hidden min-[761px]:block">
-              학습자료를 작성하고 관리할 수 있습니다.
-            </p>
           </div>
           <button
             type="button"

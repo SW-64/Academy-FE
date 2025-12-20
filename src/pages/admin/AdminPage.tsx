@@ -132,6 +132,13 @@ function AdminPage() {
     }
   };
 
+  const handleReject = (id: number) => {
+    // 거절 처리: 미승인 목록에서 제거
+    if (confirm('정말 이 유저의 가입 신청을 거절하시겠습니까?')) {
+      setPendingUsers(prev => prev.filter(u => u.id !== id));
+    }
+  };
+
   const handleEditStudent = (student: Student) => {
     setEditingStudent(student);
     setEditForm({
@@ -216,10 +223,6 @@ function AdminPage() {
       <header className="mb-6">
         <div className="mb-2">
           <h1 className="text-2xl font-semibold text-slate-900">학생 관리</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            전체 학생 및 학부모 목록을 관리하고 미승인 유저를 승인할 수
-            있습니다.
-          </p>
         </div>
       </header>
 
@@ -534,7 +537,7 @@ function AdminPage() {
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
                       신청일
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-900">
                       처리
                     </th>
                   </tr>
@@ -567,14 +570,23 @@ function AdminPage() {
                         <td className="px-4 py-3 text-sm text-slate-600">
                           {user.requestedAt}
                         </td>
-                        <td className="px-4 py-3">
-                          <button
-                            type="button"
-                            onClick={() => handleApprove(user.id)}
-                            className="inline-flex items-center justify-center rounded-lg bg-[#084773] px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#063a5a]"
-                          >
-                            ✓ 승인
-                          </button>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleApprove(user.id)}
+                              className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                            >
+                              승인
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleReject(user.id)}
+                              className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                            >
+                              거절
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
