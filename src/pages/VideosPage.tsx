@@ -60,9 +60,6 @@ function VideosPage() {
       {/* 헤더 */}
       <header className="mb-6">
         <h1 className="text-2xl font-semibold text-slate-900">영상</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          강의 영상과 다시보기를 확인하실 수 있습니다.
-        </p>
       </header>
 
       {/* 영상 목록 */}

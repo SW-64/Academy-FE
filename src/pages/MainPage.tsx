@@ -201,7 +201,7 @@ function GradeChart({ isModal = false }: { isModal?: boolean }) {
           </div>
         </div>
         {/* Y축 레이블 (70-100) */}
-        <div className="absolute left-0 top-0 flex h-full flex-col justify-between py-1 sm:py-2">
+        <div className="absolute left-0 top-0 bottom-8 sm:bottom-10 flex flex-col justify-between py-1 sm:py-2">
           {[100, 90, 80, 70].map(score => (
             <span key={score} className="text-[10px] sm:text-xs text-slate-500">
               {score}
@@ -211,18 +211,18 @@ function GradeChart({ isModal = false }: { isModal?: boolean }) {
         {/* X축 레이블 - 모든 날짜 표시 (데이터 포인트 위치에 맞춰 배치) */}
         <div
           className="absolute bottom-0 left-0 right-0"
-          style={{ height: '20px' }}
+          style={{ height: '20px', paddingLeft: '2.5rem' }}
         >
           {myRecords.map((record, index) => {
             const recordsLength = myRecords.length;
-            const xPercent =
+            // SVG 내부의 실제 x 좌표 계산 (viewBox 기준)
+            const svgX =
               recordsLength > 1
-                ? ((padding +
-                    (index / (recordsLength - 1)) *
-                      (chartWidth - padding * 2)) /
-                    chartWidth) *
-                  100
-                : (padding / chartWidth) * 100;
+                ? padding +
+                  (index / (recordsLength - 1)) * (chartWidth - padding * 2)
+                : padding;
+            // SVG viewBox 기준으로 퍼센트 계산 (800px 기준)
+            const xPercent = (svgX / chartWidth) * 100;
             return (
               <span
                 key={index}

@@ -347,9 +347,6 @@ function AdminGradesPage() {
       <header className="mb-6">
         <div className="mb-2">
           <h1 className="text-2xl font-semibold text-slate-900">성적 관리</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            시험 목록을 확인하고 관리할 수 있습니다.
-          </p>
         </div>
       </header>
 
@@ -484,21 +481,22 @@ function AdminGradesPage() {
 
       {/* 시험 목록 테이블 */}
       <section className="mb-4 sm:mb-6">
-        <div className="mb-3 sm:mb-4 flex items-center justify-between">
-          <h2 className="text-base sm:text-lg font-semibold text-slate-900">
-            시험 목록
-          </h2>
-          <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value as SortOption)}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773] bg-white"
-          >
-            <option value="latest">최신순</option>
-            <option value="avgScore">평균점수 높은순</option>
-          </select>
-        </div>
         <div className="flex justify-center">
-          <div className="w-full max-w-[1200px] overflow-hidden rounded-lg border border-slate-200 bg-white">
+          <div className="w-full max-w-[1200px]">
+            <div className="mb-3 sm:mb-4 flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-semibold text-slate-900">
+                시험 목록
+              </h2>
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value as SortOption)}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773] bg-white"
+              >
+                <option value="latest">최신순</option>
+                <option value="avgScore">평균점수 높은순</option>
+              </select>
+            </div>
+            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
@@ -545,6 +543,7 @@ function AdminGradesPage() {
                   )}
                 </tbody>
               </table>
+            </div>
             </div>
           </div>
         </div>

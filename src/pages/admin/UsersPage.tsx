@@ -179,9 +179,6 @@ function UsersPage() {
       <div className="space-y-6">
       <header className="space-y-1">
         <h2 className="text-lg font-semibold text-slate-900">유저 관리</h2>
-        <p className="text-sm text-slate-600">
-          계정 승인, 정보 변경, 부모-자녀 연동을 한 곳에서 관리합니다.
-        </p>
       </header>
 
       {/* Sub tabs */}

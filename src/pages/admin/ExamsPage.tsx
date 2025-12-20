@@ -29,9 +29,6 @@ function ExamsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">시험 관리</h2>
-          <p className="text-sm text-slate-600">
-            모의고사 및 정기 시험 일정을 등록하고 관리할 수 있습니다.
-          </p>
         </div>
         <button
           type="button"

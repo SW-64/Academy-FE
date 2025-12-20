@@ -188,9 +188,6 @@ function AdminVideosPage() {
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="text-center md:text-left">
             <h1 className="text-2xl font-semibold text-slate-900">영상 관리</h1>
-            <p className="mt-1 text-sm text-slate-600 hidden min-[761px]:block">
-              영상을 작성하고 관리할 수 있습니다.
-            </p>
           </div>
           <button
             type="button"

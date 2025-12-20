@@ -80,9 +80,6 @@ function GradesPage() {
       {/* 헤더 */}
       <header className="mb-3 sm:mb-4 md:mb-6">
         <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-900">나의 성적</h1>
-        <p className="mt-1 text-xs sm:text-sm text-slate-600">
-          {currentStudent.studentName}님의 수학 시험 성적을 확인하실 수 있습니다.
-        </p>
       </header>
 
       {/* 년도 및 월 선택 */}
@@ -433,7 +430,7 @@ function GradesPage() {
                   </div>
                 </div>
                 {/* Y축 레이블 (60~100) */}
-                <div className="absolute left-0 top-0 flex h-full flex-col justify-between py-1 sm:py-2">
+                <div className="absolute left-0 top-0 bottom-8 sm:bottom-10 flex flex-col justify-between py-1 sm:py-2">
                   {[100, 90, 80, 70, 60].map(score => (
                     <span key={score} className="text-[10px] sm:text-xs text-slate-500">
                       {score}
@@ -441,7 +438,7 @@ function GradesPage() {
                   ))}
                 </div>
                 {/* X축 레이블 */}
-                <div className="absolute bottom-0 left-0 right-0 flex justify-between px-1 sm:px-2">
+                <div className="absolute bottom-0 left-0 right-0" style={{ height: '20px', paddingLeft: '2rem' }}>
                   {[...filteredRecords]
                     .reverse()
                     .filter(
@@ -449,11 +446,33 @@ function GradesPage() {
                         index % Math.max(1, Math.floor(filteredRecords.length / 5)) ===
                           0 || index === filteredRecords.length - 1
                     )
-                    .map((record, index) => (
-                      <span key={index} className="text-[8px] sm:text-[10px] text-slate-500">
-                        {record.dateFormatted}
-                      </span>
-                    ))}
+                    .map((filteredRecord, displayIndex) => {
+                      // 필터링된 레코드들 중에서 원래 인덱스 찾기
+                      const reversedRecords = [...filteredRecords].reverse();
+                      const originalIndex = reversedRecords.findIndex(r => r.date === filteredRecord.date);
+                      
+                      // SVG 내부의 실제 x 좌표 계산 (viewBox 기준, padding = 50)
+                      const reversedLength = filteredRecords.length;
+                      const x =
+                        reversedLength > 1
+                          ? 50 + (originalIndex / (reversedLength - 1)) * 700
+                          : 50;
+                      // SVG viewBox 기준으로 퍼센트 계산 (800px 기준)
+                      const xPercent = (x / 800) * 100;
+                      
+                      return (
+                        <span 
+                          key={displayIndex} 
+                          className="absolute text-[8px] sm:text-[10px] text-slate-500"
+                          style={{
+                            left: `${xPercent}%`,
+                            transform: 'translateX(-50%)',
+                          }}
+                        >
+                          {filteredRecord.dateFormatted}
+                        </span>
+                      );
+                    })}
                 </div>
               </>
             ) : (
