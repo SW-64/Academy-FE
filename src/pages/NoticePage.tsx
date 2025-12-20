@@ -20,44 +20,44 @@ function NoticePage() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  
+
   // 고정 공지와 일반 공지 분리
   const pinnedNotices = dummyNotices.filter(notice => notice.isPinned);
   // 일반 리스트는 id 기준 내림차순 정렬 (낮은 번호가 밑으로)
   const sortedNotices = [...dummyNotices].sort((a, b) => b.id - a.id);
-  
+
   // 제목 검색 필터링
   const filteredNotices = searchTitle
     ? sortedNotices.filter(notice =>
         notice.title.toLowerCase().includes(searchTitle.toLowerCase())
       )
     : sortedNotices;
-  
+
   // 검색어가 변경되면 첫 페이지로 리셋
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTitle]);
-  
+
   const totalPages = Math.ceil(filteredNotices.length / itemsPerPage);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentNotices = filteredNotices.slice(startIndex, endIndex);
-  
+
   // 테이블 행 렌더링 함수 (고정 공지 섹션용)
   const renderPinnedNoticeRow = (notice: Notice) => (
     <tr
       key={notice.id}
       className="border-b border-slate-100 transition-colors hover:bg-slate-50"
     >
-      <td className="pl-6 pr-1 py-3">
+      <td className="pl-8 pr-1 py-3">
         <span className="inline-flex rounded bg-emerald-500 px-2 py-0.5 text-xs font-medium text-white">
           공지
         </span>
       </td>
       <td className="pl-1 pr-4 py-3">
         <div className="flex items-center gap-2">
-          <span 
+          <span
             className="text-sm text-slate-900 cursor-pointer hover:text-[#084773] hover:underline"
             onClick={() => navigate(`/notice/${notice.id}`)}
           >
@@ -78,21 +78,19 @@ function NoticePage() {
       </td>
     </tr>
   );
-  
+
   // 테이블 행 렌더링 함수 (일반 리스트용)
   const renderNoticeRow = (notice: Notice) => (
     <tr
       key={notice.id}
       className="border-b border-slate-100 transition-colors hover:bg-slate-50"
     >
-      <td className="pl-8 pr-0 py-3">
-        <span className="text-sm text-slate-700">
-          {notice.id}
-        </span>
+      <td className="pl-8 pr-1 py-3">
+        <span className="text-sm text-slate-700">{notice.id}</span>
       </td>
       <td className="pl-1 pr-4 py-3">
         <div className="flex items-center gap-2">
-          <span 
+          <span
             className="text-sm text-slate-900 cursor-pointer hover:text-[#084773] hover:underline"
             onClick={() => navigate(`/notice/${notice.id}`)}
           >
@@ -118,7 +116,9 @@ function NoticePage() {
     <MainLayout showCalendar={showCalendar}>
       {/* 헤더 */}
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900 text-center md:text-left">공지사항</h1>
+        <h1 className="text-2xl font-semibold text-slate-900 text-center md:text-left">
+          공지사항
+        </h1>
         <p className="mt-1 text-sm text-slate-600 text-center md:text-left">
           공지사항을 조회합니다.
         </p>
@@ -129,7 +129,7 @@ function NoticePage() {
         <div className="pl-4 pt-3 text-sm max-[355px]:text-xs text-slate-600">
           전체 {searchTitle ? filteredNotices.length : dummyNotices.length}건
         </div>
-        
+
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -174,9 +174,7 @@ function NoticePage() {
           <tbody>
             {/* 고정 공지 섹션 */}
             {pinnedNotices.length > 0 && (
-              <>
-                {pinnedNotices.map(notice => renderPinnedNoticeRow(notice))}
-              </>
+              <>{pinnedNotices.map(notice => renderPinnedNoticeRow(notice))}</>
             )}
             {/* 일반 공지 리스트 */}
             {currentNotices.map(notice => renderNoticeRow(notice))}
