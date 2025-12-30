@@ -76,7 +76,9 @@ function generateWeekdaysInFebruary2026(): string[] {
     const dayOfWeek = date.getDay(); // 0 = 일요일, 1 = 월요일, ..., 5 = 금요일
     // 평일만 추가 (월요일=1 ~ 금요일=5)
     if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(
+        day
+      ).padStart(2, '0')}`;
       dates.push(dateStr);
     }
   }
@@ -134,10 +136,14 @@ students.forEach(student => {
     const score = generateScore(student.id, dayIndex, student.targetScore);
     studentScores.push(score);
     cumulativeSum += score;
-    const average = Math.round((cumulativeSum / studentScores.length) * 10) / 10;
+    const average =
+      Math.round((cumulativeSum / studentScores.length) * 10) / 10;
 
     const dateObj = new Date(date);
-    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}/${String(dateObj.getDate()).padStart(2, '0')}`;
 
     examRecords.push({
       studentId: student.id,
@@ -158,23 +164,28 @@ const student1 = students.find(s => s.id === 1);
 if (student1) {
   // 학생 1번의 기존 점수 기록 (누적 평균 계산용)
   const student1ExistingRecords = examRecords.filter(r => r.studentId === 1);
-  let cumulativeSum = student1ExistingRecords.reduce((sum, r) => sum + r.score, 0);
+  let cumulativeSum = student1ExistingRecords.reduce(
+    (sum, r) => sum + r.score,
+    0
+  );
   let recordCount = student1ExistingRecords.length;
 
   // 1월 데이터 4개 (2026-01-06, 2026-01-07, 2026-01-08, 2026-01-09)
-  const januaryDates = [
-    '2026-01-06',
-    '2026-01-07',
-    '2026-01-08',
-    '2026-01-09',
-  ];
+  const januaryDates = ['2026-01-06', '2026-01-07', '2026-01-08', '2026-01-09'];
   januaryDates.forEach((date, index) => {
-    const score = generateScore(student1.id, recordCount + index, student1.targetScore);
+    const score = generateScore(
+      student1.id,
+      recordCount + index,
+      student1.targetScore
+    );
     cumulativeSum += score;
     recordCount++;
     const average = Math.round((cumulativeSum / recordCount) * 10) / 10;
     const dateObj = new Date(date);
-    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}/${String(dateObj.getDate()).padStart(2, '0')}`;
 
     examRecords.push({
       studentId: 1,
@@ -191,12 +202,19 @@ if (student1) {
 
   // 3월 데이터 1개 (2026-03-03)
   const marchDate = '2026-03-03';
-  const marchScore = generateScore(student1.id, recordCount, student1.targetScore);
+  const marchScore = generateScore(
+    student1.id,
+    recordCount,
+    student1.targetScore
+  );
   cumulativeSum += marchScore;
   recordCount++;
   const marchAverage = Math.round((cumulativeSum / recordCount) * 10) / 10;
   const marchDateObj = new Date(marchDate);
-  const marchDateFormatted = `${String(marchDateObj.getMonth() + 1).padStart(2, '0')}/${String(marchDateObj.getDate()).padStart(2, '0')}`;
+  const marchDateFormatted = `${String(marchDateObj.getMonth() + 1).padStart(
+    2,
+    '0'
+  )}/${String(marchDateObj.getDate()).padStart(2, '0')}`;
 
   examRecords.push({
     studentId: 1,
@@ -213,12 +231,19 @@ if (student1) {
   // 4월 데이터 3개 (2026-04-01, 2026-04-02, 2026-04-03)
   const aprilDates = ['2026-04-01', '2026-04-02', '2026-04-03'];
   aprilDates.forEach((date, index) => {
-    const score = generateScore(student1.id, recordCount + index, student1.targetScore);
+    const score = generateScore(
+      student1.id,
+      recordCount + index,
+      student1.targetScore
+    );
     cumulativeSum += score;
     recordCount++;
     const average = Math.round((cumulativeSum / recordCount) * 10) / 10;
     const dateObj = new Date(date);
-    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}/${String(dateObj.getDate()).padStart(2, '0')}`;
 
     examRecords.push({
       studentId: 1,
@@ -251,10 +276,14 @@ export const studentSummaries: StudentSummary[] = students.map(student => {
   const studentRecords = examRecords.filter(r => r.studentId === student.id);
   const latestRecord = studentRecords[studentRecords.length - 1];
   const firstHalfAvg =
-    studentRecords.slice(0, Math.floor(studentRecords.length / 2)).reduce((sum, r) => sum + r.score, 0) /
+    studentRecords
+      .slice(0, Math.floor(studentRecords.length / 2))
+      .reduce((sum, r) => sum + r.score, 0) /
     Math.floor(studentRecords.length / 2);
   const secondHalfAvg =
-    studentRecords.slice(Math.floor(studentRecords.length / 2)).reduce((sum, r) => sum + r.score, 0) /
+    studentRecords
+      .slice(Math.floor(studentRecords.length / 2))
+      .reduce((sum, r) => sum + r.score, 0) /
     Math.ceil(studentRecords.length / 2);
 
   const gradeDistribution: Record<GradeLevel, number> = {
@@ -315,7 +344,10 @@ export const dailyStats: DailyStats[] = allExamDates.map(date => {
   if (dateRecords.length === 0) {
     // 해당 날짜에 데이터가 없으면 기본값 반환
     const dateObj = new Date(date);
-    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}/${String(dateObj.getDate()).padStart(2, '0')}`;
     return {
       date,
       dateFormatted,
@@ -326,10 +358,16 @@ export const dailyStats: DailyStats[] = allExamDates.map(date => {
   }
 
   const averageScore =
-    Math.round((dateRecords.reduce((sum, r) => sum + r.score, 0) / dateRecords.length) * 10) / 10;
+    Math.round(
+      (dateRecords.reduce((sum, r) => sum + r.score, 0) / dateRecords.length) *
+        10
+    ) / 10;
 
   const dateObj = new Date(date);
-  const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+  const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(
+    2,
+    '0'
+  )}/${String(dateObj.getDate()).padStart(2, '0')}`;
 
   const gradeDistribution: Record<GradeLevel, number> = {
     A: 0,
@@ -370,7 +408,10 @@ for (let week = 0; week < weeks; week++) {
 
   const weekRecords = examRecords.filter(r => weekDates.includes(r.date));
   const averageScore =
-    Math.round((weekRecords.reduce((sum, r) => sum + r.score, 0) / weekRecords.length) * 10) / 10;
+    Math.round(
+      (weekRecords.reduce((sum, r) => sum + r.score, 0) / weekRecords.length) *
+        10
+    ) / 10;
 
   weeklyStats.push({
     week: week + 1,
@@ -387,7 +428,10 @@ export const monthlyStats = {
   totalStudents: students.length,
   totalExams: examRecords.length,
   averageScore:
-    Math.round((examRecords.reduce((sum, r) => sum + r.score, 0) / examRecords.length) * 10) / 10,
+    Math.round(
+      (examRecords.reduce((sum, r) => sum + r.score, 0) / examRecords.length) *
+        10
+    ) / 10,
   gradeDistribution: examRecords.reduce(
     (acc, record) => {
       acc[record.grade]++;
@@ -396,7 +440,3 @@ export const monthlyStats = {
     { A: 0, B: 0, C: 0, D: 0, F: 0 } as Record<GradeLevel, number>
   ),
 };
-
-
-
-
