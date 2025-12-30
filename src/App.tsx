@@ -17,6 +17,11 @@ import AdminNoticePage from './pages/admin/AdminNoticePage';
 import AdminGradesPage from './pages/admin/AdminGradesPage';
 import AdminMaterialsPage from './pages/admin/MaterialsPage';
 import AdminVideosPage from './pages/admin/VideosPage';
+import ParentMainPage from './pages/parent/ParentMainPage';
+import ParentNoticePage from './pages/parent/ParentNoticePage';
+import ParentNoticeDetailPage from './pages/parent/ParentNoticeDetailPage';
+import ParentChildrenPage from './pages/parent/ParentChildrenPage';
+import ParentMyPage from './pages/parent/ParentMyPage';
 
 function App() {
   return (
@@ -45,6 +50,13 @@ function App() {
         <Route path="/admin/materials" element={<AdminMaterialsPage />} />
         <Route path="/admin/videos" element={<AdminVideosPage />} />
         <Route path="/admin/mypage" element={<MyPage />} />
+
+        {/* 학부모 라우트 */}
+        <Route path="/parent/main" element={<ParentMainPage />} />
+        <Route path="/parent/notice" element={<ParentNoticePage />} />
+        <Route path="/parent/notice/:id" element={<ParentNoticeDetailPage />} />
+        <Route path="/parent/children" element={<ParentChildrenPage />} />
+        <Route path="/parent/mypage" element={<ParentMyPage />} />
 
         {/* 기존 인증 관련 페이지들 */}
         <Route path="/login" element={<LoginPage />} />
