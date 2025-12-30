@@ -23,7 +23,8 @@ function AdminGradesPage() {
   const [useMonthDropdown, setUseMonthDropdown] = useState(false);
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
   const monthDropdownRef = useRef<HTMLDivElement>(null);
-  const [studentSortOption, setStudentSortOption] = useState<StudentSortOption>('name'); // 기본값: 이름순
+  const [studentSortOption, setStudentSortOption] =
+    useState<StudentSortOption>('name'); // 기본값: 이름순
   const [selectedExam, setSelectedExam] = useState<{
     date: string;
     dateFormatted: string;
@@ -34,9 +35,9 @@ function AdminGradesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddExamModalOpen, setIsAddExamModalOpen] = useState(false);
   const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
-  const [examRecordsState, setExamRecordsState] = useState<ExamRecord[]>(examRecords);
-  
-  
+  const [examRecordsState, setExamRecordsState] =
+    useState<ExamRecord[]>(examRecords);
+
   // 새 시험 추가 폼
   const [newExam, setNewExam] = useState({
     date: '',
@@ -64,7 +65,10 @@ function AdminGradesPage() {
   // 드롭다운 외부 클릭 감지
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (monthDropdownRef.current && !monthDropdownRef.current.contains(event.target as Node)) {
+      if (
+        monthDropdownRef.current &&
+        !monthDropdownRef.current.contains(event.target as Node)
+      ) {
         setIsMonthDropdownOpen(false);
       }
     };
@@ -87,15 +91,19 @@ function AdminGradesPage() {
   const allExamsByDate = uniqueExamDates.map(date => {
     const records = examRecordsState.filter(record => record.date === date);
     const dateObj = new Date(date);
-    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
-    
+    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}/${String(dateObj.getDate()).padStart(2, '0')}`;
+
     return {
       date,
       dateFormatted,
       records,
-      averageScore: Math.round(
-        (records.reduce((sum, r) => sum + r.score, 0) / records.length) * 10
-      ) / 10,
+      averageScore:
+        Math.round(
+          (records.reduce((sum, r) => sum + r.score, 0) / records.length) * 10
+        ) / 10,
       totalStudents: records.length,
     };
   });
@@ -104,7 +112,10 @@ function AdminGradesPage() {
   const filteredExams = allExamsByDate
     .filter(exam => {
       const examDate = new Date(exam.date);
-      return examDate.getMonth() + 1 === selectedMonth && examDate.getFullYear() === 2026;
+      return (
+        examDate.getMonth() + 1 === selectedMonth &&
+        examDate.getFullYear() === 2026
+      );
     })
     .sort((a, b) => {
       if (sortOption === 'latest') {
@@ -117,35 +128,51 @@ function AdminGradesPage() {
   // 이번 달 요약 데이터 계산
   const currentMonthExams = allExamsByDate.filter(exam => {
     const examDate = new Date(exam.date);
-    return examDate.getMonth() + 1 === selectedMonth && examDate.getFullYear() === 2026;
+    return (
+      examDate.getMonth() + 1 === selectedMonth &&
+      examDate.getFullYear() === 2026
+    );
   });
 
   const currentMonthStats = {
     examCount: currentMonthExams.length,
-    averageScore: currentMonthExams.length > 0
-      ? Math.round(
-          (currentMonthExams.reduce((sum, e) => sum + e.averageScore, 0) / currentMonthExams.length) * 10
-        ) / 10
-      : 0,
+    averageScore:
+      currentMonthExams.length > 0
+        ? Math.round(
+            (currentMonthExams.reduce((sum, e) => sum + e.averageScore, 0) /
+              currentMonthExams.length) *
+              10
+          ) / 10
+        : 0,
     totalStudents: 30, // 고정값
-    previousMonthChange: selectedMonth > 1
-      ? (() => {
-          const prevMonthExams = allExamsByDate.filter(exam => {
-            const examDate = new Date(exam.date);
-            return examDate.getMonth() + 1 === selectedMonth - 1 && examDate.getFullYear() === 2026;
-          });
-          const prevAvg = prevMonthExams.length > 0
-            ? prevMonthExams.reduce((sum, e) => sum + e.averageScore, 0) / prevMonthExams.length
-            : 0;
-          const currentAvg = currentMonthExams.length > 0
-            ? currentMonthExams.reduce((sum, e) => sum + e.averageScore, 0) / currentMonthExams.length
-            : 0;
-          return Math.round((currentAvg - prevAvg) * 10) / 10;
-        })()
-      : 0,
+    previousMonthChange:
+      selectedMonth > 1
+        ? (() => {
+            const prevMonthExams = allExamsByDate.filter(exam => {
+              const examDate = new Date(exam.date);
+              return (
+                examDate.getMonth() + 1 === selectedMonth - 1 &&
+                examDate.getFullYear() === 2026
+              );
+            });
+            const prevAvg =
+              prevMonthExams.length > 0
+                ? prevMonthExams.reduce((sum, e) => sum + e.averageScore, 0) /
+                  prevMonthExams.length
+                : 0;
+            const currentAvg =
+              currentMonthExams.length > 0
+                ? currentMonthExams.reduce(
+                    (sum, e) => sum + e.averageScore,
+                    0
+                  ) / currentMonthExams.length
+                : 0;
+            return Math.round((currentAvg - prevAvg) * 10) / 10;
+          })()
+        : 0,
   };
 
-  const handleExamClick = (exam: typeof allExamsByDate[0]) => {
+  const handleExamClick = (exam: (typeof allExamsByDate)[0]) => {
     setSelectedExam(exam);
     setStudentSortOption('name'); // 모달 열 때 기본값으로 리셋
     setIsModalOpen(true);
@@ -170,28 +197,37 @@ function AdminGradesPage() {
     }
 
     const dateObj = new Date(newExam.date);
-    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}/${String(dateObj.getDate()).padStart(2, '0')}`;
 
-    const newRecords: ExamRecord[] = newExam.students.map(({ studentId, score }) => {
-      const student = students.find(s => s.id === studentId);
-      if (!student) return null as any;
+    const newRecords: ExamRecord[] = newExam.students
+      .map(({ studentId, score }) => {
+        const student = students.find(s => s.id === studentId);
+        if (!student) return null as any;
 
-      const existingRecords = examRecordsState.filter(r => r.studentId === studentId);
-      const cumulativeSum = existingRecords.reduce((sum, r) => sum + r.score, 0) + score;
-      const average = Math.round((cumulativeSum / (existingRecords.length + 1)) * 10) / 10;
+        const existingRecords = examRecordsState.filter(
+          r => r.studentId === studentId
+        );
+        const cumulativeSum =
+          existingRecords.reduce((sum, r) => sum + r.score, 0) + score;
+        const average =
+          Math.round((cumulativeSum / (existingRecords.length + 1)) * 10) / 10;
 
-      return {
-        studentId,
-        studentName: student.name,
-        date: newExam.date,
-        dateFormatted,
-        score,
-        average,
-        grade: calculateGrade(score),
-        targetScore: student.targetScore,
-        differenceFromTarget: score - student.targetScore,
-      };
-    }).filter(Boolean);
+        return {
+          studentId,
+          studentName: student.name,
+          date: newExam.date,
+          dateFormatted,
+          score,
+          average,
+          grade: calculateGrade(score),
+          targetScore: student.targetScore,
+          differenceFromTarget: score - student.targetScore,
+        };
+      })
+      .filter(Boolean);
 
     setExamRecordsState(prev => [...prev, ...newRecords]);
     setNewExam({ date: '', students: [] });
@@ -201,8 +237,10 @@ function AdminGradesPage() {
   const handleAddAllStudents = () => {
     const allStudentIds = students.map(s => s.id);
     const existingStudentIds = newExam.students.map(s => s.studentId);
-    const studentsToAdd = allStudentIds.filter(id => !existingStudentIds.includes(id));
-    
+    const studentsToAdd = allStudentIds.filter(
+      id => !existingStudentIds.includes(id)
+    );
+
     const newStudents = studentsToAdd.map(studentId => ({
       studentId,
       score: 0,
@@ -276,11 +314,18 @@ function AdminGradesPage() {
     if (!student) return;
 
     const dateObj = new Date(selectedExam.date);
-    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}/${String(dateObj.getDate()).padStart(2, '0')}`;
 
-    const existingRecords = examRecordsState.filter(r => r.studentId === studentId);
-    const cumulativeSum = existingRecords.reduce((sum, r) => sum + r.score, 0) + score;
-    const average = Math.round((cumulativeSum / (existingRecords.length + 1)) * 10) / 10;
+    const existingRecords = examRecordsState.filter(
+      r => r.studentId === studentId
+    );
+    const cumulativeSum =
+      existingRecords.reduce((sum, r) => sum + r.score, 0) + score;
+    const average =
+      Math.round((cumulativeSum / (existingRecords.length + 1)) * 10) / 10;
 
     const newRecord: ExamRecord = {
       studentId,
@@ -295,13 +340,16 @@ function AdminGradesPage() {
     };
 
     setExamRecordsState(prev => [...prev, newRecord]);
-    
+
     setSelectedExam(prev => {
       if (!prev) return null;
       const updatedRecords = [...prev.records, newRecord];
-      const averageScore = Math.round(
-        (updatedRecords.reduce((sum, r) => sum + r.score, 0) / updatedRecords.length) * 10
-      ) / 10;
+      const averageScore =
+        Math.round(
+          (updatedRecords.reduce((sum, r) => sum + r.score, 0) /
+            updatedRecords.length) *
+            10
+        ) / 10;
       return {
         ...prev,
         records: updatedRecords,
@@ -317,19 +365,28 @@ function AdminGradesPage() {
   const handleRemoveStudentFromDetail = (studentId: number) => {
     if (!selectedExam) return;
 
-    setExamRecordsState(prev => prev.filter(r => !(r.date === selectedExam.date && r.studentId === studentId)));
-    
+    setExamRecordsState(prev =>
+      prev.filter(
+        r => !(r.date === selectedExam.date && r.studentId === studentId)
+      )
+    );
+
     // 모달의 selectedExam 업데이트
     setSelectedExam(prev => {
       if (!prev) return null;
-      const updatedRecords = prev.records.filter(r => r.studentId !== studentId);
+      const updatedRecords = prev.records.filter(
+        r => r.studentId !== studentId
+      );
       if (updatedRecords.length === 0) {
         setIsModalOpen(false);
         return null;
       }
-      const averageScore = Math.round(
-        (updatedRecords.reduce((sum, r) => sum + r.score, 0) / updatedRecords.length) * 10
-      ) / 10;
+      const averageScore =
+        Math.round(
+          (updatedRecords.reduce((sum, r) => sum + r.score, 0) /
+            updatedRecords.length) *
+            10
+        ) / 10;
       return {
         ...prev,
         records: updatedRecords,
@@ -339,8 +396,7 @@ function AdminGradesPage() {
     });
   };
 
-
-``
+  ``;
   return (
     <MainLayout showCalendar={showCalendar} isAdmin={true}>
       {/* 헤더 */}
@@ -349,29 +405,48 @@ function AdminGradesPage() {
           <h1 className="text-2xl font-semibold text-slate-900">성적 관리</h1>
         </div>
       </header>
-
       요약 카드
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-medium text-slate-600 mb-1">이번 달 시험 수</div>
-          <div className="text-2xl font-bold text-slate-900">{currentMonthStats.examCount}개</div>
+          <div className="text-xs font-medium text-slate-600 mb-1">
+            이번 달 시험 수
+          </div>
+          <div className="text-2xl font-bold text-slate-900">
+            {currentMonthStats.examCount}개
+          </div>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-medium text-slate-600 mb-1">이번 달 평균 점수</div>
-          <div className="text-2xl font-bold text-slate-900">{currentMonthStats.averageScore}점</div>
+          <div className="text-xs font-medium text-slate-600 mb-1">
+            이번 달 평균 점수
+          </div>
+          <div className="text-2xl font-bold text-slate-900">
+            {currentMonthStats.averageScore}점
+          </div>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-medium text-slate-600 mb-1">참여 학생 수</div>
-          <div className="text-2xl font-bold text-slate-900">{currentMonthStats.totalStudents}명</div>
+          <div className="text-xs font-medium text-slate-600 mb-1">
+            참여 학생 수
+          </div>
+          <div className="text-2xl font-bold text-slate-900">
+            {currentMonthStats.totalStudents}명
+          </div>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-medium text-slate-600 mb-1">전월 대비 증감</div>
-          <div className={`text-2xl font-bold ${currentMonthStats.previousMonthChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-            {currentMonthStats.previousMonthChange >= 0 ? '+' : ''}{currentMonthStats.previousMonthChange}점
+          <div className="text-xs font-medium text-slate-600 mb-1">
+            전월 대비 증감
+          </div>
+          <div
+            className={`text-2xl font-bold ${
+              currentMonthStats.previousMonthChange >= 0
+                ? 'text-emerald-600'
+                : 'text-red-600'
+            }`}
+          >
+            {currentMonthStats.previousMonthChange >= 0 ? '+' : ''}
+            {currentMonthStats.previousMonthChange}점
           </div>
         </div>
       </div>
-
       {/* 년도 및 월 선택 */}
       <div className="mb-4 sm:mb-6">
         <div className="mb-3 sm:mb-0 flex items-center justify-between gap-4">
@@ -387,7 +462,11 @@ function AdminGradesPage() {
                   className="flex w-17 items-center justify-between rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:bg-slate-50 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                 >
                   <span>{selectedMonth}월</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isMonthDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${
+                      isMonthDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
                 </button>
                 {isMonthDropdownOpen && (
                   <div className="absolute left-0 top-full z-50 mt-1 w-17 rounded-xl border border-slate-300 bg-white shadow-lg">
@@ -455,7 +534,9 @@ function AdminGradesPage() {
                       key={month}
                       type="button"
                       onClick={() => setSelectedMonth(month)}
-                      className={`rounded-lg ${month >= 10 ? 'px-3' : 'px-4'} py-2 text-sm font-medium transition-colors ${
+                      className={`rounded-lg ${
+                        month >= 10 ? 'px-3' : 'px-4'
+                      } py-2 text-sm font-medium transition-colors ${
                         selectedMonth === month
                           ? 'bg-[#084773] text-white'
                           : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
@@ -478,7 +559,6 @@ function AdminGradesPage() {
           </button>
         </div>
       </div>
-
       {/* 시험 목록 테이블 */}
       <section className="mb-4 sm:mb-6">
         <div className="flex justify-center">
@@ -489,7 +569,7 @@ function AdminGradesPage() {
               </h2>
               <select
                 value={sortOption}
-                onChange={(e) => setSortOption(e.target.value as SortOption)}
+                onChange={e => setSortOption(e.target.value as SortOption)}
                 className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773] bg-white"
               >
                 <option value="latest">최신순</option>
@@ -497,58 +577,57 @@ function AdminGradesPage() {
               </select>
             </div>
             <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-white">
-                    <th className="px-4 py-3 text-left text-sm font-bold text-slate-900">
-                      날짜
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
-                      평균 점수
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
-                      참여 학생
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredExams.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={3}
-                        className="px-4 py-8 text-center text-sm text-slate-500"
-                      >
-                        {selectedMonth}월에 시험 기록이 없습니다.
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-white">
+                      <th className="px-4 py-3 text-left text-sm font-bold text-slate-900">
+                        날짜
+                      </th>
+                      <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
+                        평균 점수
+                      </th>
+                      <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
+                        참여 학생
+                      </th>
                     </tr>
-                  ) : (
-                    filteredExams.map(exam => (
-                      <tr
-                        key={exam.date}
-                        onClick={() => handleExamClick(exam)}
-                        className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50"
-                      >
-                        <td className="px-4 py-3 text-sm text-slate-900">
-                          {exam.dateFormatted}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-medium text-slate-900 text-right">
-                          {exam.averageScore}점
-                        </td>
-                        <td className="px-4 py-3 text-sm text-slate-600 text-right">
-                          {exam.totalStudents}명
+                  </thead>
+                  <tbody>
+                    {filteredExams.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={3}
+                          className="px-4 py-8 text-center text-sm text-slate-500"
+                        >
+                          {selectedMonth}월에 시험 기록이 없습니다.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    ) : (
+                      filteredExams.map(exam => (
+                        <tr
+                          key={exam.date}
+                          onClick={() => handleExamClick(exam)}
+                          className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50"
+                        >
+                          <td className="px-4 py-3 text-sm text-slate-900">
+                            {exam.dateFormatted}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-medium text-slate-900 text-right">
+                            {exam.averageScore}점
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-600 text-right">
+                            {exam.totalStudents}명
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
       </section>
-
       {/* 시험 추가 모달 */}
       {isAddExamModalOpen && (
         <div
@@ -567,7 +646,9 @@ function AdminGradesPage() {
               <X className="h-5 w-5" />
             </button>
 
-            <h2 className="mb-6 text-2xl font-semibold text-slate-900">시험 추가</h2>
+            <h2 className="mb-6 text-2xl font-semibold text-slate-900">
+              시험 추가
+            </h2>
 
             <div className="space-y-6">
               <div>
@@ -577,7 +658,9 @@ function AdminGradesPage() {
                 <input
                   type="date"
                   value={newExam.date}
-                  onChange={e => setNewExam({ ...newExam, date: e.target.value })}
+                  onChange={e =>
+                    setNewExam({ ...newExam, date: e.target.value })
+                  }
                   className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                 />
               </div>
@@ -599,12 +682,19 @@ function AdminGradesPage() {
                 <div className="flex gap-2">
                   <select
                     value={newStudent.studentId}
-                    onChange={e => setNewStudent({ ...newStudent, studentId: e.target.value })}
+                    onChange={e =>
+                      setNewStudent({
+                        ...newStudent,
+                        studentId: e.target.value,
+                      })
+                    }
                     className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                   >
                     <option value="">학생 선택</option>
                     {students
-                      .filter(s => !newExam.students.some(es => es.studentId === s.id))
+                      .filter(
+                        s => !newExam.students.some(es => es.studentId === s.id)
+                      )
                       .map(student => (
                         <option key={student.id} value={student.id}>
                           {student.name}
@@ -614,7 +704,9 @@ function AdminGradesPage() {
                   <input
                     type="number"
                     value={newStudent.score}
-                    onChange={e => setNewStudent({ ...newStudent, score: e.target.value })}
+                    onChange={e =>
+                      setNewStudent({ ...newStudent, score: e.target.value })
+                    }
                     placeholder="점수"
                     min="0"
                     max="100"
@@ -632,7 +724,9 @@ function AdminGradesPage() {
 
               {newExam.students.length > 0 && (
                 <div>
-                  <h3 className="mb-3 text-sm font-semibold text-slate-900">추가된 학생 목록</h3>
+                  <h3 className="mb-3 text-sm font-semibold text-slate-900">
+                    추가된 학생 목록
+                  </h3>
                   <div className="space-y-2">
                     {newExam.students.map(({ studentId, score }, index) => {
                       const student = students.find(s => s.id === studentId);
@@ -650,10 +744,20 @@ function AdminGradesPage() {
                               value={score}
                               onChange={e => {
                                 const newScore = Number(e.target.value);
-                                if (!isNaN(newScore) && newScore >= 0 && newScore <= 100) {
+                                if (
+                                  !isNaN(newScore) &&
+                                  newScore >= 0 &&
+                                  newScore <= 100
+                                ) {
                                   const updatedStudents = [...newExam.students];
-                                  updatedStudents[index] = { ...updatedStudents[index], score: newScore };
-                                  setNewExam({ ...newExam, students: updatedStudents });
+                                  updatedStudents[index] = {
+                                    ...updatedStudents[index],
+                                    score: newScore,
+                                  };
+                                  setNewExam({
+                                    ...newExam,
+                                    students: updatedStudents,
+                                  });
                                 }
                               }}
                               min="0"
@@ -664,7 +768,9 @@ function AdminGradesPage() {
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleRemoveStudentFromExam(studentId)}
+                            onClick={() =>
+                              handleRemoveStudentFromExam(studentId)
+                            }
                             className="rounded-lg bg-red-50 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 flex-shrink-0"
                           >
                             제거
@@ -699,7 +805,6 @@ function AdminGradesPage() {
           </div>
         </div>
       )}
-
       {/* 상세 모달 */}
       {isModalOpen && selectedExam && (
         <div
@@ -730,7 +835,9 @@ function AdminGradesPage() {
               <div className="flex items-center gap-2">
                 <select
                   value={studentSortOption}
-                  onChange={(e) => setStudentSortOption(e.target.value as StudentSortOption)}
+                  onChange={e =>
+                    setStudentSortOption(e.target.value as StudentSortOption)
+                  }
                   className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773] bg-white"
                 >
                   <option value="name">이름순</option>
@@ -776,10 +883,16 @@ function AdminGradesPage() {
                       }
                     })
                     .map((record, index) => {
-                      const phoneNumber = record.studentId <= 3 
-                        ? ['010-1111-2222', '010-3333-4444', '010-5555-6666'][record.studentId - 1]
-                        : `010-${String(record.studentId).padStart(4, '0')}-${String(record.studentId * 1111).slice(-4)}`;
-                      
+                      const phoneNumber =
+                        record.studentId <= 3
+                          ? ['010-1111-2222', '010-3333-4444', '010-5555-6666'][
+                              record.studentId - 1
+                            ]
+                          : `010-${String(record.studentId).padStart(
+                              4,
+                              '0'
+                            )}-${String(record.studentId * 1111).slice(-4)}`;
+
                       return (
                         <tr
                           key={`${record.studentId}-${record.date}`}
@@ -795,26 +908,43 @@ function AdminGradesPage() {
                                 value={record.score}
                                 onChange={e => {
                                   const newScore = Number(e.target.value);
-                                  if (!isNaN(newScore) && newScore >= 0 && newScore <= 100) {
-                                    const updatedRecords = [...selectedExam.records];
+                                  if (
+                                    !isNaN(newScore) &&
+                                    newScore >= 0 &&
+                                    newScore <= 100
+                                  ) {
+                                    const updatedRecords = [
+                                      ...selectedExam.records,
+                                    ];
                                     updatedRecords[index] = {
                                       ...updatedRecords[index],
                                       score: newScore,
                                       grade: calculateGrade(newScore),
                                     };
-                                    const averageScore = Math.round(
-                                      (updatedRecords.reduce((sum, r) => sum + r.score, 0) / updatedRecords.length) * 10
-                                    ) / 10;
+                                    const averageScore =
+                                      Math.round(
+                                        (updatedRecords.reduce(
+                                          (sum, r) => sum + r.score,
+                                          0
+                                        ) /
+                                          updatedRecords.length) *
+                                          10
+                                      ) / 10;
                                     setSelectedExam({
                                       ...selectedExam,
                                       records: updatedRecords,
                                       averageScore,
                                     });
                                     // examRecordsState도 업데이트
-                                    setExamRecordsState(prev => 
-                                      prev.map(r => 
-                                        r.date === selectedExam.date && r.studentId === record.studentId
-                                          ? { ...r, score: newScore, grade: calculateGrade(newScore) }
+                                    setExamRecordsState(prev =>
+                                      prev.map(r =>
+                                        r.date === selectedExam.date &&
+                                        r.studentId === record.studentId
+                                          ? {
+                                              ...r,
+                                              score: newScore,
+                                              grade: calculateGrade(newScore),
+                                            }
                                           : r
                                       )
                                     );
@@ -824,8 +954,12 @@ function AdminGradesPage() {
                                 max="100"
                                 className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                               />
-                              <span className="text-sm text-slate-900 font-medium">점</span>
-                              <span className="text-sm text-slate-500 ml-6">{phoneNumber}</span>
+                              <span className="text-sm text-slate-900 font-medium">
+                                점
+                              </span>
+                              <span className="text-sm text-slate-500 ml-6">
+                                {phoneNumber}
+                              </span>
                             </div>
                           </td>
                           <td className="px-4 py-3">
@@ -849,9 +983,11 @@ function AdminGradesPage() {
                             <div className="flex justify-end gap-2">
                               <button
                                 type="button"
-                                onClick={(e) => {
+                                onClick={e => {
                                   e.stopPropagation();
-                                  handleRemoveStudentFromDetail(record.studentId);
+                                  handleRemoveStudentFromDetail(
+                                    record.studentId
+                                  );
                                 }}
                                 className="flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
                               >
@@ -869,7 +1005,6 @@ function AdminGradesPage() {
           </div>
         </div>
       )}
-
       {/* 학생 추가 모달 (상세 모달에서) */}
       {isAddStudentModalOpen && (
         <div
@@ -888,7 +1023,9 @@ function AdminGradesPage() {
               <X className="h-5 w-5" />
             </button>
 
-            <h2 className="mb-6 text-xl font-semibold text-slate-900">학생 추가</h2>
+            <h2 className="mb-6 text-xl font-semibold text-slate-900">
+              학생 추가
+            </h2>
 
             <div className="space-y-4">
               <div>
@@ -897,12 +1034,17 @@ function AdminGradesPage() {
                 </label>
                 <select
                   value={newStudent.studentId}
-                  onChange={e => setNewStudent({ ...newStudent, studentId: e.target.value })}
+                  onChange={e =>
+                    setNewStudent({ ...newStudent, studentId: e.target.value })
+                  }
                   className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                 >
                   <option value="">학생 선택</option>
                   {students
-                    .filter(s => !selectedExam?.records.some(r => r.studentId === s.id))
+                    .filter(
+                      s =>
+                        !selectedExam?.records.some(r => r.studentId === s.id)
+                    )
                     .map(student => (
                       <option key={student.id} value={student.id}>
                         {student.name}
@@ -918,7 +1060,9 @@ function AdminGradesPage() {
                 <input
                   type="number"
                   value={newStudent.score}
-                  onChange={e => setNewStudent({ ...newStudent, score: e.target.value })}
+                  onChange={e =>
+                    setNewStudent({ ...newStudent, score: e.target.value })
+                  }
                   placeholder="0-100"
                   min="0"
                   max="100"
@@ -949,7 +1093,6 @@ function AdminGradesPage() {
           </div>
         </div>
       )}
-
     </MainLayout>
   );
 }

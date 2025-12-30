@@ -94,7 +94,10 @@ function AdminNoticePage() {
   const sortedNotices = [...notices].sort((a, b) => b.id - a.id);
   const itemsPerPage = 10;
   const generalNotices = sortedNotices.filter(notice => !notice.isPinned);
-  const totalPages = Math.max(1, Math.ceil(generalNotices.length / itemsPerPage));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(generalNotices.length / itemsPerPage)
+  );
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentNotices = generalNotices.slice(startIndex, endIndex);
@@ -120,7 +123,9 @@ function AdminNoticePage() {
       <header className="mb-6">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="text-center md:text-left">
-            <h1 className="text-2xl font-semibold text-slate-900">공지사항 관리</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">
+              공지사항 관리
+            </h1>
           </div>
           <button
             type="button"
@@ -138,7 +143,9 @@ function AdminNoticePage() {
         {/* 고정 공지 */}
         {pinnedNotices.length > 0 && (
           <section>
-            <h2 className="mb-4 text-lg font-semibold text-slate-900">고정 공지</h2>
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">
+              고정 공지
+            </h2>
             <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-blue-100/70">
               <table className="min-w-full border-collapse">
                 <thead>
@@ -188,21 +195,23 @@ function AdminNoticePage() {
 
         {/* 일반 공지 */}
         <section>
-          <h2 className="mb-4 text-lg font-semibold text-slate-900">일반 공지</h2>
+          <h2 className="mb-4 text-lg font-semibold text-slate-900">
+            일반 공지
+          </h2>
           <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-blue-100/70">
             <table className="min-w-full border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
                     번호
                   </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
                     제목
                   </th>
-                    <th className="hidden min-[431px]:table-cell px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                  <th className="hidden min-[431px]:table-cell px-4 py-3 text-left text-sm font-semibold text-slate-900">
                     작성일
                   </th>
-                    <th className="hidden min-[601px]:table-cell px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                  <th className="hidden min-[601px]:table-cell px-4 py-3 text-left text-sm font-semibold text-slate-900">
                     작성자
                   </th>
                 </tr>
@@ -214,18 +223,18 @@ function AdminNoticePage() {
                     className="border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors"
                     onClick={() => handleNoticeClick(notice)}
                   >
-                      <td className="px-4 py-3 text-sm text-slate-900">
-                        {notice.id}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-900">
-                        {notice.title}
-                      </td>
-                      <td className="hidden min-[431px]:table-cell px-4 py-3 text-sm text-slate-600">
-                        {notice.createdAt.split(' ')[0]}
-                      </td>
-                      <td className="hidden min-[601px]:table-cell px-4 py-3 text-sm text-slate-600">
-                        {notice.author}
-                      </td>
+                    <td className="px-4 py-3 text-sm text-slate-900">
+                      {notice.id}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900">
+                      {notice.title}
+                    </td>
+                    <td className="hidden min-[431px]:table-cell px-4 py-3 text-sm text-slate-600">
+                      {notice.createdAt.split(' ')[0]}
+                    </td>
+                    <td className="hidden min-[601px]:table-cell px-4 py-3 text-sm text-slate-600">
+                      {notice.author}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -259,7 +268,9 @@ function AdminNoticePage() {
           ))}
           <button
             type="button"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage(prev => Math.min(totalPages, prev + 1))
+            }
             disabled={currentPage === totalPages}
             className="flex items-center justify-center rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -286,7 +297,9 @@ function AdminNoticePage() {
               <X className="h-5 w-5" />
             </button>
 
-            <h2 className="mb-6 text-2xl font-semibold text-slate-900">공지사항 작성</h2>
+            <h2 className="mb-6 text-2xl font-semibold text-slate-900">
+              공지사항 작성
+            </h2>
 
             <div className="space-y-6">
               <div>
@@ -329,7 +342,10 @@ function AdminNoticePage() {
                   }
                   className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
                 />
-                <label htmlFor="new-pinned" className="text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="new-pinned"
+                  className="text-sm font-medium text-slate-700"
+                >
                   고정 공지로 설정
                 </label>
               </div>
@@ -376,7 +392,9 @@ function AdminNoticePage() {
               <X className="h-5 w-5" />
             </button>
 
-            <h2 className="mb-6 text-2xl font-semibold text-slate-900">공지사항 수정</h2>
+            <h2 className="mb-6 text-2xl font-semibold text-slate-900">
+              공지사항 수정
+            </h2>
 
             <div className="space-y-6">
               <div>
@@ -417,7 +435,10 @@ function AdminNoticePage() {
                   }
                   className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
                 />
-                <label htmlFor="edit-pinned" className="text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="edit-pinned"
+                  className="text-sm font-medium text-slate-700"
+                >
                   고정 공지로 설정
                 </label>
               </div>

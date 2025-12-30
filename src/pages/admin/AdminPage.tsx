@@ -50,7 +50,24 @@ const dummyPendingUsers = [
   },
 ];
 
-type TabType = 'students' | 'parents' | 'pending';
+const dummyBlacklistUsers = [
+  {
+    id: 1,
+    name: '김블랙',
+    email: 'black1@example.com',
+    role: '학생',
+    requestedAt: '2025-01-10',
+  },
+  {
+    id: 2,
+    name: '이블랙',
+    email: 'black2@example.com',
+    role: '학부모',
+    requestedAt: '2025-01-15',
+  },
+];
+
+type TabType = 'students' | 'parents' | 'pending' | 'blacklist';
 
 type Student = {
   id: number;
@@ -73,6 +90,7 @@ function AdminPage() {
   const [activeTab, setActiveTab] = useState<TabType>('students');
   const [showCalendar, setShowCalendar] = useState(false);
   const [pendingUsers, setPendingUsers] = useState(dummyPendingUsers);
+  const [blacklistUsers, setBlacklistUsers] = useState(dummyBlacklistUsers);
   const [students, setStudents] = useState<Student[]>(initialStudents);
   const [parents, setParents] = useState<Parent[]>(initialParents);
   const [studentPage, setStudentPage] = useState(1);
@@ -136,6 +154,13 @@ function AdminPage() {
     // 거절 처리: 미승인 목록에서 제거
     if (confirm('정말 이 유저의 가입 신청을 거절하시겠습니까?')) {
       setPendingUsers(prev => prev.filter(u => u.id !== id));
+    }
+  };
+
+  const handleRestore = (id: number) => {
+    // 복구 처리: 블랙리스트에서 제거
+    if (confirm('정말 이 유저를 블랙리스트에서 복구하시겠습니까?')) {
+      setBlacklistUsers(prev => prev.filter(u => u.id !== id));
     }
   };
 
@@ -260,6 +285,17 @@ function AdminPage() {
           }`}
         >
           미승인된 유저
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('blacklist')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'blacklist'
+              ? 'border-b-2 border-red-600 text-red-600'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          블랙리스트
         </button>
       </div>
 
@@ -585,6 +621,83 @@ function AdminPage() {
                               className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
                             >
                               거절
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* 블랙리스트 탭 */}
+      {activeTab === 'blacklist' && (
+        <div className="space-y-6">
+          <section>
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">
+              블랙리스트
+            </h2>
+            <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-red-100/70">
+              <table className="min-w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                      이름
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                      이메일
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                      역할
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                      신청일
+                    </th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-900">
+                      처리
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {blacklistUsers.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-4 py-8 text-center text-sm text-slate-500"
+                      >
+                        블랙리스트에 등록된 유저가 없습니다.
+                      </td>
+                    </tr>
+                  ) : (
+                    blacklistUsers.map(user => (
+                      <tr
+                        key={user.id}
+                        className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
+                      >
+                        <td className="px-4 py-3 text-sm text-slate-900">
+                          {user.name}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {user.email}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {user.role}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {user.requestedAt}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleRestore(user.id)}
+                              className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                            >
+                              복구
                             </button>
                           </div>
                         </td>
