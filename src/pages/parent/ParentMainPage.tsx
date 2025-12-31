@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../MainLayout';
-import { examRecords, dailyStats } from '../../data/gradesData';
+import { examRecords } from '../../data/gradesData';
 
 // TODO: API 연결 시 이 더미 데이터를 실제 API 호출로 교체
 const dummyNotices = [
@@ -120,7 +119,7 @@ function ParentMainPage() {
             </button>
           </div>
           <div className="space-y-3">
-            {childrenRecords.map((child, index) => (
+            {childrenRecords.map((child) => (
               <div
                 key={child.childId}
                 className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70"

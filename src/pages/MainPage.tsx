@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X } from 'lucide-react';
 import MainLayout from './MainLayout';
-import { examRecords, dailyStats } from '../data/gradesData';
+import { examRecords } from '../data/gradesData';
 
 // TODO: API 연결 시 이 더미 데이터를 실제 API 호출로 교체
 const dummyNotices = [
