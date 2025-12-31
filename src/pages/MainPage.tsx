@@ -38,35 +38,6 @@ const studentInfo: { school: string; grade: string; name: string } = {
   name: '김민수',
 };
 
-const dummyMaterials = [
-  {
-    id: 1,
-    title: '1주차 강의자료',
-    subject: 'JavaScript 기본',
-    type: 'PDF',
-  },
-  {
-    id: 2,
-    title: '컴포넌트 설계 슬라이드',
-    subject: 'React',
-    type: '슬라이드',
-  },
-];
-
-const dummyVideos = [
-  {
-    id: 1,
-    title: 'React 기본 개념 정리',
-    duration: '35:20',
-    level: '기초',
-  },
-  {
-    id: 2,
-    title: '상태 관리 패턴 소개',
-    duration: '42:10',
-    level: '심화',
-  },
-];
 
 
 function MainPage() {
@@ -221,73 +192,6 @@ function MainPage() {
                 </p>
               )}
             </div>
-          </div>
-        </section>
-
-        {/* 학습자료 섹션 */}
-        <section className="flex min-h-0 flex-col">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">학습자료</h2>
-            <button
-              type="button"
-              onClick={() => navigate('/materials')}
-              className="text-sm font-medium text-[#084773] hover:text-[#063a5a] transition-colors"
-            >
-              더보기 →
-            </button>
-          </div>
-          <div className="space-y-3">
-            {dummyMaterials.slice(0, 2).map(material => (
-              <div
-                key={material.id}
-                className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-blue-100/70 transition-shadow hover:shadow-md cursor-pointer"
-                onClick={() => navigate('/materials')}
-              >
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    {material.title}
-                  </h3>
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-                    {material.type}
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-slate-600">
-                  {material.subject}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 영상 섹션 */}
-        <section className="flex min-h-0 flex-col">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">영상</h2>
-            <button
-              type="button"
-              onClick={() => navigate('/videos')}
-              className="text-sm font-medium text-[#084773] hover:text-[#063a5a] transition-colors"
-            >
-              더보기 →
-            </button>
-          </div>
-          <div className="space-y-3">
-            {dummyVideos.slice(0, 2).map(video => (
-              <div
-                key={video.id}
-                className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-blue-100/70 transition-shadow hover:shadow-md cursor-pointer"
-                onClick={() => navigate('/videos')}
-              >
-                <h3 className="text-sm font-semibold text-slate-900">
-                  {video.title}
-                </h3>
-                <div className="mt-1 flex items-center gap-3 text-xs text-slate-600">
-                  <span>{video.duration}</span>
-                  <span>•</span>
-                  <span>{video.level}</span>
-                </div>
-              </div>
-            ))}
           </div>
         </section>
       </div>
