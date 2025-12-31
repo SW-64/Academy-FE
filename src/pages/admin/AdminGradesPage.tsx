@@ -37,6 +37,8 @@ function AdminGradesPage() {
   const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
   const [examRecordsState, setExamRecordsState] =
     useState<ExamRecord[]>(examRecords);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editDate, setEditDate] = useState('');
 
   // 새 시험 추가 폼
   const [newExam, setNewExam] = useState({
@@ -175,7 +177,68 @@ function AdminGradesPage() {
   const handleExamClick = (exam: (typeof allExamsByDate)[0]) => {
     setSelectedExam(exam);
     setStudentSortOption('name'); // 모달 열 때 기본값으로 리셋
+    setEditDate(exam.date);
+    setIsEditMode(false);
     setIsModalOpen(true);
+  };
+
+  const handleGenerateAverage = () => {
+    if (!selectedExam) return;
+    const averageScore =
+      Math.round(
+        (selectedExam.records.reduce((sum, r) => sum + r.score, 0) /
+          selectedExam.records.length) *
+          10
+      ) / 10;
+    setSelectedExam({
+      ...selectedExam,
+      averageScore,
+    });
+    // eslint-disable-next-line no-alert
+    alert(`평균 점수가 ${averageScore}점으로 계산되었습니다.`);
+  };
+
+  const handleSaveEdit = () => {
+    if (!selectedExam) return;
+
+    // 날짜 변경 시 examRecordsState 업데이트
+    if (editDate !== selectedExam.date) {
+      setExamRecordsState(prev =>
+        prev.map(r =>
+          r.date === selectedExam.date ? { ...r, date: editDate } : r
+        )
+      );
+    }
+
+    // selectedExam 업데이트
+    const dateObj = new Date(editDate);
+    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}/${String(dateObj.getDate()).padStart(2, '0')}`;
+
+    setSelectedExam({
+      ...selectedExam,
+      date: editDate,
+      dateFormatted,
+    });
+
+    setIsEditMode(false);
+    // eslint-disable-next-line no-alert
+    alert('수정이 완료되었습니다.');
+  };
+
+  const handleDeleteExam = () => {
+    if (!selectedExam) return;
+    if (!confirm('정말 이 시험을 삭제하시겠습니까?')) return;
+
+    // examRecordsState에서 해당 날짜의 모든 기록 삭제
+    setExamRecordsState(prev => prev.filter(r => r.date !== selectedExam.date));
+
+    setIsModalOpen(false);
+    setSelectedExam(null);
+    // eslint-disable-next-line no-alert
+    alert('시험이 삭제되었습니다.');
   };
 
   const handleAddExam = () => {
@@ -205,7 +268,7 @@ function AdminGradesPage() {
     const newRecords: ExamRecord[] = newExam.students
       .map(({ studentId, score }) => {
         const student = students.find(s => s.id === studentId);
-        if (!student) return null as any;
+        if (!student) return null;
 
         const existingRecords = examRecordsState.filter(
           r => r.studentId === studentId
@@ -227,7 +290,7 @@ function AdminGradesPage() {
           differenceFromTarget: score - student.targetScore,
         };
       })
-      .filter(Boolean);
+      .filter((record): record is ExamRecord => record !== null);
 
     setExamRecordsState(prev => [...prev, ...newRecords]);
     setNewExam({ date: '', students: [] });
@@ -823,9 +886,30 @@ function AdminGradesPage() {
               <X className="h-5 w-5" />
             </button>
 
-            <h2 className="mb-6 text-2xl font-semibold text-slate-900">
-              {selectedExam.dateFormatted} 시험 상세
-            </h2>
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold text-slate-900 mb-2">
+                시험 상세
+              </h2>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-slate-700">
+                  날짜:
+                </label>
+                <input
+                  type="date"
+                  value={isEditMode ? editDate : selectedExam.date}
+                  onChange={e => {
+                    if (isEditMode) {
+                      setEditDate(e.target.value);
+                    } else {
+                      // 일반 모드에서도 날짜 변경 가능
+                      setEditDate(e.target.value);
+                      setIsEditMode(true);
+                    }
+                  }}
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                />
+              </div>
+            </div>
 
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-4 text-sm text-slate-600">
@@ -1001,6 +1085,60 @@ function AdminGradesPage() {
                     })}
                 </tbody>
               </table>
+            </div>
+
+            {/* 평균 점수 생성 및 수정 버튼 */}
+            <div className="mt-6 flex items-center justify-between gap-3">
+              {isEditMode ? (
+                <>
+                  <div></div>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditDate(selectedExam.date);
+                        setIsEditMode(false);
+                      }}
+                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveEdit}
+                      className="rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
+                    >
+                      저장
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleGenerateAverage}
+                    className="rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
+                  >
+                    평균 점수 생성
+                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditMode(true)}
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                    >
+                      수정
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeleteExam}
+                      className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

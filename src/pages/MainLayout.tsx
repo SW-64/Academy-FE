@@ -38,7 +38,7 @@ const parentMenuItems = [
 const adminMenuItems = [
   { id: 'students', label: '학생 관리', icon: GraduationCap, path: '/admin' },
   { id: 'notice', label: '공지사항', icon: Megaphone, path: '/admin/notice' },
-  { id: 'grades', label: '성적', icon: GraduationCap, path: '/admin/grades' },
+  { id: 'grades', label: '시험', icon: GraduationCap, path: '/admin/grades' },
   {
     id: 'materials',
     label: '학습자료',

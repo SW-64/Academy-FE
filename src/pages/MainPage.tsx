@@ -33,6 +33,13 @@ const dummyNotices = [
 // 현재 학생 ID (실제로는 로그인한 학생 ID로 교체)
 const CURRENT_STUDENT_ID = 1;
 
+// 학생 정보 (더미 데이터 - 실제로는 API에서 가져와야 함)
+const studentInfo: { school: string; grade: string; name: string } = {
+  school: '서울고등학교',
+  grade: '1학년',
+  name: '김민수',
+};
+
 const dummyMaterials = [
   {
     id: 1,
@@ -63,188 +70,19 @@ const dummyVideos = [
   },
 ];
 
-function GradeChart({ isModal = false }: { isModal?: boolean }) {
-  // 현재 학생의 2월 27일 이후 데이터 가져오기 (최근 7개 기록)
-  const cutoffDate = new Date('2026-02-27');
-  const myRecords = examRecords
-    .filter(r => {
-      const recordDate = new Date(r.date);
-      return r.studentId === CURRENT_STUDENT_ID && recordDate > cutoffDate;
-    })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 7); // 최대 7개만
-
-  const minScore = 60;
-  const maxScore = 100;
-  const scoreRange = maxScore - minScore;
-  const chartWidth = 800;
-  const chartHeight = 300;
-  const padding = 50;
-
-  if (myRecords.length === 0) {
-    return (
-      <div
-        className={`flex items-center justify-center ${
-          isModal ? 'h-[500px]' : 'h-[280px]'
-        }`}
-      >
-        <p className="text-sm text-slate-500">표시할 성적 데이터가 없습니다.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`relative w-full ${isModal ? 'h-[500px]' : 'h-[280px]'}`}>
-      <div className="relative h-full w-full overflow-x-auto">
-        <svg
-          className="h-full w-full"
-          viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-          preserveAspectRatio="none"
-        >
-          {/* 그리드 라인 (70-100 범위) */}
-          {[70, 80, 90, 100].map(score => {
-            const y = 250 - ((score - minScore) / scoreRange) * 200;
-            return (
-              <line
-                key={score}
-                x1={padding}
-                y1={y}
-                x2={chartWidth - padding}
-                y2={y}
-                stroke="#e2e8f0"
-                strokeWidth="1"
-                strokeDasharray="4 4"
-              />
-            );
-          })}
-          {/* 전체 학생 평균점수 라인 */}
-          {(() => {
-            const averagePoints = myRecords.map((record, index) => {
-              const dailyStat = dailyStats.find(
-                stat => stat.date === record.date
-              );
-              const allStudentsAverage = dailyStat ? dailyStat.averageScore : 0;
-              const recordsLength = myRecords.length;
-              const x =
-                recordsLength > 1
-                  ? padding +
-                    (index / (recordsLength - 1)) * (chartWidth - padding * 2)
-                  : padding;
-              const y =
-                250 - ((allStudentsAverage - minScore) / scoreRange) * 200;
-              return { x, y };
-            });
-
-            return (
-              <polyline
-                points={averagePoints
-                  .map(point => `${point.x},${point.y}`)
-                  .join(' ')}
-                fill="none"
-                stroke="#f59e0b"
-                strokeWidth="2"
-                strokeDasharray="8 4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            );
-          })()}
-          {/* 시험 점수 선 */}
-          <polyline
-            points={myRecords
-              .map((record, index) => {
-                const recordsLength = myRecords.length;
-                const x =
-                  recordsLength > 1
-                    ? padding +
-                      (index / (recordsLength - 1)) * (chartWidth - padding * 2)
-                    : padding;
-                const y = 250 - ((record.score - minScore) / scoreRange) * 200;
-                return `${x},${y}`;
-              })
-              .join(' ')}
-            fill="none"
-            stroke="#084773"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* 데이터 포인트 */}
-          {myRecords.map((record, index) => {
-            const recordsLength = myRecords.length;
-            const x =
-              recordsLength > 1
-                ? padding +
-                  (index / (recordsLength - 1)) * (chartWidth - padding * 2)
-                : padding;
-            const y = 250 - ((record.score - minScore) / scoreRange) * 200;
-            return <circle key={index} cx={x} cy={y} r="4" fill="#084773" />;
-          })}
-        </svg>
-        {/* 범례 */}
-        <div
-          className={`absolute ${
-            isModal ? 'right-6 top-6' : 'right-2 top-2'
-          } flex flex-col gap-1 sm:gap-2 rounded-lg bg-white p-2 sm:p-3 shadow-sm`}
-        >
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="h-2.5 sm:h-3 w-6 sm:w-8 bg-[#084773]"></div>
-            <span className="text-[10px] sm:text-xs text-slate-600">
-              시험 점수
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="h-2.5 sm:h-3 w-6 sm:w-8 border-2 border-dashed border-amber-500"></div>
-            <span className="text-[10px] sm:text-xs text-slate-600">
-              전체 학생 평균점수
-            </span>
-          </div>
-        </div>
-        {/* Y축 레이블 (70-100) */}
-        <div className="absolute left-0 top-0 bottom-8 sm:bottom-10 flex flex-col justify-between py-1 sm:py-2">
-          {[100, 90, 80, 70].map(score => (
-            <span key={score} className="text-[10px] sm:text-xs text-slate-500">
-              {score}
-            </span>
-          ))}
-        </div>
-        {/* X축 레이블 - 모든 날짜 표시 (데이터 포인트 위치에 맞춰 배치) */}
-        <div
-          className="absolute bottom-0 left-0 right-0"
-          style={{ height: '20px', paddingLeft: '2.5rem' }}
-        >
-          {myRecords.map((record, index) => {
-            const recordsLength = myRecords.length;
-            // SVG 내부의 실제 x 좌표 계산 (viewBox 기준)
-            const svgX =
-              recordsLength > 1
-                ? padding +
-                  (index / (recordsLength - 1)) * (chartWidth - padding * 2)
-                : padding;
-            // SVG viewBox 기준으로 퍼센트 계산 (800px 기준)
-            const xPercent = (svgX / chartWidth) * 100;
-            return (
-              <span
-                key={index}
-                className="absolute text-[8px] sm:text-[10px] text-slate-500"
-                style={{
-                  left: `${xPercent}%`,
-                  transform: 'translateX(-50%)',
-                }}
-              >
-                {record.dateFormatted}
-              </span>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function MainPage() {
   const navigate = useNavigate();
-  const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
+
+  // 현재 학생의 최근 성적 데이터 가져오기
+  const myRecords = examRecords
+    .filter(r => r.studentId === CURRENT_STUDENT_ID)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const latestRecord = myRecords[0] || null;
+  
+  // 학생 전체 평균을 90점으로 고정
+  const allStudentsAverage = 90;
 
   return (
     <MainLayout>
@@ -297,15 +135,94 @@ function MainPage() {
               더보기 →
             </button>
           </div>
-          <div
-            className="flex cursor-pointer items-center rounded-xl bg-white p-4 shadow-sm ring-1 ring-blue-100/70 transition-shadow hover:shadow-md"
-            style={{ minHeight: '276px' }}
-            onClick={e => {
-              e.stopPropagation();
-              setIsGraphModalOpen(true);
-            }}
-          >
-            <GradeChart />
+          <div className="space-y-3">
+            <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70" style={{ minHeight: 'calc(3 * 88px + 2 * 12px + 1px)' }}>
+              <h3 className="text-sm font-semibold text-slate-900 mb-1">
+                {studentInfo.name}
+              </h3>
+              <p className="text-xs text-slate-600 mb-3">
+                {studentInfo.school} {studentInfo.grade}
+              </p>
+              {latestRecord ? (
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-600">최근 시험</span>
+                    <span className="text-xs text-slate-500">
+                      {latestRecord.dateFormatted}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-600">점수</span>
+                    <span className="text-sm font-semibold text-slate-900">
+                      {latestRecord.score}점
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-600">등급</span>
+                    <span
+                      className={`text-xs font-medium px-2 py-1 rounded ${
+                        latestRecord.grade === 'A'
+                          ? 'bg-green-100 text-green-700'
+                          : latestRecord.grade === 'B'
+                          ? 'bg-blue-100 text-blue-700'
+                          : latestRecord.grade === 'C'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : latestRecord.grade === 'D'
+                          ? 'bg-orange-100 text-orange-700'
+                          : 'bg-red-100 text-red-700'
+                      }`}
+                    >
+                      {latestRecord.grade}
+                    </span>
+                  </div>
+                  {/* 막대 그래프 */}
+                  <div className="mt-8 space-y-5">
+                    <div className="space-y-4">
+                      {/* 학생 전체 평균 막대 (왼쪽) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-slate-600">학생 전체 평균</span>
+                          <span className="text-xs font-medium text-slate-700">
+                            {allStudentsAverage}점
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+                          <div
+                            className="bg-blue-500 h-full flex items-center justify-end pr-2 rounded-full"
+                            style={{
+                              width: `${(allStudentsAverage / 100) * 100}%`,
+                            }}
+                          >
+                          </div>
+                        </div>
+                      </div>
+                      {/* 최근 시험 점수 막대 (오른쪽) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-slate-600">최근 시험 점수</span>
+                          <span className="text-xs font-medium text-slate-700">
+                            {latestRecord.score}점
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+                          <div
+                            className="bg-emerald-500 h-full flex items-center justify-end pr-2 rounded-full"
+                            style={{
+                              width: `${(latestRecord.score / 100) * 100}%`,
+                            }}
+                          >
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500">
+                  성적 데이터가 없습니다.
+                </p>
+              )}
+            </div>
           </div>
         </section>
 
@@ -377,42 +294,6 @@ function MainPage() {
         </section>
       </div>
 
-      {/* 그래프 확대 모달 */}
-      {isGraphModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setIsGraphModalOpen(false)}
-        >
-          <div
-            className="relative w-full max-w-4xl rounded-2xl bg-white p-6 shadow-xl"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* 닫기 버튼 */}
-            <button
-              type="button"
-              onClick={() => setIsGraphModalOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            {/* 모달 헤더 */}
-            <div className="mb-6 pr-10">
-              <h2 className="text-xl font-semibold text-slate-900">
-                성적 그래프
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                수학 성적 추이를 확인하세요
-              </p>
-            </div>
-
-            {/* 확대된 그래프 */}
-            <div className="rounded-xl bg-white p-6 ring-1 ring-blue-100/70">
-              <GradeChart isModal={true} />
-            </div>
-          </div>
-        </div>
-      )}
     </MainLayout>
   );
 }
