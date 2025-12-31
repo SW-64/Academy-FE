@@ -166,11 +166,17 @@ function AdminPage() {
 
   const handleEditStudent = (student: Student) => {
     setEditingStudent(student);
+    // 학교 이름에서 "고등학교" 제거한 앞부분만 추출
+    const schoolName = student.school.replace('고등학교', '');
+    // 연락처에서 '-' 제거
+    const phoneWithoutDash = student.phone.replace(/-/g, '');
+    // 학년에서 "학년" 제거하고 숫자만 추출
+    const gradeNumber = student.grade.replace('학년', '');
     setEditForm({
       name: student.name,
-      school: student.school,
-      phone: student.phone,
-      grade: student.grade,
+      school: schoolName,
+      phone: phoneWithoutDash,
+      grade: gradeNumber,
     });
     setEditModalOpen(true);
   };
@@ -183,9 +189,9 @@ function AdminPage() {
             ? {
                 ...s,
                 name: editForm.name,
-                school: editForm.school,
-                phone: editForm.phone,
-                grade: editForm.grade,
+                school: `${editForm.school}고등학교`,
+                phone: editForm.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3'),
+                grade: `${editForm.grade}학년`,
               }
             : s
         )
@@ -240,6 +246,18 @@ function AdminPage() {
       setDeletingParent(null);
     }
     setDeleteModalOpen(false);
+  };
+
+  const handleResetPassword = () => {
+    if (confirm('정말 초기화할까요?')) {
+      // 실제 비밀번호 초기화 로직은 여기에 구현
+      // eslint-disable-next-line no-alert
+      alert(
+        editingStudent
+          ? `${editingStudent.name} 학생의 비밀번호가 초기화되었습니다. (데모)`
+          : `${editingParent?.name} 학부모의 비밀번호가 초기화되었습니다. (데모)`
+      );
+    }
   };
 
   return (
@@ -767,14 +785,20 @@ function AdminPage() {
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                       학교
                     </label>
-                    <input
-                      type="text"
-                      value={editForm.school}
-                      onChange={e =>
-                        setEditForm({ ...editForm, school: e.target.value })
-                      }
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editForm.school}
+                        onChange={e =>
+                          setEditForm({ ...editForm, school: e.target.value })
+                        }
+                        className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                        placeholder="학교명 앞부분"
+                      />
+                      <span className="text-sm text-slate-600 whitespace-nowrap">
+                        고등학교
+                      </span>
+                    </div>
                   </div>
 
                   <div>
@@ -784,25 +808,53 @@ function AdminPage() {
                     <input
                       type="text"
                       value={editForm.phone}
-                      onChange={e =>
-                        setEditForm({ ...editForm, phone: e.target.value })
-                      }
+                      onChange={e => {
+                        // 숫자만 입력 허용
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        // 최대 11자리로 제한 (01012345678)
+                        if (value.length <= 11) {
+                          setEditForm({ ...editForm, phone: value });
+                        }
+                      }}
+                      placeholder="01012345678"
+                      maxLength={11}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                     />
+                    {editForm.phone && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        {editForm.phone.length < 11
+                          ? `${editForm.phone.length}자 입력됨 (11자 필요)`
+                          : editForm.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')}
+                      </p>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                       학년
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={editForm.grade}
                       onChange={e =>
                         setEditForm({ ...editForm, grade: e.target.value })
                       }
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                    />
+                    >
+                      <option value="">학년 선택</option>
+                      <option value="1">1학년</option>
+                      <option value="2">2학년</option>
+                      <option value="3">3학년</option>
+                    </select>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleResetPassword}
+                      className="w-full rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100"
+                    >
+                      비밀번호 초기화
+                    </button>
                   </div>
                 </>
               ) : (
@@ -839,6 +891,16 @@ function AdminPage() {
                       }
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                     />
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleResetPassword}
+                      className="w-full rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100"
+                    >
+                      비밀번호 초기화
+                    </button>
                   </div>
                 </>
               )}

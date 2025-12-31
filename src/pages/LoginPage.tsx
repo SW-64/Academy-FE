@@ -48,10 +48,7 @@ const LoginPage = () => {
       <div className="absolute top-4 right-4 flex gap-2">
         <button
           type="button"
-          onClick={() => {
-            // eslint-disable-next-line no-alert
-            alert('준비중입니다.');
-          }}
+          onClick={() => navigate('/parent/main')}
           className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         >
           학부모용

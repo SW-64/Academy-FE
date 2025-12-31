@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  Users,
 } from 'lucide-react';
 
 const menuItems = [
@@ -22,13 +23,35 @@ const menuItems = [
   { id: 'mypage', label: '마이페이지', icon: UserCircle2, path: '/mypage' },
 ];
 
+const parentMenuItems = [
+  { id: 'home', label: '홈 화면', icon: Home, path: '/parent/main' },
+  { id: 'notice', label: '공지사항', icon: Megaphone, path: '/parent/notice' },
+  { id: 'children', label: '자녀 조회', icon: Users, path: '/parent/children' },
+  {
+    id: 'mypage',
+    label: '마이페이지',
+    icon: UserCircle2,
+    path: '/parent/mypage',
+  },
+];
+
 const adminMenuItems = [
   { id: 'students', label: '학생 관리', icon: GraduationCap, path: '/admin' },
   { id: 'notice', label: '공지사항', icon: Megaphone, path: '/admin/notice' },
-  { id: 'grades', label: '성적', icon: GraduationCap, path: '/admin/grades' },
-  { id: 'materials', label: '학습자료', icon: BookOpen, path: '/admin/materials' },
+  { id: 'grades', label: '시험', icon: GraduationCap, path: '/admin/grades' },
+  {
+    id: 'materials',
+    label: '학습자료',
+    icon: BookOpen,
+    path: '/admin/materials',
+  },
   { id: 'videos', label: '영상', icon: PlayCircle, path: '/admin/videos' },
-  { id: 'mypage', label: '마이페이지', icon: UserCircle2, path: '/admin/mypage' },
+  {
+    id: 'mypage',
+    label: '마이페이지',
+    icon: UserCircle2,
+    path: '/admin/mypage',
+  },
 ];
 
 function Calendar() {
@@ -135,13 +158,21 @@ type MainLayoutProps = {
   children: ReactNode;
   showCalendar?: boolean;
   isAdmin?: boolean;
+  isParent?: boolean;
 };
 
-function MainLayout({ children, showCalendar = true, isAdmin: propIsAdmin = false }: MainLayoutProps) {
+function MainLayout({
+  children,
+  showCalendar = true,
+  isAdmin: propIsAdmin = false,
+  isParent: propIsParent = false,
+}: MainLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   // 경로가 /admin으로 시작하면 자동으로 관리자 모드로 설정
   const isAdmin = propIsAdmin || location.pathname.startsWith('/admin');
+  // 경로가 /parent로 시작하면 자동으로 학부모 모드로 설정
+  const isParent = propIsParent || location.pathname.startsWith('/parent');
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     // 1025px 이하에서는 기본적으로 닫혀있고, 그 이상에서는 열려있도록
     return window.innerWidth > 1025;
@@ -183,11 +214,13 @@ function MainLayout({ children, showCalendar = true, isAdmin: propIsAdmin = fals
       )}
 
       {/* 왼쪽 사이드바 */}
-      <aside className={`w-64 flex-shrink-0 bg-white shadow-sm ring-1 ring-blue-100/70 transition-transform duration-300 ${
-        isSidebarOpen 
-          ? 'translate-x-0' 
-          : 'translate-x-full min-[1025px]:translate-x-0'
-      } fixed min-[1025px]:static inset-y-0 right-0 min-[1025px]:left-0 z-40 min-[1025px]:z-auto`}>
+      <aside
+        className={`w-64 flex-shrink-0 bg-white shadow-sm ring-1 ring-blue-100/70 transition-transform duration-300 ${
+          isSidebarOpen
+            ? 'translate-x-0'
+            : 'translate-x-full min-[1025px]:translate-x-0'
+        } fixed min-[1025px]:static inset-y-0 right-0 min-[1025px]:left-0 z-40 min-[1025px]:z-auto`}
+      >
         {/* 사이드바 상단 로고 및 타이틀 */}
         <div className="flex items-center justify-between gap-1.5 sm:gap-2 lg:gap-2 border-b border-blue-100/70 px-2 sm:px-3 lg:px-4 py-3 sm:py-4">
           <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-2 flex-1 min-w-0">
@@ -201,6 +234,11 @@ function MainLayout({ children, showCalendar = true, isAdmin: propIsAdmin = fals
               {isAdmin && (
                 <span className="text-[10px] sm:text-xs text-slate-500">
                   관리자용
+                </span>
+              )}
+              {isParent && (
+                <span className="text-[10px] sm:text-xs text-slate-500">
+                  학부모용
                 </span>
               )}
             </div>
@@ -217,12 +255,24 @@ function MainLayout({ children, showCalendar = true, isAdmin: propIsAdmin = fals
 
         {/* 메뉴 항목 */}
         <nav className="py-2">
-          {(isAdmin ? adminMenuItems : menuItems).map(item => {
+          {(isAdmin
+            ? adminMenuItems
+            : isParent
+            ? parentMenuItems
+            : menuItems
+          ).map(item => {
             const Icon = item.icon;
             const isActive = isAdmin
-              ? location.pathname === item.path || 
+              ? location.pathname === item.path ||
                 (item.path === '/admin' && location.pathname === '/admin') ||
-                (item.path !== '/admin' && location.pathname.startsWith(item.path))
+                (item.path !== '/admin' &&
+                  location.pathname.startsWith(item.path))
+              : isParent
+              ? location.pathname === item.path ||
+                (item.path === '/parent/main' &&
+                  location.pathname === '/parent/main') ||
+                (item.path !== '/parent/main' &&
+                  location.pathname.startsWith(item.path))
               : location.pathname === item.path;
             return (
               <button
@@ -240,7 +290,9 @@ function MainLayout({ children, showCalendar = true, isAdmin: propIsAdmin = fals
                     isActive ? 'text-[#084773]' : 'text-slate-500'
                   }`}
                 />
-                <span className="text-xs sm:text-sm lg:text-sm font-medium truncate">{item.label}</span>
+                <span className="text-xs sm:text-sm lg:text-sm font-medium truncate">
+                  {item.label}
+                </span>
               </button>
             );
           })}
