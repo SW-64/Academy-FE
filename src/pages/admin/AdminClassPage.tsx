@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, UserPlus, UserMinus } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import MainLayout from '../MainLayout';
 
 type Student = {
