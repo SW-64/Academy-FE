@@ -2,12 +2,68 @@ import { useEffect, useState } from 'react';
 import { Plus, X, Trash2, Save, Upload } from 'lucide-react';
 import MainLayout from '../MainLayout';
 
+// 더미 클래스 데이터 (실제로는 API에서 가져와야 함)
+type ClassType = {
+  id: number;
+  name: string;
+  studentIds: number[];
+};
+
+const dummyClasses: ClassType[] = [
+  {
+    id: 1,
+    name: '예비고2 월금 정규반',
+    studentIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  },
+  {
+    id: 2,
+    name: '예비고2 화목 정규반',
+    studentIds: [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27],
+  },
+  {
+    id: 3,
+    name: '미적분1 기본 특강반',
+    studentIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+  },
+  {
+    id: 4,
+    name: '미적분1+2 통합 특강반',
+    studentIds: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 2, 4, 6],
+  },
+];
+
+// 더미 학생 데이터
+type Student = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  school: string;
+  grade: string;
+};
+
+const dummyStudents: Student[] = Array.from({ length: 30 }, (_, i) => ({
+  id: i + 1,
+  name: `학생${i + 1}`,
+  email: `student${i + 1}@example.com`,
+  phone: `010-${String(i + 1).padStart(4, '0')}-${String(i + 1).padStart(4, '0')}`,
+  school: [
+    '서울고등학교',
+    '부산고등학교',
+    '대전고등학교',
+    '인천고등학교',
+    '광주고등학교',
+  ][i % 5],
+  grade: `${(i % 3) + 1}학년`,
+}));
+
 type Video = {
   id: number;
   title: string;
   duration: string;
   videoFile?: File | null;
   videoFileName?: string;
+  selectedClasses?: { classId: number; studentIds: number[] }[];
 };
 
 const dummyVideos: Video[] = [
@@ -64,11 +120,13 @@ function AdminVideosPage() {
     title: '',
     videoFile: null as File | null,
     videoFileName: '',
+    selectedClasses: [] as { classId: number; studentIds: number[] }[],
   });
   const [editVideo, setEditVideo] = useState({
     title: '',
     videoFile: null as File | null,
     videoFileName: '',
+    selectedClasses: [] as { classId: number; studentIds: number[] }[],
   });
 
   const handleWrite = () => {
@@ -86,10 +144,11 @@ function AdminVideosPage() {
       videoFileName:
         newVideo.videoFileName ||
         (newVideo.videoFile ? newVideo.videoFile.name : ''),
+      selectedClasses: newVideo.selectedClasses,
     };
 
     setVideos(prev => [video, ...prev]);
-    setNewVideo({ title: '', videoFile: null, videoFileName: '' });
+    setNewVideo({ title: '', videoFile: null, videoFileName: '', selectedClasses: [] });
     setIsWriteModalOpen(false);
   };
 
@@ -99,6 +158,7 @@ function AdminVideosPage() {
       title: video.title,
       videoFile: null,
       videoFileName: video.videoFileName || '',
+      selectedClasses: video.selectedClasses || [],
     });
     setIsDetailModalOpen(true);
   };
@@ -120,6 +180,7 @@ function AdminVideosPage() {
               videoFile: editVideo.videoFile || video.videoFile,
               videoFileName:
                 editVideo.videoFileName || video.videoFileName || '',
+              selectedClasses: editVideo.selectedClasses,
             }
           : video
       )
@@ -318,6 +379,132 @@ function AdminVideosPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
+                  클래스 선택
+                </label>
+                <div className="space-y-3">
+                  {dummyClasses.map(classItem => {
+                    const isClassSelected = newVideo.selectedClasses.some(
+                      sc => sc.classId === classItem.id
+                    );
+                    const selectedClassData = newVideo.selectedClasses.find(
+                      sc => sc.classId === classItem.id
+                    );
+
+                    return (
+                      <div
+                        key={classItem.id}
+                        className="rounded-lg border border-slate-200 p-4"
+                      >
+                        <label className="flex items-center gap-2 cursor-pointer mb-3">
+                          <input
+                            type="checkbox"
+                            checked={isClassSelected}
+                            onChange={e => {
+                              if (e.target.checked) {
+                                setNewVideo({
+                                  ...newVideo,
+                                  selectedClasses: [
+                                    ...newVideo.selectedClasses,
+                                    { classId: classItem.id, studentIds: [] },
+                                  ],
+                                });
+                              } else {
+                                setNewVideo({
+                                  ...newVideo,
+                                  selectedClasses: newVideo.selectedClasses.filter(
+                                    sc => sc.classId !== classItem.id
+                                  ),
+                                });
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
+                          />
+                          <span className="text-sm font-medium text-slate-700">
+                            {classItem.name}
+                          </span>
+                        </label>
+
+                        {isClassSelected && (
+                          <div className="ml-6 mt-2">
+                            <label className="block text-xs font-medium text-slate-600 mb-2">
+                              학생 선택
+                            </label>
+                            <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 p-2 space-y-1.5">
+                              {classItem.studentIds.map(studentId => {
+                                const student = dummyStudents.find(
+                                  s => s.id === studentId
+                                );
+                                if (!student) return null;
+                                return (
+                                  <label
+                                    key={studentId}
+                                    className="flex items-center gap-2 cursor-pointer"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={
+                                        selectedClassData?.studentIds.includes(
+                                          studentId
+                                        ) || false
+                                      }
+                                      onChange={e => {
+                                        const classIndex =
+                                          newVideo.selectedClasses.findIndex(
+                                            sc => sc.classId === classItem.id
+                                          );
+                                        if (classIndex === -1) return;
+
+                                        const updatedClasses = [
+                                          ...newVideo.selectedClasses,
+                                        ];
+                                        if (e.target.checked) {
+                                          updatedClasses[classIndex] = {
+                                            ...updatedClasses[classIndex],
+                                            studentIds: [
+                                              ...updatedClasses[classIndex]
+                                                .studentIds,
+                                              studentId,
+                                            ],
+                                          };
+                                        } else {
+                                          updatedClasses[classIndex] = {
+                                            ...updatedClasses[classIndex],
+                                            studentIds:
+                                              updatedClasses[classIndex].studentIds.filter(
+                                                id => id !== studentId
+                                              ),
+                                          };
+                                        }
+                                        setNewVideo({
+                                          ...newVideo,
+                                          selectedClasses: updatedClasses,
+                                        });
+                                      }}
+                                      className="h-3.5 w-3.5 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
+                                    />
+                                    <span className="text-xs text-slate-700">
+                                      {student.name} ({student.school}{' '}
+                                      {student.grade})
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                            {selectedClassData && (
+                              <p className="mt-2 text-xs text-slate-500">
+                                선택된 학생: {selectedClassData.studentIds.length}명
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   영상 파일
                 </label>
                 <div className="space-y-3">
@@ -372,6 +559,7 @@ function AdminVideosPage() {
                     title: '',
                     videoFile: null,
                     videoFileName: '',
+                    selectedClasses: [],
                   });
                 }}
                 className="rounded-lg border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
@@ -425,6 +613,132 @@ function AdminVideosPage() {
                   }
                   className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  클래스 선택
+                </label>
+                <div className="space-y-3">
+                  {dummyClasses.map(classItem => {
+                    const isClassSelected = editVideo.selectedClasses.some(
+                      sc => sc.classId === classItem.id
+                    );
+                    const selectedClassData = editVideo.selectedClasses.find(
+                      sc => sc.classId === classItem.id
+                    );
+
+                    return (
+                      <div
+                        key={classItem.id}
+                        className="rounded-lg border border-slate-200 p-4"
+                      >
+                        <label className="flex items-center gap-2 cursor-pointer mb-3">
+                          <input
+                            type="checkbox"
+                            checked={isClassSelected}
+                            onChange={e => {
+                              if (e.target.checked) {
+                                setEditVideo({
+                                  ...editVideo,
+                                  selectedClasses: [
+                                    ...editVideo.selectedClasses,
+                                    { classId: classItem.id, studentIds: [] },
+                                  ],
+                                });
+                              } else {
+                                setEditVideo({
+                                  ...editVideo,
+                                  selectedClasses: editVideo.selectedClasses.filter(
+                                    sc => sc.classId !== classItem.id
+                                  ),
+                                });
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
+                          />
+                          <span className="text-sm font-medium text-slate-700">
+                            {classItem.name}
+                          </span>
+                        </label>
+
+                        {isClassSelected && (
+                          <div className="ml-6 mt-2">
+                            <label className="block text-xs font-medium text-slate-600 mb-2">
+                              학생 선택
+                            </label>
+                            <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 p-2 space-y-1.5">
+                              {classItem.studentIds.map(studentId => {
+                                const student = dummyStudents.find(
+                                  s => s.id === studentId
+                                );
+                                if (!student) return null;
+                                return (
+                                  <label
+                                    key={studentId}
+                                    className="flex items-center gap-2 cursor-pointer"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={
+                                        selectedClassData?.studentIds.includes(
+                                          studentId
+                                        ) || false
+                                      }
+                                      onChange={e => {
+                                        const classIndex =
+                                          editVideo.selectedClasses.findIndex(
+                                            sc => sc.classId === classItem.id
+                                          );
+                                        if (classIndex === -1) return;
+
+                                        const updatedClasses = [
+                                          ...editVideo.selectedClasses,
+                                        ];
+                                        if (e.target.checked) {
+                                          updatedClasses[classIndex] = {
+                                            ...updatedClasses[classIndex],
+                                            studentIds: [
+                                              ...updatedClasses[classIndex]
+                                                .studentIds,
+                                              studentId,
+                                            ],
+                                          };
+                                        } else {
+                                          updatedClasses[classIndex] = {
+                                            ...updatedClasses[classIndex],
+                                            studentIds:
+                                              updatedClasses[classIndex].studentIds.filter(
+                                                id => id !== studentId
+                                              ),
+                                          };
+                                        }
+                                        setEditVideo({
+                                          ...editVideo,
+                                          selectedClasses: updatedClasses,
+                                        });
+                                      }}
+                                      className="h-3.5 w-3.5 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
+                                    />
+                                    <span className="text-xs text-slate-700">
+                                      {student.name} ({student.school}{' '}
+                                      {student.grade})
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                            {selectedClassData && (
+                              <p className="mt-2 text-xs text-slate-500">
+                                선택된 학생: {selectedClassData.studentIds.length}명
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>
