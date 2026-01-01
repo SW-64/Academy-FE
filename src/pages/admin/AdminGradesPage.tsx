@@ -1,55 +1,58 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Plus, UserPlus, UserMinus, ChevronDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, Plus, ChevronDown } from 'lucide-react';
 import MainLayout from '../MainLayout';
-import { examRecords, students } from '../../data/gradesData';
-import type { ExamRecord, GradeLevel } from '../../data/gradesData';
-
-// 등급 계산 함수
-function calculateGrade(score: number): GradeLevel {
-  if (score >= 90) return 'A';
-  if (score >= 80) return 'B';
-  if (score >= 70) return 'C';
-  if (score >= 60) return 'D';
-  return 'F';
-}
+import { examRecords } from '../../data/gradesData';
+import type { ExamRecord } from '../../data/gradesData';
 
 type SortOption = 'latest' | 'avgScore';
-type StudentSortOption = 'name' | 'score';
+
+// 더미 클래스 데이터
+const dummyClasses = [
+  { id: 1, name: '예비고2 월금 정규반' },
+  { id: 2, name: '예비고2 화목 정규반' },
+  { id: 3, name: '미적분1 기본 특강반' },
+  { id: 4, name: '미적분1+2 통합 특강반' },
+];
 
 function AdminGradesPage() {
+  const navigate = useNavigate();
   const [selectedMonth, setSelectedMonth] = useState<number>(2); // 기본값: 2월
   const [sortOption, setSortOption] = useState<SortOption>('latest');
   const [showCalendar, setShowCalendar] = useState(false);
   const [useMonthDropdown, setUseMonthDropdown] = useState(false);
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
   const monthDropdownRef = useRef<HTMLDivElement>(null);
-  const [studentSortOption, setStudentSortOption] =
-    useState<StudentSortOption>('name'); // 기본값: 이름순
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
   const [selectedExam, setSelectedExam] = useState<{
     date: string;
     dateFormatted: string;
+    name: string;
     records: ExamRecord[];
     averageScore: number;
     totalStudents: number;
+    questions?: {
+      questionNumber: number;
+      points: number;
+      errorRate?: number;
+    }[];
   } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddExamModalOpen, setIsAddExamModalOpen] = useState(false);
-  const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
   const [examRecordsState, setExamRecordsState] =
     useState<ExamRecord[]>(examRecords);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editDate, setEditDate] = useState('');
+  const [editExamName, setEditExamName] = useState('');
+  const [editQuestions, setEditQuestions] = useState<
+    { questionNumber: number; points: number; errorRate?: number }[]
+  >([]);
 
   // 새 시험 추가 폼
   const [newExam, setNewExam] = useState({
+    name: '',
     date: '',
-    students: [] as { studentId: number; score: number }[],
-  });
-
-  // 학생 추가 폼
-  const [newStudent, setNewStudent] = useState({
-    studentId: '',
-    score: '',
+    questions: [] as { questionNumber: number; points: number }[],
   });
 
   // 캘린더 표시 여부 설정 (너비 1350px 이상일 때 표시)
@@ -101,6 +104,7 @@ function AdminGradesPage() {
     return {
       date,
       dateFormatted,
+      name: `${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일 시험`, // 기본 시험 이름
       records,
       averageScore:
         Math.round(
@@ -127,62 +131,26 @@ function AdminGradesPage() {
       }
     });
 
-  // 이번 달 요약 데이터 계산
-  const currentMonthExams = allExamsByDate.filter(exam => {
-    const examDate = new Date(exam.date);
-    return (
-      examDate.getMonth() + 1 === selectedMonth &&
-      examDate.getFullYear() === 2026
-    );
-  });
-
-  const currentMonthStats = {
-    examCount: currentMonthExams.length,
-    averageScore:
-      currentMonthExams.length > 0
-        ? Math.round(
-            (currentMonthExams.reduce((sum, e) => sum + e.averageScore, 0) /
-              currentMonthExams.length) *
-              10
-          ) / 10
-        : 0,
-    totalStudents: 30, // 고정값
-    previousMonthChange:
-      selectedMonth > 1
-        ? (() => {
-            const prevMonthExams = allExamsByDate.filter(exam => {
-              const examDate = new Date(exam.date);
-              return (
-                examDate.getMonth() + 1 === selectedMonth - 1 &&
-                examDate.getFullYear() === 2026
-              );
-            });
-            const prevAvg =
-              prevMonthExams.length > 0
-                ? prevMonthExams.reduce((sum, e) => sum + e.averageScore, 0) /
-                  prevMonthExams.length
-                : 0;
-            const currentAvg =
-              currentMonthExams.length > 0
-                ? currentMonthExams.reduce(
-                    (sum, e) => sum + e.averageScore,
-                    0
-                  ) / currentMonthExams.length
-                : 0;
-            return Math.round((currentAvg - prevAvg) * 10) / 10;
-          })()
-        : 0,
-  };
-
   const handleExamClick = (exam: (typeof allExamsByDate)[0]) => {
-    setSelectedExam(exam);
-    setStudentSortOption('name'); // 모달 열 때 기본값으로 리셋
+    // 시험 추가에서 설정한 문항 정보를 가져옴 (임시로 더미 데이터 사용)
+    // 실제로는 시험 저장 시 questions 정보도 함께 저장되어야 함
+    const examQuestions = [
+      { questionNumber: 1, points: 5, errorRate: undefined },
+      { questionNumber: 2, points: 5, errorRate: undefined },
+      { questionNumber: 3, points: 10, errorRate: undefined },
+    ];
+
+    setSelectedExam({
+      ...exam,
+      questions: examQuestions,
+    });
     setEditDate(exam.date);
+    setEditExamName(exam.name);
     setIsEditMode(false);
     setIsModalOpen(true);
   };
 
-  const handleGenerateAverage = () => {
+  const handleGenerateAverageForDetail = () => {
     if (!selectedExam) return;
     const averageScore =
       Math.round(
@@ -200,6 +168,11 @@ function AdminGradesPage() {
 
   const handleSaveEdit = () => {
     if (!selectedExam) return;
+
+    if (!editExamName.trim()) {
+      alert('시험 이름을 입력해주세요.');
+      return;
+    }
 
     // 날짜 변경 시 examRecordsState 업데이트
     if (editDate !== selectedExam.date) {
@@ -219,6 +192,7 @@ function AdminGradesPage() {
 
     setSelectedExam({
       ...selectedExam,
+      name: editExamName,
       date: editDate,
       dateFormatted,
     });
@@ -245,218 +219,51 @@ function AdminGradesPage() {
     const year = 2026;
     const month = selectedMonth;
     const defaultDate = `${year}-${String(month).padStart(2, '0')}-01`;
-    setNewExam({ date: defaultDate, students: [] });
+    setNewExam({ name: '', date: defaultDate, questions: [] });
     setIsAddExamModalOpen(true);
   };
 
   const handleSaveExam = () => {
+    if (!newExam.name) {
+      alert('시험 이름을 입력해주세요.');
+      return;
+    }
     if (!newExam.date) {
       alert('날짜를 선택해주세요.');
       return;
     }
-    if (newExam.students.length === 0) {
-      alert('최소 한 명의 학생을 추가해주세요.');
+    if (newExam.questions.length === 0) {
+      alert('최소 한 개의 문항을 추가해주세요.');
       return;
     }
 
-    const dateObj = new Date(newExam.date);
-    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(
-      2,
-      '0'
-    )}/${String(dateObj.getDate()).padStart(2, '0')}`;
-
-    const newRecords: ExamRecord[] = newExam.students
-      .map(({ studentId, score }) => {
-        const student = students.find(s => s.id === studentId);
-        if (!student) return null;
-
-        const existingRecords = examRecordsState.filter(
-          r => r.studentId === studentId
-        );
-        const cumulativeSum =
-          existingRecords.reduce((sum, r) => sum + r.score, 0) + score;
-        const average =
-          Math.round((cumulativeSum / (existingRecords.length + 1)) * 10) / 10;
-
-        return {
-          studentId,
-          studentName: student.name,
-          date: newExam.date,
-          dateFormatted,
-          score,
-          average,
-          grade: calculateGrade(score),
-          targetScore: student.targetScore,
-          differenceFromTarget: score - student.targetScore,
-        };
-      })
-      .filter((record): record is ExamRecord => record !== null);
-
-    setExamRecordsState(prev => [...prev, ...newRecords]);
-    setNewExam({ date: '', students: [] });
+    // 시험 저장 로직 (나중에 API로 교체)
+    alert('시험이 추가되었습니다.');
+    setNewExam({ name: '', date: '', questions: [] });
     setIsAddExamModalOpen(false);
   };
 
-  const handleAddAllStudents = () => {
-    const allStudentIds = students.map(s => s.id);
-    const existingStudentIds = newExam.students.map(s => s.studentId);
-    const studentsToAdd = allStudentIds.filter(
-      id => !existingStudentIds.includes(id)
-    );
-
-    const newStudents = studentsToAdd.map(studentId => ({
-      studentId,
-      score: 0,
-    }));
-
+  const handleAddQuestion = () => {
+    const nextQuestionNumber = newExam.questions.length + 1;
     setNewExam(prev => ({
       ...prev,
-      students: [...prev.students, ...newStudents],
+      questions: [
+        ...prev.questions,
+        { questionNumber: nextQuestionNumber, points: 0 },
+      ],
     }));
   };
 
-  const handleAddStudentToExam = () => {
-    if (!newStudent.studentId || !newStudent.score) {
-      alert('학생과 점수를 모두 입력해주세요.');
-      return;
-    }
-
-    const studentId = Number(newStudent.studentId);
-    const score = Number(newStudent.score);
-
-    if (isNaN(studentId) || isNaN(score) || score < 0 || score > 100) {
-      alert('올바른 점수를 입력해주세요. (0-100)');
-      return;
-    }
-
-    if (newExam.students.some(s => s.studentId === studentId)) {
-      alert('이미 추가된 학생입니다.');
-      return;
-    }
-
+  const handleRemoveQuestion = (index: number) => {
     setNewExam(prev => ({
       ...prev,
-      students: [...prev.students, { studentId, score }],
-    }));
-
-    setNewStudent({ studentId: '', score: '' });
-  };
-
-  const handleRemoveStudentFromExam = (studentId: number) => {
-    setNewExam(prev => ({
-      ...prev,
-      students: prev.students.filter(s => s.studentId !== studentId),
+      questions: prev.questions.filter((_, i) => i !== index),
     }));
   };
 
-  const handleAddStudentToDetail = () => {
-    if (!selectedExam) return;
-    setIsAddStudentModalOpen(true);
-  };
-
-  const handleSaveStudentToDetail = () => {
-    if (!selectedExam || !newStudent.studentId || !newStudent.score) {
-      alert('학생과 점수를 모두 입력해주세요.');
-      return;
-    }
-
-    const studentId = Number(newStudent.studentId);
-    const score = Number(newStudent.score);
-
-    if (isNaN(studentId) || isNaN(score) || score < 0 || score > 100) {
-      alert('올바른 점수를 입력해주세요. (0-100)');
-      return;
-    }
-
-    if (selectedExam.records.some(r => r.studentId === studentId)) {
-      alert('이미 추가된 학생입니다.');
-      return;
-    }
-
-    const student = students.find(s => s.id === studentId);
-    if (!student) return;
-
-    const dateObj = new Date(selectedExam.date);
-    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(
-      2,
-      '0'
-    )}/${String(dateObj.getDate()).padStart(2, '0')}`;
-
-    const existingRecords = examRecordsState.filter(
-      r => r.studentId === studentId
-    );
-    const cumulativeSum =
-      existingRecords.reduce((sum, r) => sum + r.score, 0) + score;
-    const average =
-      Math.round((cumulativeSum / (existingRecords.length + 1)) * 10) / 10;
-
-    const newRecord: ExamRecord = {
-      studentId,
-      studentName: student.name,
-      date: selectedExam.date,
-      dateFormatted,
-      score,
-      average,
-      grade: calculateGrade(score),
-      targetScore: student.targetScore,
-      differenceFromTarget: score - student.targetScore,
-    };
-
-    setExamRecordsState(prev => [...prev, newRecord]);
-
-    setSelectedExam(prev => {
-      if (!prev) return null;
-      const updatedRecords = [...prev.records, newRecord];
-      const averageScore =
-        Math.round(
-          (updatedRecords.reduce((sum, r) => sum + r.score, 0) /
-            updatedRecords.length) *
-            10
-        ) / 10;
-      return {
-        ...prev,
-        records: updatedRecords,
-        averageScore,
-        totalStudents: updatedRecords.length,
-      };
-    });
-
-    setNewStudent({ studentId: '', score: '' });
-    setIsAddStudentModalOpen(false);
-  };
-
-  const handleRemoveStudentFromDetail = (studentId: number) => {
-    if (!selectedExam) return;
-
-    setExamRecordsState(prev =>
-      prev.filter(
-        r => !(r.date === selectedExam.date && r.studentId === studentId)
-      )
-    );
-
-    // 모달의 selectedExam 업데이트
-    setSelectedExam(prev => {
-      if (!prev) return null;
-      const updatedRecords = prev.records.filter(
-        r => r.studentId !== studentId
-      );
-      if (updatedRecords.length === 0) {
-        setIsModalOpen(false);
-        return null;
-      }
-      const averageScore =
-        Math.round(
-          (updatedRecords.reduce((sum, r) => sum + r.score, 0) /
-            updatedRecords.length) *
-            10
-        ) / 10;
-      return {
-        ...prev,
-        records: updatedRecords,
-        averageScore,
-        totalStudents: updatedRecords.length,
-      };
-    });
+  const handleGenerateErrorRate = () => {
+    // 오답률 생성 로직 (나중에 API로 교체)
+    alert('오답률이 생성되었습니다.');
   };
 
   ``;
@@ -465,232 +272,264 @@ function AdminGradesPage() {
       {/* 헤더 */}
       <header className="mb-6">
         <div className="mb-2">
-          <h1 className="text-2xl font-semibold text-slate-900">성적 관리</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">시험 관리</h1>
         </div>
+        {selectedClassId && (
+          <>
+            <button
+              type="button"
+              onClick={() => setSelectedClassId(null)}
+              className="mt-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+            >
+              ← 클래스 선택으로 돌아가기
+            </button>
+            <div className="mt-4">
+              <h2 className="text-lg font-semibold text-slate-900">
+                {dummyClasses.find(c => c.id === selectedClassId)?.name}
+              </h2>
+            </div>
+          </>
+        )}
       </header>
-      요약 카드
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-medium text-slate-600 mb-1">
-            이번 달 시험 수
+
+      {/* 클래스 선택 */}
+      {!selectedClassId && (
+        <section className="mb-6">
+          <h2 className="mb-4 text-lg font-semibold text-slate-900">
+            클래스 선택
+          </h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {dummyClasses.map(classItem => (
+              <button
+                key={classItem.id}
+                type="button"
+                onClick={() => setSelectedClassId(classItem.id)}
+                className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70 transition-shadow hover:shadow-md text-left"
+              >
+                <h3 className="text-lg font-semibold text-slate-900">
+                  {classItem.name}
+                </h3>
+              </button>
+            ))}
           </div>
-          <div className="text-2xl font-bold text-slate-900">
-            {currentMonthStats.examCount}개
-          </div>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-medium text-slate-600 mb-1">
-            이번 달 평균 점수
-          </div>
-          <div className="text-2xl font-bold text-slate-900">
-            {currentMonthStats.averageScore}점
-          </div>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-medium text-slate-600 mb-1">
-            참여 학생 수
-          </div>
-          <div className="text-2xl font-bold text-slate-900">
-            {currentMonthStats.totalStudents}명
-          </div>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-medium text-slate-600 mb-1">
-            전월 대비 증감
-          </div>
-          <div
-            className={`text-2xl font-bold ${
-              currentMonthStats.previousMonthChange >= 0
-                ? 'text-emerald-600'
-                : 'text-red-600'
-            }`}
-          >
-            {currentMonthStats.previousMonthChange >= 0 ? '+' : ''}
-            {currentMonthStats.previousMonthChange}점
-          </div>
-        </div>
-      </div>
-      {/* 년도 및 월 선택 */}
-      <div className="mb-4 sm:mb-6">
-        <div className="mb-3 sm:mb-0 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <span className="text-base sm:text-lg font-semibold text-slate-900">
-              2026년
-            </span>
-            {useMonthDropdown ? (
-              <div className="relative" ref={monthDropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setIsMonthDropdownOpen(!isMonthDropdownOpen)}
-                  className="flex w-17 items-center justify-between rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:bg-slate-50 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                >
-                  <span>{selectedMonth}월</span>
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                      isMonthDropdownOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
-                {isMonthDropdownOpen && (
-                  <div className="absolute left-0 top-full z-50 mt-1 w-17 rounded-xl border border-slate-300 bg-white shadow-lg">
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-                      <button
-                        key={month}
-                        type="button"
-                        onClick={() => {
-                          setSelectedMonth(month);
-                          setIsMonthDropdownOpen(false);
-                        }}
-                        className={`w-full px-3 py-2 text-left text-sm transition-colors first:rounded-t-xl last:rounded-b-xl ${
-                          selectedMonth === month
-                            ? 'bg-[#084773] text-white'
-                            : 'text-slate-800 hover:bg-slate-50'
+        </section>
+      )}
+
+      {/* 클래스 선택 시 표시되는 내용 */}
+      {selectedClassId && (
+        <>
+          {/* 년도 및 월 선택 */}
+          <div className="mb-4 sm:mb-6">
+            <div className="mb-3 sm:mb-0 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <span className="text-base sm:text-lg font-semibold text-slate-900">
+                  2026년
+                </span>
+                {useMonthDropdown ? (
+                  <div className="relative" ref={monthDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setIsMonthDropdownOpen(!isMonthDropdownOpen)
+                      }
+                      className="flex w-17 items-center justify-between rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm transition-colors hover:bg-slate-50 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                    >
+                      <span>{selectedMonth}월</span>
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform ${
+                          isMonthDropdownOpen ? 'rotate-180' : ''
                         }`}
-                      >
-                        {month}월
-                      </button>
-                    ))}
+                      />
+                    </button>
+                    {isMonthDropdownOpen && (
+                      <div className="absolute left-0 top-full z-50 mt-1 w-17 rounded-xl border border-slate-300 bg-white shadow-lg">
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                          month => (
+                            <button
+                              key={month}
+                              type="button"
+                              onClick={() => {
+                                setSelectedMonth(month);
+                                setIsMonthDropdownOpen(false);
+                              }}
+                              className={`w-full px-3 py-2 text-left text-sm transition-colors first:rounded-t-xl last:rounded-b-xl ${
+                                selectedMonth === month
+                                  ? 'bg-[#084773] text-white'
+                                  : 'text-slate-800 hover:bg-slate-50'
+                              }`}
+                            >
+                              {month}월
+                            </button>
+                          )
+                        )}
+                      </div>
+                    )}
                   </div>
+                ) : (
+                  <>
+                    {/* 1260px 이하: 2줄 배치 (1~6월, 7~12월) */}
+                    <div className="min-[1261px]:hidden flex flex-col gap-2">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                        {Array.from({ length: 6 }, (_, i) => i + 1).map(
+                          month => (
+                            <button
+                              key={month}
+                              type="button"
+                              onClick={() => setSelectedMonth(month)}
+                              className={`rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
+                                selectedMonth === month
+                                  ? 'bg-[#084773] text-white'
+                                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
+                              }`}
+                            >
+                              {month}월
+                            </button>
+                          )
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                        {Array.from({ length: 6 }, (_, i) => i + 7).map(
+                          month => (
+                            <button
+                              key={month}
+                              type="button"
+                              onClick={() => setSelectedMonth(month)}
+                              className={`rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
+                                selectedMonth === month
+                                  ? 'bg-[#084773] text-white'
+                                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
+                              }`}
+                            >
+                              {month}월
+                            </button>
+                          )
+                        )}
+                      </div>
+                    </div>
+                    {/* 1261px 이상: 1줄 배치 */}
+                    <div className="hidden min-[1261px]:flex flex-wrap gap-2">
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                        month => (
+                          <button
+                            key={month}
+                            type="button"
+                            onClick={() => setSelectedMonth(month)}
+                            className={`rounded-lg ${
+                              month >= 10 ? 'px-3' : 'px-4'
+                            } py-2 text-sm font-medium transition-colors ${
+                              selectedMonth === month
+                                ? 'bg-[#084773] text-white'
+                                : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
+                            }`}
+                          >
+                            {month}월
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
-            ) : (
-              <>
-                {/* 1260px 이하: 2줄 배치 (1~6월, 7~12월) */}
-                <div className="min-[1261px]:hidden flex flex-col gap-2">
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                    {Array.from({ length: 6 }, (_, i) => i + 1).map(month => (
-                      <button
-                        key={month}
-                        type="button"
-                        onClick={() => setSelectedMonth(month)}
-                        className={`rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
-                          selectedMonth === month
-                            ? 'bg-[#084773] text-white'
-                            : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
-                        }`}
-                      >
-                        {month}월
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                    {Array.from({ length: 6 }, (_, i) => i + 7).map(month => (
-                      <button
-                        key={month}
-                        type="button"
-                        onClick={() => setSelectedMonth(month)}
-                        className={`rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
-                          selectedMonth === month
-                            ? 'bg-[#084773] text-white'
-                            : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
-                        }`}
-                      >
-                        {month}월
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {/* 1261px 이상: 1줄 배치 */}
-                <div className="hidden min-[1261px]:flex flex-wrap gap-2">
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-                    <button
-                      key={month}
-                      type="button"
-                      onClick={() => setSelectedMonth(month)}
-                      className={`rounded-lg ${
-                        month >= 10 ? 'px-3' : 'px-4'
-                      } py-2 text-sm font-medium transition-colors ${
-                        selectedMonth === month
-                          ? 'bg-[#084773] text-white'
-                          : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
-                      }`}
-                    >
-                      {month}월
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={handleAddExam}
-            className="flex items-center gap-2 rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a] flex-shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            시험 추가
-          </button>
-        </div>
-      </div>
-      {/* 시험 목록 테이블 */}
-      <section className="mb-4 sm:mb-6">
-        <div className="flex justify-center">
-          <div className="w-full max-w-[1200px]">
-            <div className="mb-3 sm:mb-4 flex items-center justify-between">
-              <h2 className="text-base sm:text-lg font-semibold text-slate-900">
-                시험 목록
-              </h2>
-              <select
-                value={sortOption}
-                onChange={e => setSortOption(e.target.value as SortOption)}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773] bg-white"
+              <button
+                type="button"
+                onClick={handleAddExam}
+                className="flex items-center gap-2 rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a] flex-shrink-0"
               >
-                <option value="latest">최신순</option>
-                <option value="avgScore">평균점수 높은순</option>
-              </select>
+                <Plus className="h-4 w-4" />
+                시험 추가
+              </button>
             </div>
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 bg-white">
-                      <th className="px-4 py-3 text-left text-sm font-bold text-slate-900">
-                        날짜
-                      </th>
-                      <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
-                        평균 점수
-                      </th>
-                      <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
-                        참여 학생
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredExams.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={3}
-                          className="px-4 py-8 text-center text-sm text-slate-500"
-                        >
-                          {selectedMonth}월에 시험 기록이 없습니다.
-                        </td>
+          </div>
+        </>
+      )}
+
+      {/* 시험 목록 테이블 - 클래스 선택 시에만 표시 */}
+      {selectedClassId && (
+        <section className="mb-4 sm:mb-6">
+          <div className="flex justify-center">
+            <div className="w-full max-w-[1200px]">
+              <div className="mb-3 sm:mb-4 flex items-center justify-between">
+                <h2 className="text-base sm:text-lg font-semibold text-slate-900">
+                  시험 목록
+                </h2>
+                <select
+                  value={sortOption}
+                  onChange={e => setSortOption(e.target.value as SortOption)}
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773] bg-white"
+                >
+                  <option value="latest">최신순</option>
+                  <option value="avgScore">평균점수 높은순</option>
+                </select>
+              </div>
+              <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-white">
+                        <th className="px-4 py-3 text-left text-sm font-bold text-slate-900">
+                          회차
+                        </th>
+                        <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
+                          평균 점수
+                        </th>
+                        <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
+                          작업
+                        </th>
                       </tr>
-                    ) : (
-                      filteredExams.map(exam => (
-                        <tr
-                          key={exam.date}
-                          onClick={() => handleExamClick(exam)}
-                          className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50"
-                        >
-                          <td className="px-4 py-3 text-sm text-slate-900">
-                            {exam.dateFormatted}
-                          </td>
-                          <td className="px-4 py-3 text-sm font-medium text-slate-900 text-right">
-                            {exam.averageScore}점
-                          </td>
-                          <td className="px-4 py-3 text-sm text-slate-600 text-right">
-                            {exam.totalStudents}명
+                    </thead>
+                    <tbody>
+                      {filteredExams.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={3}
+                            className="px-4 py-8 text-center text-sm text-slate-500"
+                          >
+                            {selectedMonth}월에 시험 기록이 없습니다.
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        filteredExams.map(exam => (
+                          <tr
+                            key={exam.date}
+                            className="border-b border-slate-100 transition-colors hover:bg-slate-50"
+                          >
+                            <td className="px-4 py-3 text-sm text-slate-900">
+                              {exam.name}
+                            </td>
+                            <td className="px-4 py-3 text-sm font-medium text-slate-900 text-right">
+                              {exam.averageScore}점
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleExamClick(exam)}
+                                  className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700"
+                                >
+                                  시험 상세
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    navigate(`/admin/grades/${exam.date}`)
+                                  }
+                                  className="rounded-lg bg-[#084773] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#063a5a]"
+                                >
+                                  성적 상세
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
       {/* 시험 추가 모달 */}
       {isAddExamModalOpen && (
         <div
@@ -698,160 +537,151 @@ function AdminGradesPage() {
           onClick={() => setIsAddExamModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-3xl rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto"
+            className="relative w-full max-w-5xl h-[90vh] rounded-2xl bg-white shadow-xl overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setIsAddExamModalOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+              className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 z-10"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <h2 className="mb-6 text-2xl font-semibold text-slate-900">
-              시험 추가
-            </h2>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  날짜
-                </label>
-                <input
-                  type="date"
-                  value={newExam.date}
-                  onChange={e =>
-                    setNewExam({ ...newExam, date: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                />
-              </div>
-
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <label className="block text-sm font-medium text-slate-700">
-                    학생 추가
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleAddAllStudents}
-                    className="flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
-                  >
-                    <UserPlus className="h-3 w-3" />
-                    현재 학생 모두 추가
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <select
-                    value={newStudent.studentId}
-                    onChange={e =>
-                      setNewStudent({
-                        ...newStudent,
-                        studentId: e.target.value,
-                      })
-                    }
-                    className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                  >
-                    <option value="">학생 선택</option>
-                    {students
-                      .filter(
-                        s => !newExam.students.some(es => es.studentId === s.id)
-                      )
-                      .map(student => (
-                        <option key={student.id} value={student.id}>
-                          {student.name}
-                        </option>
-                      ))}
-                  </select>
-                  <input
-                    type="number"
-                    value={newStudent.score}
-                    onChange={e =>
-                      setNewStudent({ ...newStudent, score: e.target.value })
-                    }
-                    placeholder="점수"
-                    min="0"
-                    max="100"
-                    className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddStudentToExam}
-                    className="rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
-                  >
-                    추가
-                  </button>
-                </div>
-              </div>
-
-              {newExam.students.length > 0 && (
-                <div>
-                  <h3 className="mb-3 text-sm font-semibold text-slate-900">
-                    추가된 학생 목록
-                  </h3>
-                  <div className="space-y-2">
-                    {newExam.students.map(({ studentId, score }, index) => {
-                      const student = students.find(s => s.id === studentId);
-                      return (
-                        <div
-                          key={studentId}
-                          className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2"
-                        >
-                          <span className="text-sm font-medium text-slate-900 flex-shrink-0">
-                            {student?.name}
-                          </span>
-                          <div className="flex items-center gap-2 flex-1 max-w-xs">
-                            <input
-                              type="number"
-                              value={score}
-                              onChange={e => {
-                                const newScore = Number(e.target.value);
-                                if (
-                                  !isNaN(newScore) &&
-                                  newScore >= 0 &&
-                                  newScore <= 100
-                                ) {
-                                  const updatedStudents = [...newExam.students];
-                                  updatedStudents[index] = {
-                                    ...updatedStudents[index],
-                                    score: newScore,
-                                  };
-                                  setNewExam({
-                                    ...newExam,
-                                    students: updatedStudents,
-                                  });
-                                }
-                              }}
-                              min="0"
-                              max="100"
-                              className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                            />
-                            <span className="text-sm text-slate-600">점</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleRemoveStudentFromExam(studentId)
-                            }
-                            className="rounded-lg bg-red-50 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 flex-shrink-0"
-                          >
-                            제거
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+            <div className="p-6 flex-shrink-0 border-b border-slate-200">
+              <h2 className="text-2xl font-semibold text-slate-900">
+                시험 추가
+              </h2>
             </div>
 
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    시험 이름 (회차)
+                  </label>
+                  <input
+                    type="text"
+                    value={newExam.name}
+                    onChange={e =>
+                      setNewExam({ ...newExam, name: e.target.value })
+                    }
+                    placeholder="예: 1회차 모의고사"
+                    className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    날짜
+                  </label>
+                  <input
+                    type="date"
+                    value={newExam.date}
+                    onChange={e =>
+                      setNewExam({ ...newExam, date: e.target.value })
+                    }
+                    className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                  />
+                </div>
+
+                <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <label className="block text-sm font-medium text-slate-700">
+                      문항 관리
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAddQuestion}
+                      className="flex items-center gap-1 rounded-lg bg-[#084773] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#063a5a]"
+                    >
+                      <Plus className="h-3 w-3" />
+                      문항 추가
+                    </button>
+                  </div>
+
+                  {newExam.questions.length > 0 ? (
+                    <div className="overflow-x-auto rounded-lg border border-slate-200">
+                      <table className="min-w-full border-collapse">
+                        <thead className="bg-slate-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                              문항번호
+                            </th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                              배점
+                            </th>
+                            <th className="px-4 py-3 text-right text-sm font-semibold text-slate-900">
+                              작업
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {newExam.questions.map((question, index) => (
+                            <tr
+                              key={index}
+                              className="border-b border-slate-100 hover:bg-slate-50"
+                            >
+                              <td className="px-4 py-3">
+                                <input
+                                  type="number"
+                                  value={question.questionNumber}
+                                  readOnly
+                                  disabled
+                                  className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm bg-slate-100 text-slate-600 cursor-not-allowed"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="number"
+                                  value={question.points}
+                                  onChange={e => {
+                                    const updatedQuestions = [
+                                      ...newExam.questions,
+                                    ];
+                                    updatedQuestions[index] = {
+                                      ...updatedQuestions[index],
+                                      points: Number(e.target.value),
+                                    };
+                                    setNewExam({
+                                      ...newExam,
+                                      questions: updatedQuestions,
+                                    });
+                                  }}
+                                  min="0"
+                                  className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                                />
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveQuestion(index)}
+                                  className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                                >
+                                  삭제
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                      문항이 없습니다. 문항을 추가해주세요.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 하단 고정 버튼 영역 */}
+            <div className="p-6 border-t border-slate-200 bg-white flex-shrink-0 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => {
                   setIsAddExamModalOpen(false);
-                  setNewExam({ date: '', students: [] });
+                  setNewExam({ name: '', date: '', questions: [] });
                 }}
                 className="rounded-lg border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
               >
@@ -875,358 +705,232 @@ function AdminGradesPage() {
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-4xl rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto"
+            className="relative w-full max-w-5xl h-[90vh] rounded-2xl bg-white shadow-xl overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+              className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 z-10"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-semibold text-slate-900 mb-2">
+            <div className="p-6 flex-shrink-0 border-b border-slate-200">
+              <h2 className="text-2xl font-semibold text-slate-900 mb-4">
                 시험 상세
               </h2>
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-slate-700">
-                  날짜:
-                </label>
-                <input
-                  type="date"
-                  value={isEditMode ? editDate : selectedExam.date}
-                  onChange={e => {
-                    if (isEditMode) {
-                      setEditDate(e.target.value);
-                    } else {
-                      // 일반 모드에서도 날짜 변경 가능
-                      setEditDate(e.target.value);
-                      setIsEditMode(true);
-                    }
-                  }}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                />
-              </div>
-            </div>
-
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-4 text-sm text-slate-600">
-                <span>평균 점수: {selectedExam.averageScore}점</span>
-                <span>참여 학생: {selectedExam.totalStudents}명</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <select
-                  value={studentSortOption}
-                  onChange={e =>
-                    setStudentSortOption(e.target.value as StudentSortOption)
-                  }
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773] bg-white"
-                >
-                  <option value="name">이름순</option>
-                  <option value="score">성적순</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={handleAddStudentToDetail}
-                  className="flex items-center gap-2 rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  학생 추가
-                </button>
-              </div>
-            </div>
-
-            {/* 학생별 성적 테이블 */}
-            <div className="overflow-x-auto rounded-xl bg-white border border-slate-200">
-              <table className="min-w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
-                      학생명
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
-                      점수
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
-                      등급
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-900">
-                      관리
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedExam.records
-                    .sort((a, b) => {
-                      if (studentSortOption === 'name') {
-                        return a.studentName.localeCompare(b.studentName, 'ko');
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-slate-700 w-24">
+                    시험 이름:
+                  </label>
+                  <input
+                    type="text"
+                    value={isEditMode ? editExamName : selectedExam.name}
+                    onChange={e => {
+                      if (isEditMode) {
+                        setEditExamName(e.target.value);
                       } else {
-                        return b.score - a.score;
+                        setEditExamName(e.target.value);
+                        setIsEditMode(true);
                       }
-                    })
-                    .map((record, index) => {
-                      const phoneNumber =
-                        record.studentId <= 3
-                          ? ['010-1111-2222', '010-3333-4444', '010-5555-6666'][
-                              record.studentId - 1
-                            ]
-                          : `010-${String(record.studentId).padStart(
-                              4,
-                              '0'
-                            )}-${String(record.studentId * 1111).slice(-4)}`;
+                    }}
+                    className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-slate-700 w-24">
+                    날짜:
+                  </label>
+                  <input
+                    type="date"
+                    value={isEditMode ? editDate : selectedExam.date}
+                    onChange={e => {
+                      if (isEditMode) {
+                        setEditDate(e.target.value);
+                      } else {
+                        setEditDate(e.target.value);
+                        setIsEditMode(true);
+                      }
+                    }}
+                    className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-slate-700 w-24">
+                    평균 점수:
+                  </label>
+                  <span className="text-sm text-slate-900">
+                    {selectedExam.averageScore}점
+                  </span>
+                </div>
+              </div>
+            </div>
 
-                      return (
+            <div className="flex-1 overflow-y-auto p-6">
+              {/* 문항, 배점, 오답률 테이블 */}
+              {selectedExam.questions && selectedExam.questions.length > 0 ? (
+                <div className="overflow-x-auto rounded-lg border border-slate-200">
+                  <table className="min-w-full border-collapse">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                          문항
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                          배점
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                          오답률
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(isEditMode
+                        ? editQuestions
+                        : selectedExam.questions
+                      ).map((question, index) => (
                         <tr
-                          key={`${record.studentId}-${record.date}`}
-                          className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
+                          key={index}
+                          className="border-b border-slate-100 hover:bg-slate-50"
                         >
-                          <td className="px-4 py-3 text-sm text-slate-900">
-                            {record.studentName}
-                          </td>
                           <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
+                            {isEditMode ? (
                               <input
                                 type="number"
-                                value={record.score}
+                                value={question.questionNumber}
                                 onChange={e => {
-                                  const newScore = Number(e.target.value);
-                                  if (
-                                    !isNaN(newScore) &&
-                                    newScore >= 0 &&
-                                    newScore <= 100
-                                  ) {
-                                    const updatedRecords = [
-                                      ...selectedExam.records,
-                                    ];
-                                    updatedRecords[index] = {
-                                      ...updatedRecords[index],
-                                      score: newScore,
-                                      grade: calculateGrade(newScore),
-                                    };
-                                    const averageScore =
-                                      Math.round(
-                                        (updatedRecords.reduce(
-                                          (sum, r) => sum + r.score,
-                                          0
-                                        ) /
-                                          updatedRecords.length) *
-                                          10
-                                      ) / 10;
-                                    setSelectedExam({
-                                      ...selectedExam,
-                                      records: updatedRecords,
-                                      averageScore,
-                                    });
-                                    // examRecordsState도 업데이트
-                                    setExamRecordsState(prev =>
-                                      prev.map(r =>
-                                        r.date === selectedExam.date &&
-                                        r.studentId === record.studentId
-                                          ? {
-                                              ...r,
-                                              score: newScore,
-                                              grade: calculateGrade(newScore),
-                                            }
-                                          : r
-                                      )
-                                    );
-                                  }
+                                  const updatedQuestions = [...editQuestions];
+                                  updatedQuestions[index] = {
+                                    ...updatedQuestions[index],
+                                    questionNumber: Number(e.target.value),
+                                  };
+                                  setEditQuestions(updatedQuestions);
+                                }}
+                                min="1"
+                                className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                              />
+                            ) : (
+                              <span className="text-sm text-slate-900">
+                                {question.questionNumber}번
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {isEditMode ? (
+                              <input
+                                type="number"
+                                value={question.points}
+                                onChange={e => {
+                                  const updatedQuestions = [...editQuestions];
+                                  updatedQuestions[index] = {
+                                    ...updatedQuestions[index],
+                                    points: Number(e.target.value),
+                                  };
+                                  setEditQuestions(updatedQuestions);
                                 }}
                                 min="0"
-                                max="100"
-                                className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                                className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                               />
-                              <span className="text-sm text-slate-900 font-medium">
-                                점
+                            ) : (
+                              <span className="text-sm text-slate-900">
+                                {question.points}점
                               </span>
-                              <span className="text-sm text-slate-500 ml-6">
-                                {phoneNumber}
-                              </span>
-                            </div>
+                            )}
                           </td>
                           <td className="px-4 py-3">
-                            <span
-                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                                record.grade === 'A'
-                                  ? 'bg-emerald-100 text-emerald-700'
-                                  : record.grade === 'B'
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : record.grade === 'C'
-                                  ? 'bg-yellow-100 text-yellow-700'
-                                  : record.grade === 'D'
-                                  ? 'bg-orange-100 text-orange-700'
-                                  : 'bg-red-100 text-red-700'
-                              }`}
-                            >
-                              {record.grade}
+                            <span className="text-sm text-slate-900">
+                              {question.errorRate !== undefined
+                                ? `${question.errorRate}%`
+                                : '-'}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
-                            <div className="flex justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  handleRemoveStudentFromDetail(
-                                    record.studentId
-                                  );
-                                }}
-                                className="flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
-                              >
-                                <UserMinus className="h-3 w-3" />
-                                학생 빼기
-                              </button>
-                            </div>
-                          </td>
                         </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  문항이 없습니다. 시험 추가에서 문항을 설정해주세요.
+                </div>
+              )}
             </div>
 
-            {/* 평균 점수 생성 및 수정 버튼 */}
-            <div className="mt-6 flex items-center justify-between gap-3">
-              {isEditMode ? (
-                <>
-                  <div></div>
-                  <div className="flex gap-3">
+            {/* 하단 고정 버튼 영역 */}
+            <div className="p-6 border-t border-slate-200 bg-white flex-shrink-0 flex items-center justify-between">
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleGenerateErrorRate}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                >
+                  오답률 생성
+                </button>
+                <button
+                  type="button"
+                  onClick={handleGenerateAverageForDetail}
+                  className="rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
+                >
+                  평균 점수 생성
+                </button>
+              </div>
+              <div className="flex gap-3">
+                {isEditMode ? (
+                  <>
                     <button
                       type="button"
                       onClick={() => {
                         setEditDate(selectedExam.date);
+                        setEditExamName(selectedExam.name);
+                        setEditQuestions(
+                          selectedExam.questions
+                            ? [...selectedExam.questions]
+                            : []
+                        );
                         setIsEditMode(false);
                       }}
-                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                      className="rounded-lg border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
                     >
                       취소
                     </button>
                     <button
                       type="button"
                       onClick={handleSaveEdit}
-                      className="rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
+                      className="rounded-lg bg-[#084773] px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
                     >
                       저장
                     </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleGenerateAverage}
-                    className="rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
-                  >
-                    평균 점수 생성
-                  </button>
-                  <div className="flex gap-3">
+                  </>
+                ) : (
+                  <>
                     <button
                       type="button"
-                      onClick={() => setIsEditMode(true)}
-                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                      onClick={() => {
+                        setEditDate(selectedExam.date);
+                        setEditExamName(selectedExam.name);
+                        setEditQuestions(
+                          selectedExam.questions
+                            ? [...selectedExam.questions]
+                            : []
+                        );
+                        setIsEditMode(true);
+                      }}
+                      className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
                     >
                       수정
                     </button>
                     <button
                       type="button"
                       onClick={handleDeleteExam}
-                      className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                      className="rounded-lg bg-red-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
                     >
                       삭제
                     </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      {/* 학생 추가 모달 (상세 모달에서) */}
-      {isAddStudentModalOpen && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setIsAddStudentModalOpen(false)}
-        >
-          <div
-            className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setIsAddStudentModalOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <h2 className="mb-6 text-xl font-semibold text-slate-900">
-              학생 추가
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  학생 선택
-                </label>
-                <select
-                  value={newStudent.studentId}
-                  onChange={e =>
-                    setNewStudent({ ...newStudent, studentId: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                >
-                  <option value="">학생 선택</option>
-                  {students
-                    .filter(
-                      s =>
-                        !selectedExam?.records.some(r => r.studentId === s.id)
-                    )
-                    .map(student => (
-                      <option key={student.id} value={student.id}>
-                        {student.name}
-                      </option>
-                    ))}
-                </select>
+                  </>
+                )}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  점수
-                </label>
-                <input
-                  type="number"
-                  value={newStudent.score}
-                  onChange={e =>
-                    setNewStudent({ ...newStudent, score: e.target.value })
-                  }
-                  placeholder="0-100"
-                  min="0"
-                  max="100"
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsAddStudentModalOpen(false);
-                  setNewStudent({ studentId: '', score: '' });
-                }}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveStudentToDetail}
-                className="rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
-              >
-                추가
-              </button>
             </div>
           </div>
         </div>

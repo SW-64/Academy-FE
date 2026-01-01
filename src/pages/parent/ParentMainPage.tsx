@@ -51,7 +51,7 @@ function ParentMainPage() {
       childRecords.length > 0 ? childRecords[0].studentName : `학생${childId}`;
 
     const latestRecord = childRecords[0] || null;
-    
+
     // 학생 전체 평균을 90점으로 고정
     const allStudentsAverage = 90;
 
@@ -60,10 +60,12 @@ function ParentMainPage() {
       name: studentName,
       school: childInfo[childId]?.school || '고등학교',
       grade: childInfo[childId]?.grade || '1학년',
-      latestRecord: latestRecord ? {
-        ...latestRecord,
-        allStudentsAverage,
-      } : null,
+      latestRecord: latestRecord
+        ? {
+            ...latestRecord,
+            allStudentsAverage,
+          }
+        : null,
     };
   });
 
@@ -119,7 +121,7 @@ function ParentMainPage() {
             </button>
           </div>
           <div className="space-y-3">
-            {childrenRecords.map((child) => (
+            {childrenRecords.map(child => (
               <div
                 key={child.childId}
                 className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70"
@@ -169,7 +171,9 @@ function ParentMainPage() {
                         {/* 학생 전체 평균 막대 (왼쪽) */}
                         <div>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs text-slate-600">학생 전체 평균</span>
+                            <span className="text-xs text-slate-600">
+                              학생 전체 평균
+                            </span>
                             <span className="text-xs font-medium text-slate-700">
                               {child.latestRecord.allStudentsAverage}점
                             </span>
@@ -178,16 +182,21 @@ function ParentMainPage() {
                             <div
                               className="bg-blue-500 h-full flex items-center justify-end pr-2 rounded-full"
                               style={{
-                                width: `${(child.latestRecord.allStudentsAverage / 100) * 100}%`,
+                                width: `${
+                                  (child.latestRecord.allStudentsAverage /
+                                    100) *
+                                  100
+                                }%`,
                               }}
-                            >
-                            </div>
+                            ></div>
                           </div>
                         </div>
                         {/* 최근 시험 점수 막대 (오른쪽) */}
                         <div>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs text-slate-600">최근 시험 점수</span>
+                            <span className="text-xs text-slate-600">
+                              최근 시험 점수
+                            </span>
                             <span className="text-xs font-medium text-slate-700">
                               {child.latestRecord.score}점
                             </span>
@@ -196,10 +205,11 @@ function ParentMainPage() {
                             <div
                               className="bg-emerald-500 h-full flex items-center justify-end pr-2 rounded-full"
                               style={{
-                                width: `${(child.latestRecord.score / 100) * 100}%`,
+                                width: `${
+                                  (child.latestRecord.score / 100) * 100
+                                }%`,
                               }}
-                            >
-                            </div>
+                            ></div>
                           </div>
                         </div>
                       </div>

@@ -13,8 +13,10 @@ import VideosPage from './pages/VideosPage';
 import MyPage from './pages/MyPage';
 import IntegrationsPage from './pages/IntegrationsPage';
 import AdminPage from './pages/admin/AdminPage';
+import AdminClassPage from './pages/admin/AdminClassPage';
 import AdminNoticePage from './pages/admin/AdminNoticePage';
 import AdminGradesPage from './pages/admin/AdminGradesPage';
+import ExamDetailPage from './pages/admin/ExamDetailPage';
 import AdminMaterialsPage from './pages/admin/MaterialsPage';
 import AdminVideosPage from './pages/admin/VideosPage';
 import ParentMainPage from './pages/parent/ParentMainPage';
@@ -44,9 +46,12 @@ function App() {
         <Route path="/integrations" element={<IntegrationsPage />} />
 
         {/* 관리자 라우트 */}
-        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin" element={<AdminClassPage />} />
+        <Route path="/admin/classes" element={<AdminClassPage />} />
+        <Route path="/admin/students" element={<AdminPage />} />
         <Route path="/admin/notice" element={<AdminNoticePage />} />
         <Route path="/admin/grades" element={<AdminGradesPage />} />
+        <Route path="/admin/grades/:examDate" element={<ExamDetailPage />} />
         <Route path="/admin/materials" element={<AdminMaterialsPage />} />
         <Route path="/admin/videos" element={<AdminVideosPage />} />
         <Route path="/admin/mypage" element={<MyPage />} />

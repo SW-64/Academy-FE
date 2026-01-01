@@ -4,6 +4,14 @@ import MainLayout from '../MainLayout';
 import { dummyNotices } from '../../data/noticesData';
 import type { Notice } from '../../data/noticesData';
 
+// 더미 클래스 데이터 (실제로는 API에서 가져와야 함)
+const dummyClasses = [
+  { id: 1, name: '예비고2 월금 정규반' },
+  { id: 2, name: '예비고2 화목 정규반' },
+  { id: 3, name: '미적분1 기본 특강반' },
+  { id: 4, name: '미적분1+2 통합 특강반' },
+];
+
 function AdminNoticePage() {
   const [notices, setNotices] = useState<Notice[]>(dummyNotices);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -15,11 +23,13 @@ function AdminNoticePage() {
     title: '',
     content: '',
     isPinned: false,
+    classIds: [] as number[],
   });
   const [editNotice, setEditNotice] = useState({
     title: '',
     content: '',
     isPinned: false,
+    classIds: [] as number[],
   });
 
   const handleWrite = () => {
@@ -38,10 +48,11 @@ function AdminNoticePage() {
       createdAt: new Date().toLocaleString('ko-KR'),
       isPinned: newNotice.isPinned,
       hasNewTag: true,
+      classIds: newNotice.classIds,
     };
 
     setNotices(prev => [notice, ...prev]);
-    setNewNotice({ title: '', content: '', isPinned: false });
+    setNewNotice({ title: '', content: '', isPinned: false, classIds: [] });
     setIsWriteModalOpen(false);
   };
 
@@ -51,6 +62,7 @@ function AdminNoticePage() {
       title: notice.title,
       content: notice.content || '',
       isPinned: notice.isPinned || false,
+      classIds: notice.classIds || [],
     });
     setIsDetailModalOpen(true);
   };
@@ -71,6 +83,7 @@ function AdminNoticePage() {
               title: editNotice.title,
               content: editNotice.content,
               isPinned: editNotice.isPinned,
+              classIds: editNotice.classIds,
             }
           : notice
       )
@@ -332,6 +345,44 @@ function AdminNoticePage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  클래스 지정
+                </label>
+                <div className="space-y-2">
+                  {dummyClasses.map(classItem => (
+                    <label
+                      key={classItem.id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={newNotice.classIds.includes(classItem.id)}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setNewNotice({
+                              ...newNotice,
+                              classIds: [...newNotice.classIds, classItem.id],
+                            });
+                          } else {
+                            setNewNotice({
+                              ...newNotice,
+                              classIds: newNotice.classIds.filter(
+                                id => id !== classItem.id
+                              ),
+                            });
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
+                      />
+                      <span className="text-sm text-slate-700">
+                        {classItem.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -356,7 +407,7 @@ function AdminNoticePage() {
                 type="button"
                 onClick={() => {
                   setIsWriteModalOpen(false);
-                  setNewNotice({ title: '', content: '', isPinned: false });
+                  setNewNotice({ title: '', content: '', isPinned: false, classIds: [] });
                 }}
                 className="rounded-lg border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
               >
@@ -423,6 +474,44 @@ function AdminNoticePage() {
                   rows={15}
                   className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  클래스 지정
+                </label>
+                <div className="space-y-2">
+                  {dummyClasses.map(classItem => (
+                    <label
+                      key={classItem.id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={editNotice.classIds.includes(classItem.id)}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setEditNotice({
+                              ...editNotice,
+                              classIds: [...editNotice.classIds, classItem.id],
+                            });
+                          } else {
+                            setEditNotice({
+                              ...editNotice,
+                              classIds: editNotice.classIds.filter(
+                                id => id !== classItem.id
+                              ),
+                            });
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
+                      />
+                      <span className="text-sm text-slate-700">
+                        {classItem.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="flex items-center gap-2">

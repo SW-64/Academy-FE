@@ -190,7 +190,10 @@ function AdminPage() {
                 ...s,
                 name: editForm.name,
                 school: `${editForm.school}고등학교`,
-                phone: editForm.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3'),
+                phone: editForm.phone.replace(
+                  /(\d{3})(\d{4})(\d{4})/,
+                  '$1-$2-$3'
+                ),
                 grade: `${editForm.grade}학년`,
               }
             : s
@@ -824,7 +827,10 @@ function AdminPage() {
                       <p className="mt-1 text-xs text-slate-500">
                         {editForm.phone.length < 11
                           ? `${editForm.phone.length}자 입력됨 (11자 필요)`
-                          : editForm.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')}
+                          : editForm.phone.replace(
+                              /(\d{3})(\d{4})(\d{4})/,
+                              '$1-$2-$3'
+                            )}
                       </p>
                     )}
                   </div>

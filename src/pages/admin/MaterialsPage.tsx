@@ -3,10 +3,19 @@ import { Plus, X, Trash2, Save, Upload } from 'lucide-react';
 import MainLayout from '../MainLayout';
 import { dummyMaterials, type Material } from '../MaterialsPage';
 
+// 더미 클래스 데이터 (실제로는 API에서 가져와야 함)
+const dummyClasses = [
+  { id: 1, name: '예비고2 월금 정규반' },
+  { id: 2, name: '예비고2 화목 정규반' },
+  { id: 3, name: '미적분1 기본 특강반' },
+  { id: 4, name: '미적분1+2 통합 특강반' },
+];
+
 type MaterialWithFile = Material & {
   content?: string;
   pdfFile?: File | null;
   pdfFileName?: string;
+  classIds?: number[];
 };
 
 function AdminMaterialsPage() {
@@ -23,12 +32,14 @@ function AdminMaterialsPage() {
     content: '',
     pdfFile: null as File | null,
     pdfFileName: '',
+    classIds: [] as number[],
   });
   const [editMaterial, setEditMaterial] = useState({
     title: '',
     content: '',
     pdfFile: null as File | null,
     pdfFileName: '',
+    classIds: [] as number[],
   });
 
   const handleWrite = () => {
@@ -49,10 +60,11 @@ function AdminMaterialsPage() {
       pdfFileName:
         newMaterial.pdfFileName ||
         (newMaterial.pdfFile ? newMaterial.pdfFile.name : ''),
+      classIds: newMaterial.classIds,
     };
 
     setMaterials(prev => [material, ...prev]);
-    setNewMaterial({ title: '', content: '', pdfFile: null, pdfFileName: '' });
+    setNewMaterial({ title: '', content: '', pdfFile: null, pdfFileName: '', classIds: [] });
     setIsWriteModalOpen(false);
   };
 
@@ -63,6 +75,7 @@ function AdminMaterialsPage() {
       content: material.content || '',
       pdfFile: null,
       pdfFileName: material.pdfFileName || '',
+      classIds: material.classIds || [],
     });
     setIsDetailModalOpen(true);
   };
@@ -85,6 +98,7 @@ function AdminMaterialsPage() {
               pdfFile: editMaterial.pdfFile || material.pdfFile,
               pdfFileName:
                 editMaterial.pdfFileName || material.pdfFileName || '',
+              classIds: editMaterial.classIds,
             }
           : material
       )
@@ -311,6 +325,44 @@ function AdminMaterialsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
+                  클래스 지정
+                </label>
+                <div className="space-y-2">
+                  {dummyClasses.map(classItem => (
+                    <label
+                      key={classItem.id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={newMaterial.classIds.includes(classItem.id)}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setNewMaterial({
+                              ...newMaterial,
+                              classIds: [...newMaterial.classIds, classItem.id],
+                            });
+                          } else {
+                            setNewMaterial({
+                              ...newMaterial,
+                              classIds: newMaterial.classIds.filter(
+                                id => id !== classItem.id
+                              ),
+                            });
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
+                      />
+                      <span className="text-sm text-slate-700">
+                        {classItem.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   PDF 파일
                 </label>
                 <div className="space-y-3">
@@ -366,6 +418,7 @@ function AdminMaterialsPage() {
                     content: '',
                     pdfFile: null,
                     pdfFileName: '',
+                    classIds: [],
                   });
                 }}
                 className="rounded-lg border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
@@ -437,6 +490,44 @@ function AdminMaterialsPage() {
                   className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                   placeholder="내용을 입력하세요"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  클래스 지정
+                </label>
+                <div className="space-y-2">
+                  {dummyClasses.map(classItem => (
+                    <label
+                      key={classItem.id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={editMaterial.classIds.includes(classItem.id)}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setEditMaterial({
+                              ...editMaterial,
+                              classIds: [...editMaterial.classIds, classItem.id],
+                            });
+                          } else {
+                            setEditMaterial({
+                              ...editMaterial,
+                              classIds: editMaterial.classIds.filter(
+                                id => id !== classItem.id
+                              ),
+                            });
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
+                      />
+                      <span className="text-sm text-slate-700">
+                        {classItem.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div>

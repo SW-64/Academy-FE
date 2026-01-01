@@ -7,6 +7,7 @@ export type Notice = {
   createdAt: string;
   isPinned?: boolean;
   content?: string;
+  classIds?: number[];
 };
 
 export const dummyNotices: Notice[] = [

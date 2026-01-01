@@ -36,7 +36,8 @@ const parentMenuItems = [
 ];
 
 const adminMenuItems = [
-  { id: 'students', label: '학생 관리', icon: GraduationCap, path: '/admin' },
+  { id: 'classes', label: '클래스 관리', icon: Users, path: '/admin/classes' },
+  { id: 'students', label: '학생 관리', icon: GraduationCap, path: '/admin/students' },
   { id: 'notice', label: '공지사항', icon: Megaphone, path: '/admin/notice' },
   { id: 'grades', label: '시험', icon: GraduationCap, path: '/admin/grades' },
   {
@@ -159,6 +160,7 @@ type MainLayoutProps = {
   showCalendar?: boolean;
   isAdmin?: boolean;
   isParent?: boolean;
+  customRightContent?: ReactNode;
 };
 
 function MainLayout({
@@ -166,6 +168,7 @@ function MainLayout({
   showCalendar = true,
   isAdmin: propIsAdmin = false,
   isParent: propIsParent = false,
+  customRightContent,
 }: MainLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -224,9 +227,21 @@ function MainLayout({
         {/* 사이드바 상단 로고 및 타이틀 */}
         <div className="flex items-center justify-between gap-1.5 sm:gap-2 lg:gap-2 border-b border-blue-100/70 px-2 sm:px-3 lg:px-4 py-3 sm:py-4">
           <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-2 flex-1 min-w-0">
-            <div className="flex h-7 w-7 sm:h-8 sm:w-8 lg:h-8 lg:w-8 items-center justify-center rounded-full bg-[#084773] flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                if (isAdmin) {
+                  navigate('/admin/classes');
+                } else if (isParent) {
+                  navigate('/parent/main');
+                } else {
+                  navigate('/main');
+                }
+              }}
+              className="flex h-7 w-7 sm:h-8 sm:w-8 lg:h-8 lg:w-8 items-center justify-center rounded-full bg-[#084773] flex-shrink-0 hover:bg-[#063a5a] transition-colors cursor-pointer"
+            >
               <Home className="h-4 w-4 sm:h-5 sm:w-5 lg:h-5 lg:w-5 text-white" />
-            </div>
+            </button>
             <div className="flex flex-col min-w-0">
               <span className="text-xs sm:text-sm lg:text-sm font-semibold text-[#084773] truncate">
                 학습 관리 프로그램
@@ -306,10 +321,12 @@ function MainLayout({
         </div>
       </main>
 
-      {/* 오른쪽 캘린더 - 데스크탑에서만 표시 */}
-      {showCalendar && (
+      {/* 오른쪽 캘린더 또는 커스텀 컨텐츠 - 데스크탑에서만 표시 */}
+      {(showCalendar || customRightContent) && (
         <aside className="hidden min-[1350px]:block w-80 flex-shrink-0 border-l border-blue-100/70 bg-white/50 p-6">
-          <Calendar />
+          <div className={customRightContent ? 'sticky top-6' : ''}>
+            {customRightContent || <Calendar />}
+          </div>
         </aside>
       )}
     </div>
