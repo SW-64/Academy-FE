@@ -19,6 +19,8 @@ import AdminGradesPage from './pages/admin/AdminGradesPage';
 import ExamDetailPage from './pages/admin/ExamDetailPage';
 import AdminMaterialsPage from './pages/admin/MaterialsPage';
 import AdminVideosPage from './pages/admin/VideosPage';
+import AdminHomeworkPage from './pages/admin/AdminHomeworkPage';
+import HomeworkProgressPage from './pages/admin/HomeworkProgressPage';
 import ParentMainPage from './pages/parent/ParentMainPage';
 import ParentNoticePage from './pages/parent/ParentNoticePage';
 import ParentNoticeDetailPage from './pages/parent/ParentNoticeDetailPage';
@@ -54,6 +56,8 @@ function App() {
         <Route path="/admin/grades/:examDate" element={<ExamDetailPage />} />
         <Route path="/admin/materials" element={<AdminMaterialsPage />} />
         <Route path="/admin/videos" element={<AdminVideosPage />} />
+        <Route path="/admin/homework" element={<AdminHomeworkPage />} />
+        <Route path="/admin/homework-progress" element={<HomeworkProgressPage />} />
         <Route path="/admin/mypage" element={<MyPage />} />
 
         {/* 학부모 라우트 */}

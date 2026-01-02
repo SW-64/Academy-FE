@@ -244,4 +244,3 @@ export const dummyNotices: Notice[] = [
 참가 신청은 6월 5일까지, 선착순 30명으로 마감됩니다.`,
   },
 ];
-
