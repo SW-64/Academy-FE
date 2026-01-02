@@ -26,18 +26,11 @@ function ExamDetailPage() {
     }
 
     // 더미 문항 데이터 (실제로는 시험 저장 시 함께 저장되어야 함)
-    const questions = [
-      { questionNumber: 1, points: 1 },
-      { questionNumber: 2, points: 1 },
-      { questionNumber: 3, points: 1 },
-      { questionNumber: 4, points: 1 },
-      { questionNumber: 5, points: 1 },
-      { questionNumber: 6, points: 1 },
-      { questionNumber: 7, points: 1 },
-      { questionNumber: 8, points: 1 },
-      { questionNumber: 9, points: 1 },
-      { questionNumber: 10, points: 1 },
-    ];
+    const questionCount = 25;
+    const questions = Array.from({ length: questionCount }, (_, i) => ({
+      questionNumber: i + 1,
+      points: 1,
+    }));
 
     // 학생별 오답 정보 (더미 데이터)
     const studentAnswers: Record<number, {
@@ -125,38 +118,10 @@ function ExamDetailPage() {
         ) / 10
       : 0;
 
-  // 문항별 오답률 계산
-  const questionErrorRates: number[] = [];
-  for (let i = 1; i <= totalQuestions; i++) {
-    const wrongCount = examData.records.filter(r => {
-      const info = getStudentAnswerInfo(r.studentId);
-      return info.tookExam && info.wrongAnswers.includes(i);
-    }).length;
-    const errorRate =
-      tookExamCount > 0
-        ? Math.round((wrongCount / tookExamCount) * 100 * 10) / 10
-        : 0;
-    questionErrorRates.push(errorRate);
-  }
-  const averageErrorRate =
-    questionErrorRates.length > 0
-      ? Math.round(
-          (questionErrorRates.reduce((sum, rate) => sum + rate, 0) /
-            questionErrorRates.length) *
-            10
-        ) / 10
-      : 0;
-
   const customRightContent = (
     <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-blue-100/70">
       <h3 className="mb-4 text-sm font-semibold text-slate-900">시험 통계</h3>
       <div className="space-y-4">
-        <div>
-          <div className="text-xs text-slate-600">오답률</div>
-          <div className="text-lg font-semibold text-slate-900">
-            {averageErrorRate}%
-          </div>
-        </div>
         <div>
           <div className="text-xs text-slate-600">학생 평균</div>
           <div className="text-lg font-semibold text-slate-900">

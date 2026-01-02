@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   Users,
+  FileText,
 } from 'lucide-react';
 
 const menuItems = [
@@ -40,6 +41,8 @@ const adminMenuItems = [
   { id: 'students', label: '학생 관리', icon: GraduationCap, path: '/admin/students' },
   { id: 'notice', label: '공지사항', icon: Megaphone, path: '/admin/notice' },
   { id: 'grades', label: '시험', icon: GraduationCap, path: '/admin/grades' },
+  { id: 'homework', label: '교재', icon: BookOpen, path: '/admin/homework' },
+  { id: 'homework-progress', label: '숙제 진도', icon: FileText, path: '/admin/homework-progress' },
   {
     id: 'materials',
     label: '학습자료',

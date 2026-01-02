@@ -38,8 +38,6 @@ const studentInfo: { school: string; grade: string; name: string } = {
   name: '김민수',
 };
 
-
-
 function MainPage() {
   const navigate = useNavigate();
 
@@ -49,7 +47,7 @@ function MainPage() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const latestRecord = myRecords[0] || null;
-  
+
   // 학생 전체 평균을 90점으로 고정
   const allStudentsAverage = 90;
 
@@ -105,7 +103,10 @@ function MainPage() {
             </button>
           </div>
           <div className="space-y-3">
-            <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70" style={{ minHeight: 'calc(3 * 88px + 2 * 12px + 1px)' }}>
+            <div
+              className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70"
+              style={{ minHeight: 'calc(3 * 88px + 2 * 12px + 1px)' }}
+            >
               <h3 className="text-sm font-semibold text-slate-900 mb-1">
                 {studentInfo.name}
               </h3>
@@ -150,7 +151,9 @@ function MainPage() {
                       {/* 학생 전체 평균 막대 (왼쪽) */}
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-slate-600">학생 전체 평균</span>
+                          <span className="text-xs text-slate-600">
+                            학생 전체 평균
+                          </span>
                           <span className="text-xs font-medium text-slate-700">
                             {allStudentsAverage}점
                           </span>
@@ -161,14 +164,15 @@ function MainPage() {
                             style={{
                               width: `${(allStudentsAverage / 100) * 100}%`,
                             }}
-                          >
-                          </div>
+                          ></div>
                         </div>
                       </div>
                       {/* 최근 시험 점수 막대 (오른쪽) */}
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-slate-600">최근 시험 점수</span>
+                          <span className="text-xs text-slate-600">
+                            최근 시험 점수
+                          </span>
                           <span className="text-xs font-medium text-slate-700">
                             {latestRecord.score}점
                           </span>
@@ -179,8 +183,7 @@ function MainPage() {
                             style={{
                               width: `${(latestRecord.score / 100) * 100}%`,
                             }}
-                          >
-                          </div>
+                          ></div>
                         </div>
                       </div>
                     </div>
@@ -195,7 +198,6 @@ function MainPage() {
           </div>
         </section>
       </div>
-
     </MainLayout>
   );
 }
