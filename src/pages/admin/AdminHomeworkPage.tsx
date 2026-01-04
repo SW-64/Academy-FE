@@ -216,12 +216,10 @@ function AdminHomeworkPage() {
     classId: 0,
     majorUnitCount: 0,
     minorUnitCount: 0,
-    stepCount: 3, // 기본 스텝 수 (하위 호환성 유지)
   });
   const [majorUnits, setMajorUnits] = useState<
-    Array<{ minorUnitCount: number; stepCount: number }>
+    Array<{ minorUnitCount: number }>
   >([]);
-  const [subUnits, setSubUnits] = useState<SubUnit[]>([]);
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -233,17 +231,14 @@ function AdminHomeworkPage() {
       classId: 0,
       majorUnitCount: 0,
       minorUnitCount: 0,
-      stepCount: 3,
     });
     setMajorUnits([]);
-    setSubUnits([]);
   };
 
   const handleOpenEditModal = (textbook: Textbook) => {
     setIsModalOpen(true);
     setIsEditMode(true);
     setEditingTextbookId(textbook.id);
-    const stepSubUnit = textbook.subUnits.find(sub => sub.name === '스텝');
     const majorUnitCount = textbook.majorUnitCount || textbook.unitCount;
     
     // 기존 데이터에 majorUnitsDetail이 있으면 사용, 없으면 전역 값으로 모든 대단원에 동일하게 적용
@@ -251,11 +246,10 @@ function AdminHomeworkPage() {
       majorUnitsDetail?: Array<{
         majorUnitIndex: number;
         minorUnitCount: number;
-        stepCount: number;
       }>;
     };
     
-    let initialMajorUnits: Array<{ minorUnitCount: number; stepCount: number }>;
+    let initialMajorUnits: Array<{ minorUnitCount: number }>;
     
     if (textbookWithDetail.majorUnitsDetail && textbookWithDetail.majorUnitsDetail.length > 0) {
       // 기존에 저장된 대단원별 상세 정보가 있으면 사용
@@ -265,15 +259,13 @@ function AdminHomeworkPage() {
         );
         return {
           minorUnitCount: detail?.minorUnitCount || textbook.minorUnitCount || 0,
-          stepCount: detail?.stepCount || stepSubUnit?.subUnitCount || 3,
         };
       });
     } else {
       // 기존 데이터를 대단원별 구조로 변환
-      // 기존에는 전역 소단원 수와 스텝 수만 있었으므로, 모든 대단원에 동일하게 적용
+      // 기존에는 전역 소단원 수만 있었으므로, 모든 대단원에 동일하게 적용
       initialMajorUnits = Array.from({ length: majorUnitCount }, () => ({
         minorUnitCount: textbook.minorUnitCount || 0,
-        stepCount: stepSubUnit?.subUnitCount || 3,
       }));
     }
     
@@ -283,10 +275,8 @@ function AdminHomeworkPage() {
       classId: textbook.classId,
       majorUnitCount: majorUnitCount,
       minorUnitCount: textbook.minorUnitCount || 0,
-      stepCount: stepSubUnit?.subUnitCount || 3,
     });
     setMajorUnits(initialMajorUnits);
-    setSubUnits(textbook.subUnits.map(subUnit => ({ ...subUnit })));
   };
 
   const handleCloseModal = () => {
@@ -299,40 +289,18 @@ function AdminHomeworkPage() {
       classId: 0,
       majorUnitCount: 0,
       minorUnitCount: 0,
-      stepCount: 3,
     });
     setMajorUnits([]);
-    setSubUnits([]);
   };
 
-  const handleAddSubUnit = () => {
-    const newSubUnit: SubUnit = {
-      id: `subunit-${Date.now()}-${Math.random()}`,
-      name: '',
-      subUnitCount: 0,
-    };
-    setSubUnits([...subUnits, newSubUnit]);
-  };
-
-  const handleSubUnitNameChange = (index: number, name: string) => {
-    const newSubUnits = [...subUnits];
-    newSubUnits[index].name = name;
-    setSubUnits(newSubUnits);
-  };
-
-  const handleSubUnitCountChange = (index: number, count: number) => {
-    const newSubUnits = [...subUnits];
-    newSubUnits[index].subUnitCount = Math.max(0, count);
-    setSubUnits(newSubUnits);
-  };
-
-  const handleRemoveSubUnit = (index: number) => {
-    setSubUnits(subUnits.filter((_, i) => i !== index));
-  };
 
   // 대단원 수 변경 시 majorUnits 배열 업데이트
-  const handleMajorUnitCountChange = (count: number) => {
-    const newCount = Math.max(0, count);
+  const handleMajorUnitCountChange = (value: string | number) => {
+    // 문자열인 경우 숫자로 변환 (앞의 0 제거)
+    const numValue = typeof value === 'string' 
+      ? (value === '' ? 0 : parseInt(value, 10) || 0)
+      : value;
+    const newCount = Math.max(0, numValue);
     setNewTextbook(prev => ({ ...prev, majorUnitCount: newCount }));
     
     if (newCount > majorUnits.length) {
@@ -340,15 +308,11 @@ function AdminHomeworkPage() {
       const defaultMinorCount = majorUnits.length > 0 
         ? majorUnits[0].minorUnitCount 
         : newTextbook.minorUnitCount || 0;
-      const defaultStepCount = majorUnits.length > 0 
-        ? majorUnits[0].stepCount 
-        : newTextbook.stepCount || 3;
       
       const newMajorUnits = [...majorUnits];
       for (let i = majorUnits.length; i < newCount; i++) {
         newMajorUnits.push({
           minorUnitCount: defaultMinorCount,
-          stepCount: defaultStepCount,
         });
       }
       setMajorUnits(newMajorUnits);
@@ -368,15 +332,6 @@ function AdminHomeworkPage() {
     setMajorUnits(newMajorUnits);
   };
 
-  // 대단원별 스텝 수 변경
-  const handleMajorUnitStepCountChange = (index: number, count: number) => {
-    const newMajorUnits = [...majorUnits];
-    newMajorUnits[index] = {
-      ...newMajorUnits[index],
-      stepCount: Math.max(1, count),
-    };
-    setMajorUnits(newMajorUnits);
-  };
 
   const handleSave = () => {
     if (!newTextbook.name || !newTextbook.grade || !newTextbook.classId) {
@@ -400,10 +355,6 @@ function AdminHomeworkPage() {
         alert(`${i + 1}번째 대단원의 소단원 수를 입력해주세요.`);
         return;
       }
-      if (majorUnits[i].stepCount === 0) {
-        alert(`${i + 1}번째 대단원의 스텝 수를 입력해주세요.`);
-        return;
-      }
     }
 
     const selectedClass = dummyClasses.find(c => c.id === newTextbook.classId);
@@ -413,28 +364,6 @@ function AdminHomeworkPage() {
       majorUnits.reduce((sum, unit) => sum + unit.minorUnitCount, 0) /
         majorUnits.length
     );
-
-    // 하위 단원에 스텝이 없으면 자동으로 추가 (평균 스텝 수 사용)
-    const avgStepCount = Math.round(
-      majorUnits.reduce((sum, unit) => sum + unit.stepCount, 0) /
-        majorUnits.length
-    );
-
-    const finalSubUnits = [...subUnits];
-    const hasStep = finalSubUnits.some(sub => sub.name === '스텝');
-    if (!hasStep) {
-      finalSubUnits.push({
-        id: `step-${Date.now()}`,
-        name: '스텝',
-        subUnitCount: avgStepCount,
-      });
-    } else {
-      // 스텝이 있으면 평균값으로 업데이트
-      const stepIndex = finalSubUnits.findIndex(sub => sub.name === '스텝');
-      if (stepIndex >= 0) {
-        finalSubUnits[stepIndex].subUnitCount = avgStepCount;
-      }
-    }
 
     // 대단원별 정보를 subUnits에 저장 (확장 가능한 구조)
     // 각 대단원의 정보를 별도로 저장할 수도 있지만, 현재 구조 유지를 위해
@@ -451,7 +380,7 @@ function AdminHomeworkPage() {
       unitCount: newTextbook.majorUnitCount,
       majorUnitCount: newTextbook.majorUnitCount,
       minorUnitCount: avgMinorUnitCount, // 평균값 저장 (하위 호환성)
-      subUnits: finalSubUnits.map(subUnit => ({ ...subUnit })),
+      subUnits: [],
       // 대단원별 상세 정보는 확장을 위해 별도 필드에 저장 가능
       // majorUnitsDetail: majorUnits, // 필요시 추가
     };
@@ -461,7 +390,6 @@ function AdminHomeworkPage() {
     (textbookData as any).majorUnitsDetail = majorUnits.map((unit, index) => ({
       majorUnitIndex: index + 1,
       minorUnitCount: unit.minorUnitCount,
-      stepCount: unit.stepCount,
     }));
 
     if (isEditMode && editingTextbookId) {
@@ -710,17 +638,20 @@ function AdminHomeworkPage() {
                   <input
                     type="number"
                     min="0"
-                    value={newTextbook.majorUnitCount}
-                    onChange={e => handleMajorUnitCountChange(Number(e.target.value))}
+                    value={newTextbook.majorUnitCount || ''}
+                    onChange={e => {
+                      const value = e.target.value;
+                      handleMajorUnitCountChange(value === '' ? 0 : parseInt(value, 10) || 0);
+                    }}
                     placeholder="대단원 수를 입력하세요"
                     className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
                   />
                   <p className="mt-1 text-xs text-slate-500">
-                    대단원 수를 입력하면 각 대단원별로 소단원 수와 스텝 수를 설정할 수 있습니다.
+                    대단원 수를 입력하면 각 대단원별로 소단원 수를 설정할 수 있습니다.
                   </p>
                 </div>
 
-                {/* 대단원별 소단원 수 및 스텝 수 */}
+                {/* 대단원별 소단원 수 */}
                 {newTextbook.majorUnitCount > 0 && majorUnits.length > 0 && (
                   <div className="space-y-4 border-t border-slate-200 pt-6">
                     <div>
@@ -728,7 +659,7 @@ function AdminHomeworkPage() {
                         대단원별 설정
                       </h3>
                       <p className="text-xs text-slate-500 mb-4">
-                        각 대단원마다 소단원 수와 스텝 수를 개별적으로 설정할 수 있습니다.
+                        각 대단원마다 소단원 수를 개별적으로 설정할 수 있습니다.
                       </p>
                     </div>
                     <div className="space-y-4">
@@ -742,118 +673,27 @@ function AdminHomeworkPage() {
                               {index + 1}번째 대단원
                             </span>
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-xs font-medium text-slate-700 mb-1">
-                                소단원 수
-                              </label>
-                              <input
-                                type="number"
-                                min="0"
-                                value={unit.minorUnitCount}
-                                onChange={e =>
-                                  handleMajorUnitMinorCountChange(
-                                    index,
-                                    Number(e.target.value)
-                                  )
-                                }
-                                placeholder="소단원 수"
-                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-slate-700 mb-1">
-                                스텝 수
-                              </label>
-                              <input
-                                type="number"
-                                min="1"
-                                value={unit.stepCount}
-                                onChange={e =>
-                                  handleMajorUnitStepCountChange(
-                                    index,
-                                    Number(e.target.value)
-                                  )
-                                }
-                                placeholder="스텝 수"
-                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
-                              />
-                            </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">
+                              소단원 수
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={unit.minorUnitCount}
+                              onChange={e =>
+                                handleMajorUnitMinorCountChange(
+                                  index,
+                                  Number(e.target.value)
+                                )
+                              }
+                              placeholder="소단원 수"
+                              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
+                            />
                           </div>
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {/* 하위 단원 추가 버튼 */}
-                <div>
-                  <button
-                    type="button"
-                    onClick={handleAddSubUnit}
-                    className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                  >
-                    <Plus className="h-4 w-4" />
-                    하위 단원 추가
-                  </button>
-                </div>
-
-                {/* 하위 단원 목록 */}
-                {subUnits.length > 0 && (
-                  <div className="space-y-3 border-t border-slate-200 pt-6">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      하위 단원 목록
-                    </h3>
-                    {subUnits.map((subUnit, index) => (
-                      <div
-                        key={subUnit.id}
-                        className="rounded-lg border border-slate-200 bg-white p-4"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1 space-y-3">
-                            <div>
-                              <label className="block text-xs font-medium text-slate-700 mb-1">
-                                하위 단원 이름
-                              </label>
-                              <input
-                                type="text"
-                                value={subUnit.name}
-                                onChange={e =>
-                                  handleSubUnitNameChange(index, e.target.value)
-                                }
-                                placeholder="하위 단원 이름을 입력하세요"
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-slate-700 mb-1">
-                                개수
-                              </label>
-                              <input
-                                type="number"
-                                min="0"
-                                value={subUnit.subUnitCount}
-                                onChange={e =>
-                                  handleSubUnitCountChange(
-                                    index,
-                                    Number(e.target.value)
-                                  )
-                                }
-                                placeholder="개수를 입력하세요"
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
-                              />
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveSubUnit(index)}
-                            className="mt-6 rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-red-600 transition-colors"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 )}
               </div>
