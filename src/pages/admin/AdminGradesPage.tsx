@@ -534,7 +534,6 @@ function AdminGradesPage() {
       {isAddExamModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setIsAddExamModalOpen(false)}
         >
           <div
             className="relative w-full max-w-5xl h-[90vh] rounded-2xl bg-white shadow-xl overflow-hidden flex flex-col"
@@ -702,7 +701,6 @@ function AdminGradesPage() {
       {isModalOpen && selectedExam && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setIsModalOpen(false)}
         >
           <div
             className="relative w-full max-w-5xl h-[90vh] rounded-2xl bg-white shadow-xl overflow-hidden flex flex-col"

@@ -565,10 +565,7 @@ function ParentChildrenPage() {
 
       {/* 상세 정보 모달 */}
       {isModalOpen && selectedRecord && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-3 sm:p-4"
-          onClick={() => setIsModalOpen(false)}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-3 sm:p-4">
           <div
             className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white p-4 sm:p-6 shadow-lg"
             onClick={e => e.stopPropagation()}

@@ -296,7 +296,6 @@ function AdminNoticePage() {
       {isWriteModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setIsWriteModalOpen(false)}
         >
           <div
             className="relative w-full max-w-4xl rounded-2xl bg-white p-8 shadow-xl"
@@ -429,7 +428,6 @@ function AdminNoticePage() {
       {isDetailModalOpen && selectedNotice && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setIsDetailModalOpen(false)}
         >
           <div
             className="relative w-full max-w-4xl rounded-2xl bg-white p-8 shadow-xl max-h-[90vh] overflow-y-auto"

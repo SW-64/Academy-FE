@@ -240,7 +240,6 @@ function AdminClassPage() {
       {isAddModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setIsAddModalOpen(false)}
         >
           <div
             className="relative w-full max-w-3xl h-[90vh] rounded-2xl bg-white p-6 shadow-xl overflow-hidden flex flex-col"
@@ -415,7 +414,6 @@ function AdminClassPage() {
       {isDetailModalOpen && selectedClass && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setIsDetailModalOpen(false)}
         >
           <div
             className="relative w-full max-w-4xl h-[90vh] rounded-2xl bg-white p-6 shadow-xl overflow-hidden flex flex-col"
