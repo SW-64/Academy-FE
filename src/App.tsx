@@ -1,89 +1,106 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import SignupCompletePage from './pages/SignupCompletePage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import MainPage from './pages/MainPage';
-import NoticePage from './pages/NoticePage';
-import NoticeDetailPage from './pages/NoticeDetailPage';
-import GradesPage from './pages/GradesPage';
-import MaterialsPage from './pages/MaterialsPage';
-import MaterialsDetailPage from './pages/MaterialsDetailPage';
-import VideosPage from './pages/VideosPage';
-import MyPage from './pages/MyPage';
-import IntegrationsPage from './pages/IntegrationsPage';
-import AdminPage from './pages/admin/AdminPage';
-import AdminClassPage from './pages/admin/AdminClassPage';
-import AdminNoticePage from './pages/admin/AdminNoticePage';
-import AdminGradesPage from './pages/admin/AdminGradesPage';
-import ExamDetailPage from './pages/admin/ExamDetailPage';
-import AdminMaterialsPage from './pages/admin/MaterialsPage';
-import AdminVideosPage from './pages/admin/VideosPage';
-import AdminHomeworkPage from './pages/admin/AdminHomeworkPage';
-import HomeworkProgressPage from './pages/admin/HomeworkProgressPage';
-import HomeworkProgressDetailPage from './pages/admin/HomeworkProgressDetailPage';
-import ParentMainPage from './pages/parent/ParentMainPage';
-import ParentNoticePage from './pages/parent/ParentNoticePage';
-import ParentNoticeDetailPage from './pages/parent/ParentNoticeDetailPage';
-import ParentChildrenPage from './pages/parent/ParentChildrenPage';
-import ParentMyPage from './pages/parent/ParentMyPage';
+import RouteLoader from './components/RouteLoader';
+
+// 코드 스플리팅: 모든 페이지를 lazy import
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const SignupPage = lazy(() => import('./pages/SignupPage'));
+const SignupCompletePage = lazy(() => import('./pages/SignupCompletePage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const MainPage = lazy(() => import('./pages/MainPage'));
+const NoticePage = lazy(() => import('./pages/NoticePage'));
+const NoticeDetailPage = lazy(() => import('./pages/NoticeDetailPage'));
+const GradesPage = lazy(() => import('./pages/GradesPage'));
+const MaterialsPage = lazy(() => import('./pages/MaterialsPage'));
+const MaterialsDetailPage = lazy(() => import('./pages/MaterialsDetailPage'));
+const VideosPage = lazy(() => import('./pages/VideosPage'));
+const MyPage = lazy(() => import('./pages/MyPage'));
+const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage'));
+const AdminPage = lazy(() => import('./pages/admin/AdminPage'));
+const AdminClassPage = lazy(() => import('./pages/admin/AdminClassPage'));
+const AdminNoticePage = lazy(() => import('./pages/admin/AdminNoticePage'));
+const AdminGradesPage = lazy(() => import('./pages/admin/AdminGradesPage'));
+const ExamDetailPage = lazy(() => import('./pages/admin/ExamDetailPage'));
+const AdminMaterialsPage = lazy(() => import('./pages/admin/MaterialsPage'));
+const AdminVideosPage = lazy(() => import('./pages/admin/VideosPage'));
+const AdminHomeworkPage = lazy(() => import('./pages/admin/AdminHomeworkPage'));
+const HomeworkProgressPage = lazy(
+  () => import('./pages/admin/HomeworkProgressPage')
+);
+const HomeworkProgressDetailPage = lazy(
+  () => import('./pages/admin/HomeworkProgressDetailPage')
+);
+const ParentMainPage = lazy(() => import('./pages/parent/ParentMainPage'));
+const ParentNoticePage = lazy(() => import('./pages/parent/ParentNoticePage'));
+const ParentNoticeDetailPage = lazy(
+  () => import('./pages/parent/ParentNoticeDetailPage')
+);
+const ParentChildrenPage = lazy(
+  () => import('./pages/parent/ParentChildrenPage')
+);
+const ParentMyPage = lazy(() => import('./pages/parent/ParentMyPage'));
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* 초기 진입은 /login 으로 리다이렉트 */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+      <Suspense fallback={<RouteLoader />}>
+        <Routes>
+          {/* 초기 진입은 /login 으로 리다이렉트 */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* 메인 페이지 */}
-        <Route path="/main" element={<MainPage />} />
+          {/* 메인 페이지 */}
+          <Route path="/main" element={<MainPage />} />
 
-        {/* 메인 레이아웃 페이지들 */}
-        <Route path="/notice" element={<NoticePage />} />
-        <Route path="/notice/:id" element={<NoticeDetailPage />} />
-        <Route path="/grades" element={<GradesPage />} />
-        <Route path="/materials" element={<MaterialsPage />} />
-        <Route path="/materials/:id" element={<MaterialsDetailPage />} />
-        <Route path="/videos" element={<VideosPage />} />
-        <Route path="/mypage" element={<MyPage />} />
-        <Route path="/integrations" element={<IntegrationsPage />} />
+          {/* 메인 레이아웃 페이지들 */}
+          <Route path="/notice" element={<NoticePage />} />
+          <Route path="/notice/:id" element={<NoticeDetailPage />} />
+          <Route path="/grades" element={<GradesPage />} />
+          <Route path="/materials" element={<MaterialsPage />} />
+          <Route path="/materials/:id" element={<MaterialsDetailPage />} />
+          <Route path="/videos" element={<VideosPage />} />
+          <Route path="/mypage" element={<MyPage />} />
+          <Route path="/integrations" element={<IntegrationsPage />} />
 
-        {/* 관리자 라우트 */}
-        <Route path="/admin" element={<AdminClassPage />} />
-        <Route path="/admin/classes" element={<AdminClassPage />} />
-        <Route path="/admin/students" element={<AdminPage />} />
-        <Route path="/admin/notice" element={<AdminNoticePage />} />
-        <Route path="/admin/grades" element={<AdminGradesPage />} />
-        <Route path="/admin/grades/:examDate" element={<ExamDetailPage />} />
-        <Route path="/admin/materials" element={<AdminMaterialsPage />} />
-        <Route path="/admin/videos" element={<AdminVideosPage />} />
-        <Route path="/admin/homework" element={<AdminHomeworkPage />} />
-        <Route
-          path="/admin/homework-progress"
-          element={<HomeworkProgressPage />}
-        />
-        <Route
-          path="/admin/homework-progress/:classId"
-          element={<HomeworkProgressDetailPage />}
-        />
-        <Route path="/admin/mypage" element={<MyPage />} />
+          {/* 관리자 라우트 */}
+          <Route path="/admin" element={<AdminClassPage />} />
+          <Route path="/admin/classes" element={<AdminClassPage />} />
+          <Route path="/admin/students" element={<AdminPage />} />
+          <Route path="/admin/notice" element={<AdminNoticePage />} />
+          <Route path="/admin/grades" element={<AdminGradesPage />} />
+          <Route path="/admin/grades/:examDate" element={<ExamDetailPage />} />
+          <Route path="/admin/materials" element={<AdminMaterialsPage />} />
+          <Route path="/admin/videos" element={<AdminVideosPage />} />
+          <Route path="/admin/homework" element={<AdminHomeworkPage />} />
+          <Route
+            path="/admin/homework-progress"
+            element={<HomeworkProgressPage />}
+          />
+          <Route
+            path="/admin/homework-progress/:classId"
+            element={<HomeworkProgressDetailPage />}
+          />
+          <Route path="/admin/mypage" element={<MyPage />} />
 
-        {/* 학부모 라우트 */}
-        <Route path="/parent/main" element={<ParentMainPage />} />
-        <Route path="/parent/notice" element={<ParentNoticePage />} />
-        <Route path="/parent/notice/:id" element={<ParentNoticeDetailPage />} />
-        <Route path="/parent/children" element={<ParentChildrenPage />} />
-        <Route path="/parent/mypage" element={<ParentMyPage />} />
+          {/* 학부모 라우트 */}
+          <Route path="/parent/main" element={<ParentMainPage />} />
+          <Route path="/parent/notice" element={<ParentNoticePage />} />
+          <Route
+            path="/parent/notice/:id"
+            element={<ParentNoticeDetailPage />}
+          />
+          <Route path="/parent/children" element={<ParentChildrenPage />} />
+          <Route path="/parent/mypage" element={<ParentMyPage />} />
 
-        {/* 기존 인증 관련 페이지들 */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/signup/complete" element={<SignupCompletePage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          {/* 기존 인증 관련 페이지들 */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/signup/complete" element={<SignupCompletePage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-        {/* 정의되지 않은 경로는 메인으로 */}
-        <Route path="*" element={<Navigate to="/main" replace />} />
-      </Routes>
+          {/* 정의되지 않은 경로는 메인으로 */}
+          <Route path="*" element={<Navigate to="/main" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

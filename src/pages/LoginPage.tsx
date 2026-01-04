@@ -79,9 +79,14 @@ const LoginPage = () => {
             </h1>
           ) : (
             <img
-              src="/logo.png"
+              src="/logo.webp"
               alt="곽원근 수학연구소"
               className="h-auto max-w-[274px] md:max-w-[329px]"
+              width="274"
+              height="274"
+              style={{ aspectRatio: '1/1', maxWidth: '100%', height: 'auto' }}
+              loading="eager"
+              fetchPriority="high"
               onError={() => setImageError(true)}
             />
           )}
