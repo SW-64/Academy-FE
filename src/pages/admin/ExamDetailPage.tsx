@@ -14,6 +14,13 @@ function ExamDetailPage() {
     questions: { questionNumber: number; points: number }[];
     records: ExamRecord[];
   } | null>(null);
+  const [showErrorRate, setShowErrorRate] = useState(false);
+  const [showStudentAnswers, setShowStudentAnswers] = useState(false);
+  const [showRanking, setShowRanking] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [studentWrongAnswers, setStudentWrongAnswers] = useState<
+    Record<number, number[]>
+  >({});
 
   useEffect(() => {
     if (!examDate) return;
@@ -32,35 +39,37 @@ function ExamDetailPage() {
       points: 1,
     }));
 
-    // 학생별 오답 정보 (더미 데이터)
-    const studentAnswers: Record<
-      number,
-      {
-        tookExam: boolean;
-        wrongAnswers: number[];
-        score: number;
-      }
-    > = {};
+    // 학생별 무작위 오답 생성
+    // 일부 문제는 많은 학생들이 틀리도록 설정 (50% 이상 오답률을 만들기 위해)
+    const wrongAnswersMap: Record<number, number[]> = {};
+    const popularWrongQuestions = [3, 7, 12, 18, 22]; // 많은 학생이 틀릴 문제들
 
     records.forEach(record => {
-      if (!studentAnswers[record.studentId]) {
-        // 더미 오답 데이터 생성 (실제로는 저장된 데이터 사용)
-        const wrongAnswers: number[] = [];
-        const totalQuestions = questions.length;
-        const correctAnswers = record.score; // 점수가 정답 수와 같다고 가정
-        for (let i = 1; i <= totalQuestions; i++) {
-          if (i > correctAnswers) {
-            wrongAnswers.push(i);
-          }
-        }
+      const wrongAnswers: number[] = [];
 
-        studentAnswers[record.studentId] = {
-          tookExam: true,
-          wrongAnswers,
-          score: record.score,
-        };
-      }
+      // 인기 오답 문제 중 일부를 포함 (약 70% 확률로)
+      popularWrongQuestions.forEach(qNum => {
+        if (Math.random() > 0.3) {
+          wrongAnswers.push(qNum);
+        }
+      });
+
+      // 추가로 무작위 오답 생성 (1~5개)
+      const additionalWrongCount = Math.floor(Math.random() * 5) + 1;
+      const allQuestions = Array.from(
+        { length: questionCount },
+        (_, i) => i + 1
+      );
+      const availableQuestions = allQuestions.filter(
+        q => !wrongAnswers.includes(q)
+      );
+      const shuffled = [...availableQuestions].sort(() => Math.random() - 0.5);
+      wrongAnswers.push(...shuffled.slice(0, additionalWrongCount));
+
+      wrongAnswersMap[record.studentId] = wrongAnswers;
     });
+
+    setStudentWrongAnswers(wrongAnswersMap);
 
     setExamData({
       date: examDate,
@@ -95,40 +104,7 @@ function ExamDetailPage() {
       return { tookExam: false, wrongAnswers: [], score: 0 };
     }
 
-    // 첫 번째 학생: 3개의 오답번호
-    if (
-      examData.records.length > 0 &&
-      studentId === examData.records[0].studentId
-    ) {
-      return {
-        tookExam: true,
-        wrongAnswers: [2, 3, 6], // 3개 오답번호
-        score: record.score,
-      };
-    }
-
-    // 두 번째 학생: 19개의 오답번호
-    if (
-      examData.records.length > 1 &&
-      studentId === examData.records[1].studentId
-    ) {
-      return {
-        tookExam: true,
-        wrongAnswers: [
-          1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-        ], // 19개 오답번호
-        score: record.score,
-      };
-    }
-
-    // 나머지 학생들: 기존 로직 사용
-    const wrongAnswers: number[] = [];
-    const correctAnswers = Math.round(record.score); // 점수가 정답 수와 같다고 가정
-    for (let i = 1; i <= totalQuestions; i++) {
-      if (i > correctAnswers) {
-        wrongAnswers.push(i);
-      }
-    }
+    const wrongAnswers = studentWrongAnswers[studentId] || [];
 
     return {
       tookExam: true,
@@ -171,18 +147,82 @@ function ExamDetailPage() {
   return (
     <MainLayout showCalendar={false} isAdmin={true}>
       <div className="mx-auto max-w-[95%] px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mb-6 flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => navigate('/admin/grades')}
-            className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            돌아가기
-          </button>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            {examData.name}
-          </h1>
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => navigate('/admin/grades')}
+              className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              돌아가기
+            </button>
+            <h1 className="text-2xl font-semibold text-slate-900">
+              {examData.name}
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowErrorRate(!showErrorRate);
+                setShowStudentAnswers(false);
+              }}
+              className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                showErrorRate
+                  ? 'border-[#084773] bg-[#084773] text-white'
+                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              오답률 확인
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowStudentAnswers(!showStudentAnswers);
+                setShowErrorRate(false);
+              }}
+              className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                showStudentAnswers
+                  ? 'border-[#084773] bg-[#084773] text-white'
+                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              학생별 오답번호
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowRanking(!showRanking);
+                setShowErrorRate(false);
+                setShowStudentAnswers(false);
+                setIsEditMode(false);
+              }}
+              className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                showRanking
+                  ? 'border-[#084773] bg-[#084773] text-white'
+                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              성적 순위
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsEditMode(!isEditMode);
+                setShowErrorRate(false);
+                setShowStudentAnswers(false);
+                setShowRanking(false);
+              }}
+              className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                isEditMode
+                  ? 'border-green-600 bg-green-600 text-white hover:bg-green-700'
+                  : 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
+              }`}
+            >
+              {isEditMode ? '수정 완료' : '성적 수정'}
+            </button>
+          </div>
         </div>
 
         {/* 시험 통계 (상단에 한 줄로 표시) */}
@@ -210,7 +250,13 @@ function ExamDetailPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border-2 border-slate-400 bg-white overflow-hidden">
+        <div
+          className={`rounded-lg border-2 overflow-hidden transition-all ${
+            isEditMode
+              ? 'border-blue-400 bg-blue-50/20 shadow-lg'
+              : 'border-slate-400 bg-white'
+          }`}
+        >
           <div className="flex">
             {/* 고정 컬럼: 이름, 학교, 응시여부 */}
             <div className="flex-shrink-0 border-r-2 border-slate-400 bg-slate-50">
@@ -389,7 +435,7 @@ function ExamDetailPage() {
                 }}
               >
                 <thead>
-                  {/* 첫 번째 행: 배점 (colspan) */}
+                  {/* 첫 번째 행: 문항번호/배점 (colspan) */}
                   <tr className="border-b-2 border-slate-400 bg-slate-50">
                     <th
                       colSpan={maxQuestions}
@@ -399,39 +445,11 @@ function ExamDetailPage() {
                         minHeight: '40px',
                       }}
                     >
-                      배점
+                      문항번호/배점
                     </th>
                   </tr>
-                  {/* 두 번째 행: 각 문항의 배점 */}
+                  {/* 두 번째 행: 문항번호 */}
                   <tr className="border-b border-slate-300 bg-slate-50">
-                    {Array.from({ length: maxQuestions }, (_, i) => i + 1).map(
-                      num => (
-                        <th
-                          key={num}
-                          className={`border-r border-slate-300 px-2 py-2 text-center text-xs font-medium text-slate-700 ${
-                            num <= totalQuestions
-                              ? (num - 1) % 5 < 2
-                                ? 'bg-slate-100'
-                                : 'bg-blue-50'
-                              : 'bg-slate-50'
-                          }`}
-                          style={{
-                            width: '40px',
-                            minWidth: '40px',
-                            maxWidth: '40px',
-                            height: '40px',
-                            minHeight: '40px',
-                          }}
-                        >
-                          {num <= totalQuestions
-                            ? examData.questions[num - 1]?.points || 1
-                            : ''}
-                        </th>
-                      )
-                    )}
-                  </tr>
-                  {/* 세 번째 행: 문항번호 */}
-                  <tr className="border-b-2 border-slate-400 bg-slate-50">
                     {Array.from({ length: maxQuestions }, (_, i) => i + 1).map(
                       num => (
                         <th
@@ -456,6 +474,32 @@ function ExamDetailPage() {
                       )
                     )}
                   </tr>
+                  {/* 세 번째 행: 배점 */}
+                  <tr className="border-b-2 border-slate-400 bg-slate-50">
+                    {Array.from({ length: maxQuestions }, (_, i) => i + 1).map(
+                      num => (
+                        <th
+                          key={num}
+                          className={`border-r border-slate-300 px-2 py-2 text-center text-xs font-medium text-slate-700 ${
+                            num <= totalQuestions
+                              ? 'bg-blue-100'
+                              : 'bg-slate-50'
+                          }`}
+                          style={{
+                            width: '40px',
+                            minWidth: '40px',
+                            maxWidth: '40px',
+                            height: '40px',
+                            minHeight: '40px',
+                          }}
+                        >
+                          {num <= totalQuestions
+                            ? examData.questions[num - 1]?.points || 1
+                            : ''}
+                        </th>
+                      )
+                    )}
+                  </tr>
                 </thead>
                 <tbody>
                   {examData.records.map(record => {
@@ -468,31 +512,62 @@ function ExamDetailPage() {
                         {Array.from(
                           { length: maxQuestions },
                           (_, i) => i + 1
-                        ).map(num => (
-                          <td
-                            key={num}
-                            className={`border-r border-slate-300 px-2 py-2 text-center text-sm ${
-                              num <= totalQuestions
-                                ? (num - 1) % 5 < 2
-                                  ? 'bg-slate-50'
-                                  : 'bg-blue-50/30'
-                                : 'bg-white'
-                            }`}
-                            style={{
-                              width: '40px',
-                              minWidth: '40px',
-                              maxWidth: '40px',
-                              height: '40px',
-                              minHeight: '40px',
-                            }}
-                          >
-                            {num <= totalQuestions &&
+                        ).map(num => {
+                          const isWrong =
+                            num <= totalQuestions &&
                             answerInfo.tookExam &&
-                            answerInfo.wrongAnswers.includes(num)
-                              ? 'x'
-                              : ''}
-                          </td>
-                        ))}
+                            answerInfo.wrongAnswers.includes(num);
+
+                          const handleCellClick = () => {
+                            if (!isEditMode || num > totalQuestions) return;
+
+                            const currentWrongAnswers =
+                              studentWrongAnswers[record.studentId] || [];
+                            let newWrongAnswers: number[];
+
+                            if (isWrong) {
+                              // x 표시 제거
+                              newWrongAnswers = currentWrongAnswers.filter(
+                                n => n !== num
+                              );
+                            } else {
+                              // x 표시 추가
+                              newWrongAnswers = [...currentWrongAnswers, num];
+                            }
+
+                            setStudentWrongAnswers({
+                              ...studentWrongAnswers,
+                              [record.studentId]: newWrongAnswers,
+                            });
+                          };
+
+                          return (
+                            <td
+                              key={num}
+                              onClick={handleCellClick}
+                              className={`border-r border-slate-300 px-2 py-2 text-center text-sm ${
+                                num <= totalQuestions
+                                  ? (num - 1) % 5 < 2
+                                    ? 'bg-slate-50'
+                                    : 'bg-blue-50/30'
+                                  : 'bg-white'
+                              } ${
+                                isEditMode && num <= totalQuestions
+                                  ? 'cursor-pointer hover:bg-blue-100'
+                                  : ''
+                              }`}
+                              style={{
+                                width: '40px',
+                                minWidth: '40px',
+                                maxWidth: '40px',
+                                height: '40px',
+                                minHeight: '40px',
+                              }}
+                            >
+                              {isWrong ? 'x' : ''}
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })}
@@ -502,31 +577,194 @@ function ExamDetailPage() {
           </div>
         </div>
 
-        {/* 하단 오답률 통계 */}
-        <div className="mt-6">
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold text-slate-900">
-              오답률
-            </h3>
-            <div className="max-h-48 overflow-y-auto">
-              <div className="grid grid-cols-5 gap-2 text-xs">
-                {Array.from({ length: totalQuestions }, (_, i) => i + 1).map(
-                  num => (
-                    <div
-                      key={num}
-                      className="flex flex-col items-center rounded border border-slate-200 p-2"
-                    >
-                      <div className="text-slate-600">{num}</div>
-                      <div className="font-semibold text-slate-900">
-                        {getErrorRate(num)}%
-                      </div>
-                    </div>
-                  )
-                )}
+        {/* 오답률 확인 모달 */}
+        {showErrorRate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="relative w-full max-w-2xl rounded-lg border border-slate-200 bg-white p-6 shadow-lg">
+              <button
+                type="button"
+                onClick={() => setShowErrorRate(false)}
+                className="absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    // 오답률 재계산 (실제로는 서버에 요청)
+                  }}
+                  className="rounded-lg border border-[#084773] bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063d5c]"
+                >
+                  오답률 생성
+                </button>
+              </div>
+              <h3 className="mb-3 text-lg font-semibold text-slate-900">
+                문제별 오답률
+              </h3>
+              <div className="max-h-96 overflow-y-auto">
+                <div className="grid grid-cols-5 gap-2 text-xs">
+                  {Array.from({ length: totalQuestions }, (_, i) => i + 1).map(
+                    num => {
+                      const errorRate = getErrorRate(num);
+                      const getBgColorClass = () => {
+                        if (errorRate > 50) {
+                          return 'bg-red-100 border-red-300';
+                        } else if (errorRate >= 30) {
+                          return 'bg-orange-100 border-orange-300';
+                        }
+                        return 'bg-white border-slate-200';
+                      };
+                      return (
+                        <div
+                          key={num}
+                          className={`flex flex-col items-center rounded border p-2 ${getBgColorClass()}`}
+                        >
+                          <div className="text-slate-600">{num}</div>
+                          <div className="font-semibold text-slate-900">
+                            {errorRate}%
+                          </div>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* 성적 순위 모달 */}
+        {showRanking && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="relative w-full max-w-3xl max-h-[90vh] rounded-lg border border-slate-200 bg-white p-6 shadow-lg flex flex-col">
+              <button
+                type="button"
+                onClick={() => setShowRanking(false)}
+                className="absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    // 순위 생성 (실제로는 서버에 요청)
+                  }}
+                  className="rounded-lg border border-[#084773] bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063d5c]"
+                >
+                  순위 생성
+                </button>
+              </div>
+              <h3 className="mb-4 text-lg font-semibold text-slate-900">
+                성적 순위
+              </h3>
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <div className="space-y-2">
+                  {examData.records
+                    .sort((a, b) => b.score - a.score)
+                    .map((record, index) => {
+                      const rank = index + 1;
+                      return (
+                        <div
+                          key={record.studentId}
+                          className="flex items-center gap-4 rounded border border-slate-200 p-3"
+                        >
+                          <div className="w-16 text-sm font-semibold text-slate-900 text-center">
+                            {rank}등
+                          </div>
+                          <div className="w-20 text-sm font-medium text-slate-900 text-center">
+                            {record.score}점
+                          </div>
+                          <div className="flex-1 text-sm text-slate-700">
+                            {record.studentName}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 학생별 오답번호 모달 */}
+        {showStudentAnswers && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="relative w-full max-w-3xl max-h-[90vh] rounded-lg border border-slate-200 bg-white p-6 shadow-lg flex flex-col">
+              <button
+                type="button"
+                onClick={() => setShowStudentAnswers(false)}
+                className="absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+              <h3 className="mb-4 text-lg font-semibold text-slate-900">
+                학생별 오답번호
+              </h3>
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <div className="space-y-2">
+                  {examData.records.map(record => {
+                    const answerInfo = getStudentAnswerInfo(record.studentId);
+                    return (
+                      <div
+                        key={record.studentId}
+                        className="flex items-center gap-4 rounded border border-slate-200 p-3"
+                      >
+                        <div className="w-24 text-sm font-medium text-slate-900">
+                          {record.studentName}
+                        </div>
+                        <div className="flex-1 text-sm text-slate-700">
+                          {answerInfo.wrongAnswers.length > 0
+                            ? answerInfo.wrongAnswers
+                                .sort((a, b) => a - b)
+                                .join(', ')
+                            : '없음'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

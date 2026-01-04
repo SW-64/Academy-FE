@@ -150,22 +150,7 @@ function AdminGradesPage() {
     setIsModalOpen(true);
   };
 
-  const handleGenerateAverageForDetail = () => {
-    if (!selectedExam) return;
-    const averageScore =
-      Math.round(
-        (selectedExam.records.reduce((sum, r) => sum + r.score, 0) /
-          selectedExam.records.length) *
-          10
-      ) / 10;
-    setSelectedExam({
-      ...selectedExam,
-      averageScore,
-    });
-    // eslint-disable-next-line no-alert
-    alert(`평균 점수가 ${averageScore}점으로 계산되었습니다.`);
-  };
-
+  //
   const handleSaveEdit = () => {
     if (!selectedExam) return;
 
@@ -259,11 +244,6 @@ function AdminGradesPage() {
       ...prev,
       questions: prev.questions.filter((_, i) => i !== index),
     }));
-  };
-
-  const handleGenerateErrorRate = () => {
-    // 오답률 생성 로직 (나중에 API로 교체)
-    alert('오답률이 생성되었습니다.');
   };
 
   ``;
@@ -532,9 +512,7 @@ function AdminGradesPage() {
       )}
       {/* 시험 추가 모달 */}
       {isAddExamModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
             className="relative w-full max-w-5xl h-[90vh] rounded-2xl bg-white shadow-xl overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
@@ -699,9 +677,7 @@ function AdminGradesPage() {
       )}
       {/* 상세 모달 */}
       {isModalOpen && selectedExam && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
             className="relative w-full max-w-5xl h-[90vh] rounded-2xl bg-white shadow-xl overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
@@ -858,22 +834,7 @@ function AdminGradesPage() {
 
             {/* 하단 고정 버튼 영역 */}
             <div className="p-6 border-t border-slate-200 bg-white flex-shrink-0 flex items-center justify-between">
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleGenerateErrorRate}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-                >
-                  오답률 생성
-                </button>
-                <button
-                  type="button"
-                  onClick={handleGenerateAverageForDetail}
-                  className="rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
-                >
-                  평균 점수 생성
-                </button>
-              </div>
+              <div className="flex gap-3"></div>
               <div className="flex gap-3">
                 {isEditMode ? (
                   <>
