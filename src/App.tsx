@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import RouteLoader from './components/RouteLoader';
 
 // 코드 스플리팅: 모든 페이지를 lazy import
 const LoginPage = lazy(() => import('./pages/LoginPage'));
@@ -43,7 +42,7 @@ const ParentMyPage = lazy(() => import('./pages/parent/ParentMyPage'));
 function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<RouteLoader />}>
+      <Suspense fallback={null}>
         <Routes>
           {/* 초기 진입은 /login 으로 리다이렉트 */}
           <Route path="/" element={<Navigate to="/login" replace />} />
