@@ -168,12 +168,6 @@ function HomeworkProgressPage() {
     stepIndex: number,
     newStatus: ProgressStatus
   ) => {
-    const currentProgress = getProgress(
-      studentId,
-      textbookId,
-      unitIndex,
-      stepIndex
-    );
     const progress =
       newStatus === 'completed' ? 100 : newStatus === 'in-progress' ? 50 : 0;
     updateProgress(
