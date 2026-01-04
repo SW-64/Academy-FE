@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import MainLayout from './MainLayout';
+
+// 더미 클래스 데이터 (실제로는 API에서 가져와야 함)
+const dummyClasses = [
+  { id: 1, name: '예비고2 월금 정규반' },
+  { id: 2, name: '예비고2 화목 정규반' },
+  { id: 3, name: '미적분1 기본 특강반' },
+  { id: 4, name: '미적분1+2 통합 특강반' },
+];
 
 // TODO: API 연결 시 이 더미 데이터를 실제 API 호출로 교체
 export interface Material {
@@ -10,6 +18,7 @@ export interface Material {
   createdAt: string;
   author: string;
   hasNewTag?: boolean;
+  classIds?: number[];
 }
 
 export const dummyMaterials: Material[] = [
@@ -19,6 +28,7 @@ export const dummyMaterials: Material[] = [
     createdAt: '2026-02-28',
     author: '곽원근',
     hasNewTag: true,
+    classIds: [3], // 미적분1 기본 특강반
   },
   {
     id: 15,
@@ -26,98 +36,113 @@ export const dummyMaterials: Material[] = [
     createdAt: '2026-02-27',
     author: '곽원근',
     hasNewTag: true,
+    classIds: [1, 2], // 예비고2 월금 정규반, 예비고2 화목 정규반
   },
   {
     id: 14,
     title: '기하와 벡터 - 공간도형의 방정식',
     createdAt: '2026-02-26',
     author: '곽원근',
+    classIds: [1, 2], // 예비고2 월금 정규반, 예비고2 화목 정규반
   },
   {
     id: 13,
     title: '미적분 II - 적분의 활용',
     createdAt: '2026-02-25',
     author: '곽원근',
+    classIds: [4], // 미적분1+2 통합 특강반
   },
   {
     id: 12,
     title: '수학 I - 지수함수와 로그함수',
     createdAt: '2026-02-24',
     author: '곽원근',
+    classIds: [1, 2, 3], // 예비고2 월금 정규반, 예비고2 화목 정규반, 미적분1 기본 특강반
   },
   {
     id: 11,
     title: '수학 II - 삼각함수의 성질',
     createdAt: '2026-02-23',
     author: '곽원근',
+    classIds: [1], // 예비고2 월금 정규반
   },
   {
     id: 10,
     title: '미적분 I - 도함수의 활용',
     createdAt: '2026-02-22',
     author: '곽원근',
+    classIds: [3, 4], // 미적분1 기본 특강반, 미적분1+2 통합 특강반
   },
   {
     id: 9,
     title: '확률과 통계 - 확률의 기본 성질',
     createdAt: '2026-02-21',
     author: '곽원근',
+    classIds: [2, 4], // 예비고2 화목 정규반, 미적분1+2 통합 특강반
   },
   {
     id: 8,
     title: '기하와 벡터 - 평면벡터의 연산',
     createdAt: '2026-02-20',
     author: '곽원근',
+    classIds: [2], // 예비고2 화목 정규반
   },
   {
     id: 7,
     title: '미적분 II - 여러 가지 적분법',
     createdAt: '2026-02-19',
     author: '곽원근',
+    classIds: [4], // 미적분1+2 통합 특강반
   },
   {
     id: 6,
     title: '수학 I - 수열의 극한',
     createdAt: '2026-02-18',
     author: '곽원근',
+    classIds: [1], // 예비고2 월금 정규반
   },
   {
     id: 5,
     title: '수학 II - 함수의 연속과 미분',
     createdAt: '2026-02-17',
     author: '곽원근',
+    classIds: [1, 2, 3], // 예비고2 월금 정규반, 예비고2 화목 정규반, 미적분1 기본 특강반
   },
   {
     id: 4,
     title: '미적분 I - 여러 가지 미분법',
     createdAt: '2026-02-16',
     author: '곽원근',
+    classIds: [3], // 미적분1 기본 특강반
   },
   {
     id: 3,
     title: '확률과 통계 - 조건부 확률',
     createdAt: '2026-02-15',
     author: '곽원근',
+    classIds: [3, 4], // 미적분1 기본 특강반, 미적분1+2 통합 특강반
   },
   {
     id: 2,
     title: '기하와 벡터 - 공간좌표와 공간벡터',
     createdAt: '2026-02-14',
     author: '곽원근',
+    classIds: [2, 4], // 예비고2 화목 정규반, 미적분1+2 통합 특강반
   },
   {
     id: 1,
     title: '미적분 II - 정적분의 계산',
     createdAt: '2026-02-13',
     author: '곽원근',
+    classIds: [4], // 미적분1+2 통합 특강반
   },
 ];
 
 function MaterialsPage() {
   const navigate = useNavigate();
-  const [searchTitle, setSearchTitle] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedClassFilter, setSelectedClassFilter] = useState<number | 'all'>('all');
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -133,17 +158,24 @@ function MaterialsPage() {
   // 일반 리스트는 id 기준 내림차순 정렬 (낮은 번호가 밑으로)
   const sortedMaterials = [...dummyMaterials].sort((a, b) => b.id - a.id);
 
-  // 제목 검색 필터링
-  const filteredMaterials = searchTitle
-    ? sortedMaterials.filter(material =>
-        material.title.toLowerCase().includes(searchTitle.toLowerCase())
-      )
-    : sortedMaterials;
+  // 클래스 필터링 함수
+  const filterByClass = (material: Material) => {
+    if (selectedClassFilter === 'all') {
+      // 전체자료: 모든 자료 표시
+      return true;
+    } else {
+      // 특정 클래스 자료: classIds에 선택한 클래스 ID가 포함된 경우
+      return material.classIds && material.classIds.includes(selectedClassFilter);
+    }
+  };
 
-  // 검색어가 변경되면 첫 페이지로 리셋
+  // 클래스 필터링 적용
+  const filteredMaterials = sortedMaterials.filter(filterByClass);
+
+  // 필터가 변경되면 첫 페이지로 리셋
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTitle]);
+  }, [selectedClassFilter]);
 
   const totalPages = Math.ceil(filteredMaterials.length / itemsPerPage);
 
@@ -193,33 +225,24 @@ function MaterialsPage() {
         </h1>
       </header>
 
-      {/* 검색 및 전체 자료 건수 */}
-      <div className="mb-6 flex items-center justify-between gap-2">
-        <div className="pl-4 pt-3 text-sm max-[355px]:text-xs text-slate-600">
-          전체 {searchTitle ? filteredMaterials.length : dummyMaterials.length}
-          건
-        </div>
-
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={searchTitle}
-            onChange={e => setSearchTitle(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-              }
-            }}
-            className="w-48 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-            placeholder="제목 검색"
-          />
-          <button
-            type="button"
-            className="flex items-center justify-center rounded-lg bg-[#084773] p-2 text-white transition-colors hover:bg-[#063a5a]"
-          >
-            <Search className="h-5 w-5" />
-          </button>
-        </div>
+      {/* 클래스 필터 드롭다운 */}
+      <div className="mb-6">
+        <select
+          value={selectedClassFilter}
+          onChange={e =>
+            setSelectedClassFilter(
+              e.target.value === 'all' ? 'all' : Number(e.target.value)
+            )
+          }
+          className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+        >
+          <option value="all">전체자료</option>
+          {dummyClasses.map(classItem => (
+            <option key={classItem.id} value={classItem.id}>
+              {classItem.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* 학습자료 테이블 */}

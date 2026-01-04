@@ -4,11 +4,20 @@ import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import MainLayout from '../MainLayout';
 import { dummyNotices, type Notice } from '../../data/noticesData';
 
+// 더미 클래스 데이터 (실제로는 API에서 가져와야 함)
+const dummyClasses = [
+  { id: 1, name: '예비고2 월금 정규반' },
+  { id: 2, name: '예비고2 화목 정규반' },
+  { id: 3, name: '미적분1 기본 특강반' },
+  { id: 4, name: '미적분1+2 통합 특강반' },
+];
+
 function ParentNoticePage() {
   const navigate = useNavigate();
   const [searchTitle, setSearchTitle] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedClassFilter, setSelectedClassFilter] = useState<number | 'all'>('all');
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -26,17 +35,31 @@ function ParentNoticePage() {
   // 일반 리스트는 id 기준 내림차순 정렬 (낮은 번호가 밑으로)
   const sortedNotices = [...dummyNotices].sort((a, b) => b.id - a.id);
 
+  // 클래스 필터링 함수
+  const filterByClass = (notice: Notice) => {
+    if (selectedClassFilter === 'all') {
+      // 전체공지: 모든 공지사항 표시
+      return true;
+    } else {
+      // 특정 클래스 공지: classIds에 선택한 클래스 ID가 포함된 경우
+      return notice.classIds && notice.classIds.includes(selectedClassFilter);
+    }
+  };
+
+  // 클래스 필터링 적용
+  const classFilteredNotices = sortedNotices.filter(filterByClass);
+
   // 제목 검색 필터링
   const filteredNotices = searchTitle
-    ? sortedNotices.filter(notice =>
+    ? classFilteredNotices.filter(notice =>
         notice.title.toLowerCase().includes(searchTitle.toLowerCase())
       )
-    : sortedNotices;
+    : classFilteredNotices;
 
-  // 검색어가 변경되면 첫 페이지로 리셋
+  // 검색어나 필터가 변경되면 첫 페이지로 리셋
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTitle]);
+  }, [searchTitle, selectedClassFilter]);
 
   const totalPages = Math.ceil(filteredNotices.length / itemsPerPage);
 
@@ -122,12 +145,30 @@ function ParentNoticePage() {
       </header>
 
       {/* 검색 및 전체 공지 건수 */}
-      <div className="mb-6 flex items-center justify-between gap-2">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="pl-4 pt-3 text-sm max-[355px]:text-xs text-slate-600">
-          전체 {searchTitle ? filteredNotices.length : dummyNotices.length}건
+          전체 {filteredNotices.length}건
         </div>
 
         <div className="flex items-center gap-2">
+          {/* 클래스 필터 드롭다운 */}
+          <select
+            value={selectedClassFilter}
+            onChange={e =>
+              setSelectedClassFilter(
+                e.target.value === 'all' ? 'all' : Number(e.target.value)
+              )
+            }
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+          >
+            <option value="all">전체공지</option>
+            {dummyClasses.map(classItem => (
+              <option key={classItem.id} value={classItem.id}>
+                {classItem.name}
+              </option>
+            ))}
+          </select>
+
           <input
             type="text"
             value={searchTitle}

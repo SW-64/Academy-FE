@@ -19,6 +19,7 @@ export const dummyNotices: Notice[] = [
     author: '곽원근',
     createdAt: '2018.04.29 14:16',
     isPinned: true,
+    // 전체공지 (classIds 없음)
     content: `안녕하세요.
 
 2024년 중간고사 대비 특강 일정을 안내드립니다.
@@ -39,6 +40,7 @@ export const dummyNotices: Notice[] = [
     hasNewTag: false,
     author: '곽원근',
     createdAt: '2018.04.30 15:31',
+    // 전체공지 (classIds 없음)
     content: `5월 학원 행사 일정을 안내드립니다.
 
 ■ 수학 경시대회: 5월 12일 (토) 오전 10시
@@ -54,6 +56,7 @@ export const dummyNotices: Notice[] = [
     hasNewTag: false,
     author: '곽원근',
     createdAt: '2018.05.01 14:40',
+    classIds: [1, 2], // 예비고2 월금 정규반, 예비고2 화목 정규반
     content: `여름방학 특강 등록을 안내드립니다.
 
 ■ 대상: 전 학년 학생
@@ -73,6 +76,7 @@ export const dummyNotices: Notice[] = [
     author: '곽원근',
     createdAt: '2018.05.02 14:40',
     isPinned: true,
+    classIds: [3], // 미적분1 기본 특강반
     content: `학원 교재 배부 안내입니다.
 
 2024년 상반기 교재를 배부합니다.
@@ -90,6 +94,7 @@ export const dummyNotices: Notice[] = [
     hasNewTag: false,
     author: '곽원근',
     createdAt: '2018.05.03 14:39',
+    classIds: [1], // 예비고2 월금 정규반
     content: `보충 수업 일정을 안내드립니다.
 
 ■ 대상: 수업 이해도가 부족한 학생
@@ -108,6 +113,7 @@ export const dummyNotices: Notice[] = [
     hasNewTag: false,
     author: '곽원근',
     createdAt: '2018.05.04 14:38',
+    // 전체공지 (classIds 없음)
     content: `학부모 상담 일정을 안내드립니다.
 
 ■ 상담 기간: 5월 10일 ~ 5월 25일
@@ -124,6 +130,7 @@ export const dummyNotices: Notice[] = [
     hasNewTag: false,
     author: '곽원근',
     createdAt: '2018.05.05 14:38',
+    classIds: [2], // 예비고2 화목 정규반
     content: `신규 학생 등록을 안내드립니다.
 
 ■ 등록 기간: 상시 접수
@@ -140,6 +147,7 @@ export const dummyNotices: Notice[] = [
     hasNewTag: false,
     author: '곽원근',
     createdAt: '2018.05.06 14:17',
+    classIds: [3, 4], // 미적분1 기본 특강반, 미적분1+2 통합 특강반
     content: `어린이날 대체공휴일 휴강 안내입니다.
 
 ■ 휴강일: 2018년 5월 7일 (월)
@@ -155,6 +163,7 @@ export const dummyNotices: Notice[] = [
     hasNewTag: false,
     author: '곽원근',
     createdAt: '2018.05.07 10:25',
+    // 전체공지 (classIds 없음)
     content: `1학기 중간고사 성적 발표 안내입니다.
 
 ■ 발표 일자: 2018년 5월 15일
@@ -170,6 +179,7 @@ export const dummyNotices: Notice[] = [
     hasNewTag: true,
     author: '곽원근',
     createdAt: '2018.05.08 16:45',
+    classIds: [4], // 미적분1+2 통합 특강반
     content: `수업 시간 변경을 안내드립니다.
 
 ■ 변경 기간: 5월 15일부터 적용
@@ -186,6 +196,7 @@ export const dummyNotices: Notice[] = [
     hasNewTag: true,
     author: '곽원근',
     createdAt: '2018.05.09 09:30',
+    // 전체공지 (classIds 없음)
     content: `신규 강사 채용을 안내드립니다.
 
 ■ 채용 분야: 중·고등 수학 전담 강사
@@ -202,6 +213,7 @@ export const dummyNotices: Notice[] = [
     hasNewTag: true,
     author: '곽원근',
     createdAt: '2018.05.10 14:20',
+    classIds: [1, 2, 3], // 예비고2 월금 정규반, 예비고2 화목 정규반, 미적분1 기본 특강반
     content: `학원 규정 및 수업 안내입니다.
 
 주요 규정:
@@ -220,6 +232,7 @@ export const dummyNotices: Notice[] = [
     hasNewTag: true,
     author: '곽원근',
     createdAt: '2018.05.11 11:10',
+    // 전체공지 (classIds 없음)
     content: `5월 모의고사 일정과 응시 방법을 안내드립니다.
 
 ■ 일시: 5월 20일(월) 오후 6시
@@ -235,6 +248,7 @@ export const dummyNotices: Notice[] = [
     hasNewTag: true,
     author: '곽원근',
     createdAt: '2018.05.12 09:50',
+    classIds: [2, 4], // 예비고2 화목 정규반, 미적분1+2 통합 특강반
     content: `여름방학 학습 캠프 참가자를 모집합니다.
 
 ■ 기간: 7월 25일 ~ 7월 30일 (5박 6일)
