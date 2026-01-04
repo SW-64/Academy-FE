@@ -359,11 +359,13 @@ function HomeworkProgressDetailPage() {
 
         {/* 표 표시 */}
         {displayedTextbook && students.length > 0 && (
-          <div className={`rounded-lg border-2 overflow-hidden transition-all ${
-            isEditMode 
-              ? 'border-blue-400 bg-blue-50/20 shadow-lg' 
-              : 'border-slate-400 bg-white'
-          }`}>
+          <div
+            className={`rounded-lg border-2 overflow-hidden transition-all ${
+              isEditMode
+                ? 'border-blue-400 bg-blue-50/20 shadow-lg'
+                : 'border-slate-400 bg-white'
+            }`}
+          >
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse">
                 <thead>
@@ -504,7 +506,7 @@ function HomeworkProgressDetailPage() {
                                 />
                                 {/* 상태 버튼 */}
                                 <div className="flex gap-1">
-                                    <button
+                                  <button
                                     type="button"
                                     onClick={() => {
                                       handleStatusChange(
@@ -642,4 +644,3 @@ function HomeworkProgressDetailPage() {
 }
 
 export default HomeworkProgressDetailPage;
-

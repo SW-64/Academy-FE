@@ -58,8 +58,14 @@ function App() {
         <Route path="/admin/materials" element={<AdminMaterialsPage />} />
         <Route path="/admin/videos" element={<AdminVideosPage />} />
         <Route path="/admin/homework" element={<AdminHomeworkPage />} />
-        <Route path="/admin/homework-progress" element={<HomeworkProgressPage />} />
-        <Route path="/admin/homework-progress/:classId" element={<HomeworkProgressDetailPage />} />
+        <Route
+          path="/admin/homework-progress"
+          element={<HomeworkProgressPage />}
+        />
+        <Route
+          path="/admin/homework-progress/:classId"
+          element={<HomeworkProgressDetailPage />}
+        />
         <Route path="/admin/mypage" element={<MyPage />} />
 
         {/* 학부모 라우트 */}
