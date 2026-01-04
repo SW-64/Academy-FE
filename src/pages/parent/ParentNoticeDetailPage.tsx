@@ -4,6 +4,14 @@ import { ArrowLeft } from 'lucide-react';
 import MainLayout from '../MainLayout';
 import { dummyNotices } from '../../data/noticesData';
 
+// 더미 클래스 데이터 (실제로는 API에서 가져와야 함)
+const dummyClasses = [
+  { id: 1, name: '예비고2 월금 정규반' },
+  { id: 2, name: '예비고2 화목 정규반' },
+  { id: 3, name: '미적분1 기본 특강반' },
+  { id: 4, name: '미적분1+2 통합 특강반' },
+];
+
 function ParentNoticeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -76,15 +84,38 @@ function ParentNoticeDetailPage() {
           </div>
         </div>
 
-        {/* 작성일/작성자 영역 */}
+        {/* 작성일/작성자/클래스 영역 */}
         <div className="px-6 pt-4">
-          <div className="flex justify-end gap-6 text-sm text-slate-600">
-            <div>
-              <span className="font-medium text-slate-700"></span>{' '}
-              {notice.createdAt.split(' ')[0]}
+          <div className="flex justify-between items-center text-sm text-slate-600">
+            {/* 클래스 정보 (왼쪽) */}
+            <div className="flex flex-wrap gap-2">
+              {notice.classIds && notice.classIds.length > 0 ? (
+                notice.classIds
+                  .map(classId => dummyClasses.find(c => c.id === classId)?.name)
+                  .filter(Boolean)
+                  .map((className, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex rounded-md border border-slate-200 bg-slate-30 px-2.5 py-1 text-xs font-medium text-slate-500"
+                    >
+                      {className}
+                    </span>
+                  ))
+              ) : (
+                <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500">
+                  전체공지
+                </span>
+              )}
             </div>
-            <div>
-              <span className="font-medium text-slate-700"></span> {notice.author}
+            {/* 작성일/작성자 (오른쪽) */}
+            <div className="flex gap-6">
+              <div>
+                <span className="font-medium text-slate-700"></span>{' '}
+                {notice.createdAt.split(' ')[0]}
+              </div>
+              <div>
+                <span className="font-medium text-slate-700"></span> {notice.author}
+              </div>
             </div>
           </div>
         </div>
