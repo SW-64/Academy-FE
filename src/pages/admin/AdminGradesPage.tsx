@@ -859,20 +859,6 @@ function AdminGradesPage() {
             {/* 하단 고정 버튼 영역 */}
             <div className="p-6 border-t border-slate-200 bg-white flex-shrink-0 flex items-center justify-between">
               <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleGenerateErrorRate}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-                >
-                  오답률 생성
-                </button>
-                <button
-                  type="button"
-                  onClick={handleGenerateAverageForDetail}
-                  className="rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
-                >
-                  평균 점수 생성
-                </button>
               </div>
               <div className="flex gap-3">
                 {isEditMode ? (

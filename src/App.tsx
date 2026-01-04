@@ -21,6 +21,7 @@ import AdminMaterialsPage from './pages/admin/MaterialsPage';
 import AdminVideosPage from './pages/admin/VideosPage';
 import AdminHomeworkPage from './pages/admin/AdminHomeworkPage';
 import HomeworkProgressPage from './pages/admin/HomeworkProgressPage';
+import HomeworkProgressDetailPage from './pages/admin/HomeworkProgressDetailPage';
 import ParentMainPage from './pages/parent/ParentMainPage';
 import ParentNoticePage from './pages/parent/ParentNoticePage';
 import ParentNoticeDetailPage from './pages/parent/ParentNoticeDetailPage';
@@ -58,6 +59,7 @@ function App() {
         <Route path="/admin/videos" element={<AdminVideosPage />} />
         <Route path="/admin/homework" element={<AdminHomeworkPage />} />
         <Route path="/admin/homework-progress" element={<HomeworkProgressPage />} />
+        <Route path="/admin/homework-progress/:classId" element={<HomeworkProgressDetailPage />} />
         <Route path="/admin/mypage" element={<MyPage />} />
 
         {/* 학부모 라우트 */}
