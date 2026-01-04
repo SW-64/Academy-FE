@@ -216,8 +216,11 @@ function AdminHomeworkPage() {
     classId: 0,
     majorUnitCount: 0,
     minorUnitCount: 0,
-    stepCount: 3, // 기본 스텝 수
+    stepCount: 3, // 기본 스텝 수 (하위 호환성 유지)
   });
+  const [majorUnits, setMajorUnits] = useState<
+    Array<{ minorUnitCount: number; stepCount: number }>
+  >([]);
   const [subUnits, setSubUnits] = useState<SubUnit[]>([]);
 
   const handleOpenModal = () => {
@@ -232,6 +235,7 @@ function AdminHomeworkPage() {
       minorUnitCount: 0,
       stepCount: 3,
     });
+    setMajorUnits([]);
     setSubUnits([]);
   };
 
@@ -240,14 +244,48 @@ function AdminHomeworkPage() {
     setIsEditMode(true);
     setEditingTextbookId(textbook.id);
     const stepSubUnit = textbook.subUnits.find(sub => sub.name === '스텝');
+    const majorUnitCount = textbook.majorUnitCount || textbook.unitCount;
+    
+    // 기존 데이터에 majorUnitsDetail이 있으면 사용, 없으면 전역 값으로 모든 대단원에 동일하게 적용
+    const textbookWithDetail = textbook as Textbook & {
+      majorUnitsDetail?: Array<{
+        majorUnitIndex: number;
+        minorUnitCount: number;
+        stepCount: number;
+      }>;
+    };
+    
+    let initialMajorUnits: Array<{ minorUnitCount: number; stepCount: number }>;
+    
+    if (textbookWithDetail.majorUnitsDetail && textbookWithDetail.majorUnitsDetail.length > 0) {
+      // 기존에 저장된 대단원별 상세 정보가 있으면 사용
+      initialMajorUnits = Array.from({ length: majorUnitCount }, (_, index) => {
+        const detail = textbookWithDetail.majorUnitsDetail?.find(
+          d => d.majorUnitIndex === index + 1
+        );
+        return {
+          minorUnitCount: detail?.minorUnitCount || textbook.minorUnitCount || 0,
+          stepCount: detail?.stepCount || stepSubUnit?.subUnitCount || 3,
+        };
+      });
+    } else {
+      // 기존 데이터를 대단원별 구조로 변환
+      // 기존에는 전역 소단원 수와 스텝 수만 있었으므로, 모든 대단원에 동일하게 적용
+      initialMajorUnits = Array.from({ length: majorUnitCount }, () => ({
+        minorUnitCount: textbook.minorUnitCount || 0,
+        stepCount: stepSubUnit?.subUnitCount || 3,
+      }));
+    }
+    
     setNewTextbook({
       name: textbook.name,
       grade: textbook.grade,
       classId: textbook.classId,
-      majorUnitCount: textbook.majorUnitCount || textbook.unitCount,
+      majorUnitCount: majorUnitCount,
       minorUnitCount: textbook.minorUnitCount || 0,
       stepCount: stepSubUnit?.subUnitCount || 3,
     });
+    setMajorUnits(initialMajorUnits);
     setSubUnits(textbook.subUnits.map(subUnit => ({ ...subUnit })));
   };
 
@@ -263,6 +301,7 @@ function AdminHomeworkPage() {
       minorUnitCount: 0,
       stepCount: 3,
     });
+    setMajorUnits([]);
     setSubUnits([]);
   };
 
@@ -291,6 +330,54 @@ function AdminHomeworkPage() {
     setSubUnits(subUnits.filter((_, i) => i !== index));
   };
 
+  // 대단원 수 변경 시 majorUnits 배열 업데이트
+  const handleMajorUnitCountChange = (count: number) => {
+    const newCount = Math.max(0, count);
+    setNewTextbook(prev => ({ ...prev, majorUnitCount: newCount }));
+    
+    if (newCount > majorUnits.length) {
+      // 대단원 수가 증가하면 기본값으로 추가
+      const defaultMinorCount = majorUnits.length > 0 
+        ? majorUnits[0].minorUnitCount 
+        : newTextbook.minorUnitCount || 0;
+      const defaultStepCount = majorUnits.length > 0 
+        ? majorUnits[0].stepCount 
+        : newTextbook.stepCount || 3;
+      
+      const newMajorUnits = [...majorUnits];
+      for (let i = majorUnits.length; i < newCount; i++) {
+        newMajorUnits.push({
+          minorUnitCount: defaultMinorCount,
+          stepCount: defaultStepCount,
+        });
+      }
+      setMajorUnits(newMajorUnits);
+    } else if (newCount < majorUnits.length) {
+      // 대단원 수가 감소하면 배열 축소
+      setMajorUnits(majorUnits.slice(0, newCount));
+    }
+  };
+
+  // 대단원별 소단원 수 변경
+  const handleMajorUnitMinorCountChange = (index: number, count: number) => {
+    const newMajorUnits = [...majorUnits];
+    newMajorUnits[index] = {
+      ...newMajorUnits[index],
+      minorUnitCount: Math.max(0, count),
+    };
+    setMajorUnits(newMajorUnits);
+  };
+
+  // 대단원별 스텝 수 변경
+  const handleMajorUnitStepCountChange = (index: number, count: number) => {
+    const newMajorUnits = [...majorUnits];
+    newMajorUnits[index] = {
+      ...newMajorUnits[index],
+      stepCount: Math.max(1, count),
+    };
+    setMajorUnits(newMajorUnits);
+  };
+
   const handleSave = () => {
     if (!newTextbook.name || !newTextbook.grade || !newTextbook.classId) {
       alert('교재 이름, 학년, 클래스를 모두 입력해주세요.');
@@ -302,30 +389,56 @@ function AdminHomeworkPage() {
       return;
     }
 
-    if (newTextbook.minorUnitCount === 0) {
-      alert('소단원 수를 입력해주세요.');
+    // 대단원별 소단원 수와 스텝 수 검증
+    if (majorUnits.length !== newTextbook.majorUnitCount) {
+      alert('대단원 수에 맞게 각 대단원의 정보를 입력해주세요.');
       return;
+    }
+
+    for (let i = 0; i < majorUnits.length; i++) {
+      if (majorUnits[i].minorUnitCount === 0) {
+        alert(`${i + 1}번째 대단원의 소단원 수를 입력해주세요.`);
+        return;
+      }
+      if (majorUnits[i].stepCount === 0) {
+        alert(`${i + 1}번째 대단원의 스텝 수를 입력해주세요.`);
+        return;
+      }
     }
 
     const selectedClass = dummyClasses.find(c => c.id === newTextbook.classId);
 
-    // 하위 단원에 스텝이 없으면 자동으로 추가
+    // 평균 소단원 수 계산 (하위 호환성 유지)
+    const avgMinorUnitCount = Math.round(
+      majorUnits.reduce((sum, unit) => sum + unit.minorUnitCount, 0) /
+        majorUnits.length
+    );
+
+    // 하위 단원에 스텝이 없으면 자동으로 추가 (평균 스텝 수 사용)
+    const avgStepCount = Math.round(
+      majorUnits.reduce((sum, unit) => sum + unit.stepCount, 0) /
+        majorUnits.length
+    );
+
     const finalSubUnits = [...subUnits];
     const hasStep = finalSubUnits.some(sub => sub.name === '스텝');
     if (!hasStep) {
       finalSubUnits.push({
         id: `step-${Date.now()}`,
         name: '스텝',
-        subUnitCount: newTextbook.stepCount,
+        subUnitCount: avgStepCount,
       });
     } else {
-      // 스텝이 있으면 개수 업데이트
+      // 스텝이 있으면 평균값으로 업데이트
       const stepIndex = finalSubUnits.findIndex(sub => sub.name === '스텝');
       if (stepIndex >= 0) {
-        finalSubUnits[stepIndex].subUnitCount = newTextbook.stepCount;
+        finalSubUnits[stepIndex].subUnitCount = avgStepCount;
       }
     }
 
+    // 대단원별 정보를 subUnits에 저장 (확장 가능한 구조)
+    // 각 대단원의 정보를 별도로 저장할 수도 있지만, 현재 구조 유지를 위해
+    // 평균값을 사용하되, 실제 데이터는 majorUnits 배열에 저장
     const textbookData: Textbook = {
       id:
         isEditMode && editingTextbookId
@@ -335,11 +448,21 @@ function AdminHomeworkPage() {
       grade: newTextbook.grade,
       classId: newTextbook.classId,
       className: selectedClass?.name || '',
-      unitCount: newTextbook.majorUnitCount, // 기존 구조 유지를 위해 majorUnitCount를 unitCount로 저장
+      unitCount: newTextbook.majorUnitCount,
       majorUnitCount: newTextbook.majorUnitCount,
-      minorUnitCount: newTextbook.minorUnitCount,
+      minorUnitCount: avgMinorUnitCount, // 평균값 저장 (하위 호환성)
       subUnits: finalSubUnits.map(subUnit => ({ ...subUnit })),
+      // 대단원별 상세 정보는 확장을 위해 별도 필드에 저장 가능
+      // majorUnitsDetail: majorUnits, // 필요시 추가
     };
+
+    // majorUnits 정보를 subUnits에 포함시키기 위해 확장
+    // 각 대단원별 정보를 저장할 수 있도록 구조 확장
+    (textbookData as any).majorUnitsDetail = majorUnits.map((unit, index) => ({
+      majorUnitIndex: index + 1,
+      minorUnitCount: unit.minorUnitCount,
+      stepCount: unit.stepCount,
+    }));
 
     if (isEditMode && editingTextbookId) {
       setTextbooks(
@@ -588,59 +711,80 @@ function AdminHomeworkPage() {
                     type="number"
                     min="0"
                     value={newTextbook.majorUnitCount}
-                    onChange={e =>
-                      setNewTextbook(prev => ({
-                        ...prev,
-                        majorUnitCount: Math.max(0, Number(e.target.value)),
-                      }))
-                    }
+                    onChange={e => handleMajorUnitCountChange(Number(e.target.value))}
                     placeholder="대단원 수를 입력하세요"
                     className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
                   />
-                </div>
-
-                {/* 소단원 수 */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-900 mb-2">
-                    소단원 수
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={newTextbook.minorUnitCount}
-                    onChange={e =>
-                      setNewTextbook(prev => ({
-                        ...prev,
-                        minorUnitCount: Math.max(0, Number(e.target.value)),
-                      }))
-                    }
-                    placeholder="소단원 수를 입력하세요"
-                    className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
-                  />
-                </div>
-
-                {/* 스텝 수 */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-900 mb-2">
-                    스텝 수 (각 단원당)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={newTextbook.stepCount}
-                    onChange={e =>
-                      setNewTextbook(prev => ({
-                        ...prev,
-                        stepCount: Math.max(1, Number(e.target.value)),
-                      }))
-                    }
-                    placeholder="스텝 수를 입력하세요 (기본: 3)"
-                    className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
-                  />
                   <p className="mt-1 text-xs text-slate-500">
-                    각 단원당 스텝 수를 입력하세요. 교재마다 상이할 수 있습니다.
+                    대단원 수를 입력하면 각 대단원별로 소단원 수와 스텝 수를 설정할 수 있습니다.
                   </p>
                 </div>
+
+                {/* 대단원별 소단원 수 및 스텝 수 */}
+                {newTextbook.majorUnitCount > 0 && majorUnits.length > 0 && (
+                  <div className="space-y-4 border-t border-slate-200 pt-6">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900 mb-3">
+                        대단원별 설정
+                      </h3>
+                      <p className="text-xs text-slate-500 mb-4">
+                        각 대단원마다 소단원 수와 스텝 수를 개별적으로 설정할 수 있습니다.
+                      </p>
+                    </div>
+                    <div className="space-y-4">
+                      {majorUnits.map((unit, index) => (
+                        <div
+                          key={index}
+                          className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+                        >
+                          <div className="mb-3 flex items-center gap-2">
+                            <span className="text-sm font-semibold text-slate-900">
+                              {index + 1}번째 대단원
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-slate-700 mb-1">
+                                소단원 수
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={unit.minorUnitCount}
+                                onChange={e =>
+                                  handleMajorUnitMinorCountChange(
+                                    index,
+                                    Number(e.target.value)
+                                  )
+                                }
+                                placeholder="소단원 수"
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-700 mb-1">
+                                스텝 수
+                              </label>
+                              <input
+                                type="number"
+                                min="1"
+                                value={unit.stepCount}
+                                onChange={e =>
+                                  handleMajorUnitStepCountChange(
+                                    index,
+                                    Number(e.target.value)
+                                  )
+                                }
+                                placeholder="스텝 수"
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* 하위 단원 추가 버튼 */}
                 <div>
