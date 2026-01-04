@@ -216,6 +216,7 @@ function AdminHomeworkPage() {
     classId: 0,
     majorUnitCount: 0,
     minorUnitCount: 0,
+    stepCount: 3, // 기본 스텝 수
   });
   const [subUnits, setSubUnits] = useState<SubUnit[]>([]);
 
@@ -229,6 +230,7 @@ function AdminHomeworkPage() {
       classId: 0,
       majorUnitCount: 0,
       minorUnitCount: 0,
+      stepCount: 3,
     });
     setSubUnits([]);
   };
@@ -237,12 +239,14 @@ function AdminHomeworkPage() {
     setIsModalOpen(true);
     setIsEditMode(true);
     setEditingTextbookId(textbook.id);
+    const stepSubUnit = textbook.subUnits.find(sub => sub.name === '스텝');
     setNewTextbook({
       name: textbook.name,
       grade: textbook.grade,
       classId: textbook.classId,
       majorUnitCount: textbook.majorUnitCount || textbook.unitCount,
       minorUnitCount: textbook.minorUnitCount || 0,
+      stepCount: stepSubUnit?.subUnitCount || 3,
     });
     setSubUnits(textbook.subUnits.map(subUnit => ({ ...subUnit })));
   };
@@ -257,6 +261,7 @@ function AdminHomeworkPage() {
       classId: 0,
       majorUnitCount: 0,
       minorUnitCount: 0,
+      stepCount: 3,
     });
     setSubUnits([]);
   };
@@ -303,6 +308,24 @@ function AdminHomeworkPage() {
     }
 
     const selectedClass = dummyClasses.find(c => c.id === newTextbook.classId);
+
+    // 하위 단원에 스텝이 없으면 자동으로 추가
+    const finalSubUnits = [...subUnits];
+    const hasStep = finalSubUnits.some(sub => sub.name === '스텝');
+    if (!hasStep) {
+      finalSubUnits.push({
+        id: `step-${Date.now()}`,
+        name: '스텝',
+        subUnitCount: newTextbook.stepCount,
+      });
+    } else {
+      // 스텝이 있으면 개수 업데이트
+      const stepIndex = finalSubUnits.findIndex(sub => sub.name === '스텝');
+      if (stepIndex >= 0) {
+        finalSubUnits[stepIndex].subUnitCount = newTextbook.stepCount;
+      }
+    }
+
     const textbookData: Textbook = {
       id:
         isEditMode && editingTextbookId
@@ -315,7 +338,7 @@ function AdminHomeworkPage() {
       unitCount: newTextbook.majorUnitCount, // 기존 구조 유지를 위해 majorUnitCount를 unitCount로 저장
       majorUnitCount: newTextbook.majorUnitCount,
       minorUnitCount: newTextbook.minorUnitCount,
-      subUnits: subUnits.map(subUnit => ({ ...subUnit })),
+      subUnits: finalSubUnits.map(subUnit => ({ ...subUnit })),
     };
 
     if (isEditMode && editingTextbookId) {
@@ -594,6 +617,29 @@ function AdminHomeworkPage() {
                     placeholder="소단원 수를 입력하세요"
                     className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
                   />
+                </div>
+
+                {/* 스텝 수 */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-900 mb-2">
+                    스텝 수 (각 단원당)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newTextbook.stepCount}
+                    onChange={e =>
+                      setNewTextbook(prev => ({
+                        ...prev,
+                        stepCount: Math.max(1, Number(e.target.value)),
+                      }))
+                    }
+                    placeholder="스텝 수를 입력하세요 (기본: 3)"
+                    className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    각 단원당 스텝 수를 입력하세요. 교재마다 상이할 수 있습니다.
+                  </p>
                 </div>
 
                 {/* 하위 단원 추가 버튼 */}

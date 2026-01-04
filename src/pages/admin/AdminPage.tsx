@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import MainLayout from '../MainLayout';
 
 // 더미 데이터 - 학생 20명
@@ -130,6 +130,20 @@ function AdminPage() {
     linkedStudent: '',
   });
 
+  // 학생-부모 연동 관계 (학생 ID -> 부모 ID, 1명만 가능)
+  const [studentParentLinks, setStudentParentLinks] = useState<
+    Record<number, number>
+  >({});
+
+  // 부모 검색 상태
+  const [parentSearchQuery, setParentSearchQuery] = useState('');
+
+  // 검색 결과 상태 (검색 버튼을 눌렀을 때만 표시)
+  const [searchResults, setSearchResults] = useState<Parent[]>([]);
+
+  // 검색 실행 여부
+  const [hasSearched, setHasSearched] = useState(false);
+
   // 삭제 확인 모달 상태
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
@@ -166,6 +180,9 @@ function AdminPage() {
 
   const handleEditStudent = (student: Student) => {
     setEditingStudent(student);
+    setParentSearchQuery(''); // 검색어 초기화
+    setSearchResults([]); // 검색 결과 초기화
+    setHasSearched(false); // 검색 여부 초기화
     // 학교 이름에서 "고등학교" 제거한 앞부분만 추출
     const schoolName = student.school.replace('고등학교', '');
     // 연락처에서 '-' 제거
@@ -263,6 +280,33 @@ function AdminPage() {
     }
   };
 
+  // 부모 검색 함수 (검색 버튼 클릭 시 실행)
+  const handleSearchParents = () => {
+    if (!editingStudent) return;
+
+    const linkedParentId = studentParentLinks[editingStudent.id];
+    const query = parentSearchQuery.trim().toLowerCase();
+
+    // 검색어가 있으면 필터링, 없으면 모든 부모 표시
+    const filtered = parents.filter(parent => {
+      // 이미 연동된 부모는 제외
+      if (linkedParentId && parent.id === linkedParentId) {
+        return false;
+      }
+      // 검색어 필터링
+      if (query) {
+        return (
+          parent.name.toLowerCase().includes(query) ||
+          parent.email.toLowerCase().includes(query)
+        );
+      }
+      return true;
+    });
+
+    setSearchResults(filtered);
+    setHasSearched(true);
+  };
+
   return (
     <MainLayout showCalendar={showCalendar} isAdmin={true}>
       {/* 헤더 */}
@@ -346,6 +390,9 @@ function AdminPage() {
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
                       학년
                     </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                      연동된 학부모
+                    </th>
                     <th className="pl-4 pr-6 py-3 text-right text-sm font-semibold text-slate-900">
                       관리
                     </th>
@@ -378,6 +425,23 @@ function AdminPage() {
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-600">
                           {student.grade}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {(() => {
+                            const linkedParentId =
+                              studentParentLinks[student.id];
+                            if (!linkedParentId) {
+                              return <span className="text-slate-400">-</span>;
+                            }
+                            const linkedParent = parents.find(
+                              p => p.id === linkedParentId
+                            );
+                            return linkedParent ? (
+                              <span>{linkedParent.name}</span>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex justify-end gap-2">
@@ -734,35 +798,31 @@ function AdminPage() {
 
       {/* 수정 모달 */}
       {editModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => {
-            setEditModalOpen(false);
-            setEditingStudent(null);
-            setEditingParent(null);
-          }}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
-            className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+            className="relative w-full max-w-md h-[90vh] max-h-[800px] flex flex-col rounded-2xl bg-white shadow-xl overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
-            <button
-              type="button"
-              onClick={() => {
-                setEditModalOpen(false);
-                setEditingStudent(null);
-                setEditingParent(null);
-              }}
-              className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            {/* 헤더 (고정) */}
+            <div className="flex-shrink-0 flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-200">
+              <h2 className="text-xl font-semibold text-slate-900">
+                {editingStudent ? '학생 정보 수정' : '학부모 정보 수정'}
+              </h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditModalOpen(false);
+                  setEditingStudent(null);
+                  setEditingParent(null);
+                }}
+                className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-            <h2 className="mb-4 text-xl font-semibold text-slate-900">
-              {editingStudent ? '학생 정보 수정' : '학부모 정보 수정'}
-            </h2>
-
-            <div className="space-y-4">
+            {/* 본문 (스크롤 가능) */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   이름
@@ -862,6 +922,148 @@ function AdminPage() {
                       비밀번호 초기화
                     </button>
                   </div>
+
+                  {/* 부모 목록 및 연동 */}
+                  <div className="pt-4 border-t border-slate-200">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      부모 목록
+                    </label>
+
+                    {/* 부모 검색 */}
+                    <div className="mb-3 flex gap-2">
+                      <input
+                        type="text"
+                        value={parentSearchQuery}
+                        onChange={e => setParentSearchQuery(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            handleSearchParents();
+                          }
+                        }}
+                        placeholder="부모 이름 또는 이메일로 검색..."
+                        className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSearchParents}
+                        className="rounded-lg border border-[#084773] bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a] flex items-center gap-1"
+                      >
+                        <Search className="h-4 w-4" />
+                        검색
+                      </button>
+                    </div>
+
+                    {/* 연동된 부모 목록 */}
+                    {editingStudent && (
+                      <>
+                        <div className="mb-3 h-16 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50">
+                          {(() => {
+                            const linkedParentId =
+                              studentParentLinks[editingStudent.id];
+
+                            if (!linkedParentId) {
+                              return (
+                                <div className="h-full flex items-center justify-center">
+                                  <div className="text-sm text-slate-400">
+                                    {/* 빈 상태 - 아무것도 표시하지 않음 */}
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            const linkedParent = parents.find(
+                              p => p.id === linkedParentId
+                            );
+
+                            if (!linkedParent) {
+                              return (
+                                <div className="h-full flex items-center justify-center">
+                                  <div className="text-sm text-slate-400">
+                                    {/* 빈 상태 - 아무것도 표시하지 않음 */}
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div className="divide-y divide-slate-200">
+                                <div className="flex items-center justify-between px-3 py-2 hover:bg-white">
+                                  <div className="flex-1">
+                                    <div className="text-sm font-medium text-slate-900">
+                                      {linkedParent.name}
+                                    </div>
+                                    <div className="text-xs text-slate-500">
+                                      {linkedParent.email} |{' '}
+                                      {linkedParent.phone}
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setStudentParentLinks(prev => {
+                                        const newLinks = { ...prev };
+                                        delete newLinks[editingStudent.id];
+                                        return newLinks;
+                                      });
+                                    }}
+                                    className="ml-2 rounded-lg border border-red-300 bg-red-50 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                                  >
+                                    연동 해제
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+
+                        {/* 검색 가능한 부모 목록 (검색 버튼을 눌렀을 때만 표시) */}
+                        {hasSearched && (
+                          <div className="mb-3 h-48 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50">
+                            {searchResults.length === 0 ? (
+                              <div className="px-3 py-4 text-center text-sm text-slate-500">
+                                {parentSearchQuery.trim()
+                                  ? '검색 결과가 없습니다.'
+                                  : '검색 결과가 없습니다.'}
+                              </div>
+                            ) : (
+                              <div className="divide-y divide-slate-200">
+                                {searchResults.map(parent => (
+                                  <div
+                                    key={parent.id}
+                                    className="flex items-center justify-between px-3 py-2 hover:bg-white"
+                                  >
+                                    <div className="flex-1">
+                                      <div className="text-sm font-medium text-slate-900">
+                                        {parent.name}
+                                      </div>
+                                      <div className="text-xs text-slate-500">
+                                        {parent.email} | {parent.phone}
+                                      </div>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setStudentParentLinks(prev => ({
+                                          ...prev,
+                                          [editingStudent.id]: parent.id,
+                                        }));
+                                        setSearchResults([]);
+                                        setHasSearched(false);
+                                        setParentSearchQuery('');
+                                      }}
+                                      className="ml-2 rounded-lg border border-[#084773] bg-[#084773] px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-[#063a5a]"
+                                    >
+                                      연동
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </>
               ) : (
                 <>
@@ -912,7 +1114,8 @@ function AdminPage() {
               )}
             </div>
 
-            <div className="mt-6 flex justify-end gap-2">
+            {/* 하단 버튼 (고정) */}
+            <div className="flex-shrink-0 flex justify-end gap-2 px-6 py-4 border-t border-slate-200 bg-white">
               <button
                 type="button"
                 onClick={() => {
@@ -938,10 +1141,7 @@ function AdminPage() {
 
       {/* 삭제 확인 모달 */}
       {deleteModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setDeleteModalOpen(false)}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
             className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
             onClick={e => e.stopPropagation()}

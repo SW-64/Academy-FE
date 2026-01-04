@@ -57,11 +57,12 @@ const ConsentModal = ({ isOpen, onClose, onConfirm }: ConsentModalProps) => {
     }
   }, [isOpen, onClose])
 
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose()
-    }
-  }
+  // 바깥 클릭으로 닫기 비활성화
+  // const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  //   if (e.target === e.currentTarget) {
+  //     onClose()
+  //   }
+  // }
 
   const handleConfirm = () => {
     if (serviceTerms && privacyPolicy) {
@@ -82,7 +83,6 @@ const ConsentModal = ({ isOpen, onClose, onConfirm }: ConsentModalProps) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
-      onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="consent-modal-title"
