@@ -15,9 +15,14 @@ const SignupCompletePage = () => {
             </h1>
           ) : (
             <img
-              src="/logo.png"
+              src="/logo.webp"
               alt="곽원근 수학연구소"
               className="h-auto max-w-[175px] sm:max-w-[197px] md:max-w-[219px] lg:max-w-[263px]"
+              width="263"
+              height="263"
+              style={{ aspectRatio: '1/1', maxWidth: '100%', height: 'auto' }}
+              loading="eager"
+              fetchPriority="high"
               onError={() => setImageError(true)}
             />
           )}
