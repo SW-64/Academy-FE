@@ -109,6 +109,7 @@ function HomeworkProgressDetailPage() {
     majorUnit: number;
     minorUnit: number;
   } | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const classIdNum = classId ? parseInt(classId, 10) : null;
 
@@ -309,21 +310,43 @@ function HomeworkProgressDetailPage() {
         {/* 교재 선택 */}
         {classTextbooks.length > 0 && (
           <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-900 mb-2">
-              교재 선택
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-slate-900">
+                교재 선택
+              </label>
+              {selectedTextbookId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditMode(!isEditMode);
+                    setEditingCell(null);
+                  }}
+                  className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                    isEditMode
+                      ? 'border-green-600 bg-green-600 text-white hover:bg-green-700'
+                      : 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                >
+                  {isEditMode ? '수정 완료' : '수정'}
+                </button>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               {classTextbooks.map(textbook => (
                 <button
                   key={textbook.id}
                   type="button"
                   onClick={() => {
-                    setSelectedTextbookId(textbook.id);
-                    setEditingCell(null);
+                    if (selectedTextbookId !== textbook.id) {
+                      setSelectedTextbookId(textbook.id);
+                      setEditingCell(null);
+                      setIsEditMode(false);
+                    }
                   }}
+                  disabled={selectedTextbookId === textbook.id}
                   className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                     selectedTextbookId === textbook.id
-                      ? 'border-[#084773] bg-[#084773] text-white'
+                      ? 'border-[#084773] bg-[#084773] text-white cursor-not-allowed opacity-60'
                       : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
                   }`}
                 >
@@ -336,7 +359,11 @@ function HomeworkProgressDetailPage() {
 
         {/* 표 표시 */}
         {displayedTextbook && students.length > 0 && (
-          <div className="rounded-lg border-2 border-slate-400 bg-white overflow-hidden">
+          <div className={`rounded-lg border-2 overflow-hidden transition-all ${
+            isEditMode 
+              ? 'border-blue-400 bg-blue-50/20 shadow-lg' 
+              : 'border-slate-400 bg-white'
+          }`}>
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse">
                 <thead>
@@ -420,13 +447,15 @@ function HomeworkProgressDetailPage() {
                               height: '60px',
                               minHeight: '60px',
                             }}
-                            onDoubleClick={() =>
-                              setEditingCell({
-                                studentId: student.id,
-                                majorUnit: header.majorUnit,
-                                minorUnit: header.minorUnit,
-                              })
-                            }
+                            onDoubleClick={() => {
+                              if (isEditMode) {
+                                setEditingCell({
+                                  studentId: student.id,
+                                  majorUnit: header.majorUnit,
+                                  minorUnit: header.minorUnit,
+                                });
+                              }
+                            }}
                           >
                             {isEditing ? (
                               <div className="absolute top-0 left-0 z-50 p-4 space-y-3 w-[280px] bg-white rounded-lg border-2 border-blue-500 shadow-xl">
