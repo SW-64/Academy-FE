@@ -23,12 +23,16 @@ const dummyClasses: ClassType[] = [
   {
     id: 3,
     name: '미적분1 기본 특강반',
-    studentIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+    studentIds: [
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    ],
   },
   {
     id: 4,
     name: '미적분1+2 통합 특강반',
-    studentIds: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 2, 4, 6],
+    studentIds: [
+      1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 2, 4, 6,
+    ],
   },
 ];
 
@@ -46,7 +50,10 @@ const dummyStudents: Student[] = Array.from({ length: 30 }, (_, i) => ({
   id: i + 1,
   name: `학생${i + 1}`,
   email: `student${i + 1}@example.com`,
-  phone: `010-${String(i + 1).padStart(4, '0')}-${String(i + 1).padStart(4, '0')}`,
+  phone: `010-${String(i + 1).padStart(4, '0')}-${String(i + 1).padStart(
+    4,
+    '0'
+  )}`,
   school: [
     '서울고등학교',
     '부산고등학교',
@@ -148,7 +155,12 @@ function AdminVideosPage() {
     };
 
     setVideos(prev => [video, ...prev]);
-    setNewVideo({ title: '', videoFile: null, videoFileName: '', selectedClasses: [] });
+    setNewVideo({
+      title: '',
+      videoFile: null,
+      videoFileName: '',
+      selectedClasses: [],
+    });
     setIsWriteModalOpen(false);
   };
 
@@ -341,11 +353,15 @@ function AdminVideosPage() {
 
       {/* 글쓰기 모달 */}
       {isWriteModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
             className="relative w-full max-w-4xl rounded-2xl bg-white p-8 shadow-xl"
+            style={{
+              height: '90vh',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
             onClick={e => e.stopPropagation()}
           >
             <button
@@ -360,7 +376,7 @@ function AdminVideosPage() {
               영상 작성
             </h2>
 
-            <div className="space-y-6">
+            <div className="space-y-6 flex-1 overflow-y-auto">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   제목
@@ -382,7 +398,7 @@ function AdminVideosPage() {
                 </label>
                 <div className="space-y-3">
                   {dummyClasses.map(classItem => {
-                    const isClassSelected = newVideo.selectedClasses.some(
+                    const isClassExpanded = newVideo.selectedClasses.some(
                       sc => sc.classId === classItem.id
                     );
                     const selectedClassData = newVideo.selectedClasses.find(
@@ -394,41 +410,40 @@ function AdminVideosPage() {
                         key={classItem.id}
                         className="rounded-lg border border-slate-200 p-4"
                       >
-                        <label className="flex items-center gap-2 cursor-pointer mb-3">
-                          <input
-                            type="checkbox"
-                            checked={isClassSelected}
-                            onChange={e => {
-                              if (e.target.checked) {
-                                setNewVideo({
-                                  ...newVideo,
-                                  selectedClasses: [
-                                    ...newVideo.selectedClasses,
-                                    { classId: classItem.id, studentIds: [] },
-                                  ],
-                                });
-                              } else {
-                                setNewVideo({
-                                  ...newVideo,
-                                  selectedClasses: newVideo.selectedClasses.filter(
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isClassExpanded) {
+                              setNewVideo({
+                                ...newVideo,
+                                selectedClasses:
+                                  newVideo.selectedClasses.filter(
                                     sc => sc.classId !== classItem.id
                                   ),
-                                });
-                              }
-                            }}
-                            className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
-                          />
+                              });
+                            } else {
+                              setNewVideo({
+                                ...newVideo,
+                                selectedClasses: [
+                                  ...newVideo.selectedClasses,
+                                  { classId: classItem.id, studentIds: [] },
+                                ],
+                              });
+                            }
+                          }}
+                          className="flex items-center gap-2 cursor-pointer mb-3 w-full text-left"
+                        >
                           <span className="text-sm font-medium text-slate-700">
                             {classItem.name}
                           </span>
-                        </label>
+                        </button>
 
-                        {isClassSelected && (
-                          <div className="ml-6 mt-2">
+                        {isClassExpanded && (
+                          <div className="ml-0 mt-2">
                             <label className="block text-xs font-medium text-slate-600 mb-2">
                               학생 선택
                             </label>
-                            <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 p-2 space-y-1.5">
+                            <div className="max-h-60 overflow-y-auto rounded-lg border border-slate-200 p-2 space-y-1.5">
                               {classItem.studentIds.map(studentId => {
                                 const student = dummyStudents.find(
                                   s => s.id === studentId
@@ -468,10 +483,11 @@ function AdminVideosPage() {
                                         } else {
                                           updatedClasses[classIndex] = {
                                             ...updatedClasses[classIndex],
-                                            studentIds:
-                                              updatedClasses[classIndex].studentIds.filter(
-                                                id => id !== studentId
-                                              ),
+                                            studentIds: updatedClasses[
+                                              classIndex
+                                            ].studentIds.filter(
+                                              id => id !== studentId
+                                            ),
                                           };
                                         }
                                         setNewVideo({
@@ -491,7 +507,8 @@ function AdminVideosPage() {
                             </div>
                             {selectedClassData && (
                               <p className="mt-2 text-xs text-slate-500">
-                                선택된 학생: {selectedClassData.studentIds.length}명
+                                선택된 학생:{' '}
+                                {selectedClassData.studentIds.length}명
                               </p>
                             )}
                           </div>
@@ -549,7 +566,7 @@ function AdminVideosPage() {
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end gap-3">
+            <div className="mt-8 flex justify-end gap-3 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => {
@@ -579,9 +596,7 @@ function AdminVideosPage() {
 
       {/* 상세/수정 모달 */}
       {isDetailModalOpen && selectedVideo && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
             className="relative w-full max-w-4xl rounded-2xl bg-white p-8 shadow-xl max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
@@ -597,6 +612,58 @@ function AdminVideosPage() {
             <h2 className="mb-6 text-2xl font-semibold text-slate-900">
               영상 수정
             </h2>
+
+            {/* 접근 권한 정보 */}
+            {selectedVideo.selectedClasses &&
+              selectedVideo.selectedClasses.length > 0 && (
+                <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <h3 className="mb-3 text-sm font-semibold text-slate-900">
+                    접근 권한
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedVideo.selectedClasses.map(classData => {
+                      const classItem = dummyClasses.find(
+                        c => c.id === classData.classId
+                      );
+                      if (!classItem) return null;
+
+                      return (
+                        <div
+                          key={classData.classId}
+                          className="rounded-lg border border-slate-200 bg-white p-3"
+                        >
+                          <p className="mb-2 text-sm font-medium text-slate-900">
+                            {classItem.name}
+                          </p>
+                          <div className="space-y-1">
+                            {classData.studentIds.length > 0 ? (
+                              classData.studentIds.map(studentId => {
+                                const student = dummyStudents.find(
+                                  s => s.id === studentId
+                                );
+                                if (!student) return null;
+                                return (
+                                  <p
+                                    key={studentId}
+                                    className="text-xs text-slate-600"
+                                  >
+                                    • {student.name} ({student.school}{' '}
+                                    {student.grade})
+                                  </p>
+                                );
+                              })
+                            ) : (
+                              <p className="text-xs text-slate-500">
+                                선택된 학생 없음
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
             <div className="space-y-6">
               <div>
@@ -647,9 +714,10 @@ function AdminVideosPage() {
                               } else {
                                 setEditVideo({
                                   ...editVideo,
-                                  selectedClasses: editVideo.selectedClasses.filter(
-                                    sc => sc.classId !== classItem.id
-                                  ),
+                                  selectedClasses:
+                                    editVideo.selectedClasses.filter(
+                                      sc => sc.classId !== classItem.id
+                                    ),
                                 });
                               }
                             }}
@@ -705,10 +773,11 @@ function AdminVideosPage() {
                                         } else {
                                           updatedClasses[classIndex] = {
                                             ...updatedClasses[classIndex],
-                                            studentIds:
-                                              updatedClasses[classIndex].studentIds.filter(
-                                                id => id !== studentId
-                                              ),
+                                            studentIds: updatedClasses[
+                                              classIndex
+                                            ].studentIds.filter(
+                                              id => id !== studentId
+                                            ),
                                           };
                                         }
                                         setEditVideo({
@@ -728,7 +797,8 @@ function AdminVideosPage() {
                             </div>
                             {selectedClassData && (
                               <p className="mt-2 text-xs text-slate-500">
-                                선택된 학생: {selectedClassData.studentIds.length}명
+                                선택된 학생:{' '}
+                                {selectedClassData.studentIds.length}명
                               </p>
                             )}
                           </div>

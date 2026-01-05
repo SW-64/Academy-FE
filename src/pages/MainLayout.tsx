@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 
 const menuItems = [
-  { id: 'home', label: '홈 화면', icon: Home, path: '/main' },
   { id: 'notice', label: '공지사항', icon: Megaphone, path: '/notice' },
   { id: 'grades', label: '성적', icon: GraduationCap, path: '/grades' },
   { id: 'materials', label: '학습자료', icon: BookOpen, path: '/materials' },
@@ -25,7 +24,6 @@ const menuItems = [
 ];
 
 const parentMenuItems = [
-  { id: 'home', label: '홈 화면', icon: Home, path: '/parent/main' },
   { id: 'notice', label: '공지사항', icon: Megaphone, path: '/parent/notice' },
   { id: 'children', label: '자녀 조회', icon: Users, path: '/parent/children' },
   {
@@ -38,11 +36,21 @@ const parentMenuItems = [
 
 const adminMenuItems = [
   { id: 'classes', label: '클래스 관리', icon: Users, path: '/admin/classes' },
-  { id: 'students', label: '학생 관리', icon: GraduationCap, path: '/admin/students' },
+  {
+    id: 'students',
+    label: '학생 관리',
+    icon: GraduationCap,
+    path: '/admin/students',
+  },
   { id: 'notice', label: '공지사항', icon: Megaphone, path: '/admin/notice' },
   { id: 'grades', label: '시험', icon: GraduationCap, path: '/admin/grades' },
   { id: 'homework', label: '교재', icon: BookOpen, path: '/admin/homework' },
-  { id: 'homework-progress', label: '숙제 진도', icon: FileText, path: '/admin/homework-progress' },
+  {
+    id: 'homework-progress',
+    label: '숙제 진도',
+    icon: FileText,
+    path: '/admin/homework-progress',
+  },
   {
     id: 'materials',
     label: '학습자료',
@@ -236,9 +244,9 @@ function MainLayout({
                 if (isAdmin) {
                   navigate('/admin/classes');
                 } else if (isParent) {
-                  navigate('/parent/main');
+                  navigate('/parent/notice');
                 } else {
-                  navigate('/main');
+                  navigate('/notice');
                 }
               }}
               className="flex h-7 w-7 sm:h-8 sm:w-8 lg:h-8 lg:w-8 items-center justify-center rounded-full bg-[#084773] flex-shrink-0 hover:bg-[#063a5a] transition-colors cursor-pointer"
@@ -257,6 +265,11 @@ function MainLayout({
               {isParent && (
                 <span className="text-[10px] sm:text-xs text-slate-500">
                   학부모용
+                </span>
+              )}
+              {!isAdmin && !isParent && (
+                <span className="text-[10px] sm:text-xs text-slate-500">
+                  학생용
                 </span>
               )}
             </div>

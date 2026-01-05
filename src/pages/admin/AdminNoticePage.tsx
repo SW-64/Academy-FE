@@ -19,6 +19,7 @@ function AdminNoticePage() {
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
   const [newNotice, setNewNotice] = useState({
     title: '',
     content: '',
@@ -102,9 +103,16 @@ function AdminNoticePage() {
     setSelectedNotice(null);
   };
 
+  // 클래스 필터링 (클래스가 선택되었을 때만 필터링)
+  const filteredNotices = selectedClassId
+    ? notices.filter(
+        notice => notice.classIds && notice.classIds.includes(selectedClassId)
+      )
+    : [];
+
   // 고정 공지와 일반 공지 분리
-  const pinnedNotices = notices.filter(notice => notice.isPinned);
-  const sortedNotices = [...notices].sort((a, b) => b.id - a.id);
+  const pinnedNotices = filteredNotices.filter(notice => notice.isPinned);
+  const sortedNotices = [...filteredNotices].sort((a, b) => b.id - a.id);
   const itemsPerPage = 10;
   const generalNotices = sortedNotices.filter(notice => !notice.isPinned);
   const totalPages = Math.max(
@@ -130,6 +138,11 @@ function AdminNoticePage() {
     setCurrentPage(prev => Math.min(prev, totalPages));
   }, [totalPages]);
 
+  useEffect(() => {
+    // 클래스 선택 변경 시 첫 페이지로 리셋
+    setCurrentPage(1);
+  }, [selectedClassId]);
+
   return (
     <MainLayout showCalendar={showCalendar} isAdmin={true}>
       {/* 헤더 */}
@@ -148,6 +161,24 @@ function AdminNoticePage() {
             <Plus className="h-4 w-4" />
             글쓰기
           </button>
+        </div>
+
+        {/* 클래스 선택 */}
+        <div className="mb-4 flex flex-wrap gap-2">
+          {dummyClasses.map(classItem => (
+            <button
+              key={classItem.id}
+              type="button"
+              onClick={() => setSelectedClassId(classItem.id)}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                selectedClassId === classItem.id
+                  ? 'bg-[#084773] text-white'
+                  : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              {classItem.name}
+            </button>
+          ))}
         </div>
       </header>
 
@@ -294,9 +325,7 @@ function AdminNoticePage() {
 
       {/* 글쓰기 모달 */}
       {isWriteModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
             className="relative w-full max-w-4xl rounded-2xl bg-white p-8 shadow-xl"
             onClick={e => e.stopPropagation()}
@@ -406,7 +435,12 @@ function AdminNoticePage() {
                 type="button"
                 onClick={() => {
                   setIsWriteModalOpen(false);
-                  setNewNotice({ title: '', content: '', isPinned: false, classIds: [] });
+                  setNewNotice({
+                    title: '',
+                    content: '',
+                    isPinned: false,
+                    classIds: [],
+                  });
                 }}
                 className="rounded-lg border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
               >
@@ -426,9 +460,7 @@ function AdminNoticePage() {
 
       {/* 상세/수정 모달 */}
       {isDetailModalOpen && selectedNotice && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
             className="relative w-full max-w-4xl rounded-2xl bg-white p-8 shadow-xl max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
