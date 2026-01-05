@@ -9,6 +9,8 @@ const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const NoticePage = lazy(() => import('./pages/NoticePage'));
 const NoticeDetailPage = lazy(() => import('./pages/NoticeDetailPage'));
 const GradesPage = lazy(() => import('./pages/GradesPage'));
+const HomeworkPage = lazy(() => import('./pages/HomeworkPage'));
+const HomeworkProgressPage = lazy(() => import('./pages/HomeworkProgressPage'));
 const MaterialsPage = lazy(() => import('./pages/MaterialsPage'));
 const MaterialsDetailPage = lazy(() => import('./pages/MaterialsDetailPage'));
 const VideosPage = lazy(() => import('./pages/VideosPage'));
@@ -22,7 +24,7 @@ const ExamDetailPage = lazy(() => import('./pages/admin/ExamDetailPage'));
 const AdminMaterialsPage = lazy(() => import('./pages/admin/MaterialsPage'));
 const AdminVideosPage = lazy(() => import('./pages/admin/VideosPage'));
 const AdminHomeworkPage = lazy(() => import('./pages/admin/AdminHomeworkPage'));
-const HomeworkProgressPage = lazy(
+const AdminHomeworkProgressPage = lazy(
   () => import('./pages/admin/HomeworkProgressPage')
 );
 const HomeworkProgressDetailPage = lazy(
@@ -52,6 +54,8 @@ function App() {
           <Route path="/notice" element={<NoticePage />} />
           <Route path="/notice/:id" element={<NoticeDetailPage />} />
           <Route path="/grades" element={<GradesPage />} />
+          <Route path="/homework" element={<HomeworkPage />} />
+          <Route path="/homework/:id/progress" element={<HomeworkProgressPage />} />
           <Route path="/materials" element={<MaterialsPage />} />
           <Route path="/materials/:id" element={<MaterialsDetailPage />} />
           <Route path="/videos" element={<VideosPage />} />
@@ -70,7 +74,7 @@ function App() {
           <Route path="/admin/homework" element={<AdminHomeworkPage />} />
           <Route
             path="/admin/homework-progress"
-            element={<HomeworkProgressPage />}
+            element={<AdminHomeworkProgressPage />}
           />
           <Route
             path="/admin/homework-progress/:classId"

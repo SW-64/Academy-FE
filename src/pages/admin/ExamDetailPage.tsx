@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import MainLayout from '../MainLayout';
 import { examRecords } from '../../data/gradesData';
@@ -8,6 +8,8 @@ import type { ExamRecord } from '../../data/gradesData';
 function ExamDetailPage() {
   const { examDate } = useParams<{ examDate: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const classId = searchParams.get('classId');
   const [examData, setExamData] = useState<{
     date: string;
     name: string;
@@ -151,7 +153,11 @@ function ExamDetailPage() {
           <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={() => navigate('/admin/grades')}
+              onClick={() =>
+                navigate(
+                  classId ? `/admin/grades?classId=${classId}` : '/admin/grades'
+                )
+              }
               className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
             >
               <ArrowLeft className="h-4 w-4" />

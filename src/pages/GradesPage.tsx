@@ -594,6 +594,27 @@ function GradesPage() {
               </div>
               <div className="mt-4 sm:mt-6 border-t border-slate-200 pt-3 sm:pt-4">
                 <p className="mb-2 text-xs sm:text-sm font-medium text-slate-600">
+                  오답 문항
+                </p>
+                <div className="mb-4">
+                  {selectedRecord.wrongAnswers && selectedRecord.wrongAnswers.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedRecord.wrongAnswers.map((questionNum) => (
+                        <span
+                          key={questionNum}
+                          className="inline-flex items-center justify-center rounded-lg bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 border border-red-200"
+                        >
+                          {questionNum}번
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">틀린 문항이 없습니다.</p>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 sm:mt-6 border-t border-slate-200 pt-3 sm:pt-4">
+                <p className="mb-2 text-xs sm:text-sm font-medium text-slate-600">
                   선생님 코멘트
                 </p>
                 <p className="text-sm sm:text-base leading-relaxed text-slate-700">

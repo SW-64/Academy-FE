@@ -19,6 +19,8 @@ export interface ExamRecord {
   grade: GradeLevel;
   targetScore: number;
   differenceFromTarget: number; // 목표 점수 대비 차이
+  wrongAnswers?: number[]; // 틀린 문항 번호 목록 (선택적)
+  classId?: number; // 클래스 ID (선택적)
 }
 
 // 학생 이름 목록
@@ -115,6 +117,22 @@ function generateScore(
   return score;
 }
 
+// 오답번호 생성 함수 (25문항 기준, 점수에 따라 틀린 문항 수 계산)
+function generateWrongAnswers(score: number, totalQuestions: number = 25): number[] {
+  // 점수에 따라 틀린 문항 수 계산 (100점 만점 기준)
+  const wrongCount = Math.round((100 - score) / 4); // 4점당 1문항 틀림
+  const actualWrongCount = Math.max(0, Math.min(wrongCount, totalQuestions));
+  
+  if (actualWrongCount === 0) {
+    return [];
+  }
+
+  // 랜덤하게 틀린 문항 번호 선택
+  const allQuestions = Array.from({ length: totalQuestions }, (_, i) => i + 1);
+  const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, actualWrongCount).sort((a, b) => a - b);
+}
+
 // 학생 데이터 생성
 export const students: Student[] = studentNames.map((name, index) => ({
   id: index + 1,
@@ -145,6 +163,19 @@ students.forEach(student => {
       '0'
     )}/${String(dateObj.getDate()).padStart(2, '0')}`;
 
+    // 학생별 클래스 할당 (학생 1번: 클래스 1,3 / 학생 2번: 클래스 2,4 / 나머지: 랜덤)
+    let classId: number | undefined;
+    if (student.id === 1) {
+      // 학생 1번은 클래스 1 또는 3
+      classId = dayIndex % 2 === 0 ? 1 : 3;
+    } else if (student.id === 2) {
+      // 학생 2번은 클래스 2 또는 4
+      classId = dayIndex % 2 === 0 ? 2 : 4;
+    } else {
+      // 나머지 학생은 랜덤하게 1-4 중 하나
+      classId = (dayIndex % 4) + 1;
+    }
+
     examRecords.push({
       studentId: student.id,
       studentName: student.name,
@@ -155,6 +186,8 @@ students.forEach(student => {
       grade: calculateGrade(score),
       targetScore: student.targetScore,
       differenceFromTarget: score - student.targetScore,
+      wrongAnswers: generateWrongAnswers(score),
+      classId,
     });
   });
 });
@@ -186,6 +219,8 @@ if (student1) {
       2,
       '0'
     )}/${String(dateObj.getDate()).padStart(2, '0')}`;
+    // 학생 1번은 클래스 1 또는 3
+    const classId = index % 2 === 0 ? 1 : 3;
 
     examRecords.push({
       studentId: 1,
@@ -197,6 +232,8 @@ if (student1) {
       grade: calculateGrade(score),
       targetScore: student1.targetScore,
       differenceFromTarget: score - student1.targetScore,
+      wrongAnswers: generateWrongAnswers(score),
+      classId,
     });
   });
 
@@ -226,6 +263,8 @@ if (student1) {
     grade: calculateGrade(marchScore),
     targetScore: student1.targetScore,
     differenceFromTarget: marchScore - student1.targetScore,
+    wrongAnswers: generateWrongAnswers(marchScore),
+    classId: 1, // 학생 1번의 클래스 1
   });
 
   // 4월 데이터 3개 (2026-04-01, 2026-04-02, 2026-04-03)
@@ -244,6 +283,8 @@ if (student1) {
       2,
       '0'
     )}/${String(dateObj.getDate()).padStart(2, '0')}`;
+    // 학생 1번은 클래스 1 또는 3
+    const classId = index % 2 === 0 ? 1 : 3;
 
     examRecords.push({
       studentId: 1,
@@ -255,6 +296,8 @@ if (student1) {
       grade: calculateGrade(score),
       targetScore: student1.targetScore,
       differenceFromTarget: score - student1.targetScore,
+      wrongAnswers: generateWrongAnswers(score),
+      classId,
     });
   });
 }

@@ -13,11 +13,13 @@ import {
   X,
   Users,
   FileText,
+  LogOut,
 } from 'lucide-react';
 
 const menuItems = [
   { id: 'notice', label: '공지사항', icon: Megaphone, path: '/notice' },
   { id: 'grades', label: '성적', icon: GraduationCap, path: '/grades' },
+  { id: 'homework', label: '숙제', icon: FileText, path: '/homework' },
   { id: 'materials', label: '학습자료', icon: BookOpen, path: '/materials' },
   { id: 'videos', label: '영상', icon: PlayCircle, path: '/videos' },
   { id: 'mypage', label: '마이페이지', icon: UserCircle2, path: '/mypage' },
@@ -229,7 +231,7 @@ function MainLayout({
 
       {/* 왼쪽 사이드바 */}
       <aside
-        className={`w-64 flex-shrink-0 bg-white shadow-sm ring-1 ring-blue-100/70 transition-transform duration-300 ${
+        className={`w-64 flex-shrink-0 bg-white shadow-sm ring-1 ring-blue-100/70 transition-transform duration-300 flex flex-col ${
           isSidebarOpen
             ? 'translate-x-0'
             : 'translate-x-full min-[1025px]:translate-x-0'
@@ -285,7 +287,7 @@ function MainLayout({
         </div>
 
         {/* 메뉴 항목 */}
-        <nav className="py-2">
+        <nav className="py-2 flex-1 overflow-y-auto">
           {(isAdmin
             ? adminMenuItems
             : isParent
@@ -328,6 +330,20 @@ function MainLayout({
             );
           })}
         </nav>
+
+        {/* 로그아웃 버튼 - 사이드바 하단 */}
+        <div className="border-t border-blue-100/70 px-2 sm:px-3 lg:px-4 py-1 sm:py-2">
+          <button
+            type="button"
+            onClick={() => navigate('/login')}
+            className="flex w-full items-center gap-2 sm:gap-3 lg:gap-3 px-2 sm:px-3 lg:px-4 py-2 sm:py-3 lg:py-3 text-left transition-colors text-slate-700 hover:bg-red-50 hover:text-red-600"
+          >
+            <LogOut className="h-4 w-4 sm:h-5 sm:w-5 lg:h-5 lg:w-5 flex-shrink-0 text-slate-500" />
+            <span className="text-xs sm:text-sm lg:text-sm font-medium">
+              로그아웃
+            </span>
+          </button>
+        </div>
       </aside>
 
       {/* 메인 콘텐츠 영역 */}
