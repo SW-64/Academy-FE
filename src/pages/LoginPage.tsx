@@ -35,10 +35,12 @@ const LoginPage = () => {
 
     setErrors(newErrors);
 
-    // 에러가 없으면 콘솔에 출력
+    // 에러가 없으면 공지사항으로 이동
     if (Object.keys(newErrors).length === 0) {
       console.log('Email:', email);
       console.log('Password:', password);
+      // 로그인 성공 시 공지사항으로 이동
+      navigate('/notice');
     }
   };
 
@@ -48,14 +50,14 @@ const LoginPage = () => {
       <div className="absolute top-4 right-4 flex gap-2">
         <button
           type="button"
-          onClick={() => navigate('/parent/main')}
+          onClick={() => navigate('/parent/notice')}
           className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         >
           학부모용
         </button>
         <button
           type="button"
-          onClick={() => navigate('/main')}
+          onClick={() => navigate('/notice')}
           className="px-3 py-1.5 text-sm font-medium text-white bg-[#084773] rounded-lg hover:bg-[#063a5a] transition-colors"
         >
           학생용

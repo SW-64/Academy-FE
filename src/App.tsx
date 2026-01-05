@@ -6,7 +6,6 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
 const SignupCompletePage = lazy(() => import('./pages/SignupCompletePage'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
-const MainPage = lazy(() => import('./pages/MainPage'));
 const NoticePage = lazy(() => import('./pages/NoticePage'));
 const NoticeDetailPage = lazy(() => import('./pages/NoticeDetailPage'));
 const GradesPage = lazy(() => import('./pages/GradesPage'));
@@ -29,7 +28,6 @@ const HomeworkProgressPage = lazy(
 const HomeworkProgressDetailPage = lazy(
   () => import('./pages/admin/HomeworkProgressDetailPage')
 );
-const ParentMainPage = lazy(() => import('./pages/parent/ParentMainPage'));
 const ParentNoticePage = lazy(() => import('./pages/parent/ParentNoticePage'));
 const ParentNoticeDetailPage = lazy(
   () => import('./pages/parent/ParentNoticeDetailPage')
@@ -47,8 +45,8 @@ function App() {
           {/* 초기 진입은 /login 으로 리다이렉트 */}
           <Route path="/" element={<Navigate to="/login" replace />} />
 
-          {/* 메인 페이지 */}
-          <Route path="/main" element={<MainPage />} />
+          {/* 메인 페이지는 공지사항으로 리다이렉트 */}
+          <Route path="/main" element={<Navigate to="/notice" replace />} />
 
           {/* 메인 레이아웃 페이지들 */}
           <Route path="/notice" element={<NoticePage />} />
@@ -81,7 +79,10 @@ function App() {
           <Route path="/admin/mypage" element={<MyPage />} />
 
           {/* 학부모 라우트 */}
-          <Route path="/parent/main" element={<ParentMainPage />} />
+          <Route
+            path="/parent/main"
+            element={<Navigate to="/parent/notice" replace />}
+          />
           <Route path="/parent/notice" element={<ParentNoticePage />} />
           <Route
             path="/parent/notice/:id"
@@ -96,8 +97,8 @@ function App() {
           <Route path="/signup/complete" element={<SignupCompletePage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-          {/* 정의되지 않은 경로는 메인으로 */}
-          <Route path="*" element={<Navigate to="/main" replace />} />
+          {/* 정의되지 않은 경로는 공지사항으로 */}
+          <Route path="*" element={<Navigate to="/notice" replace />} />
         </Routes>
       </Suspense>
     </BrowserRouter>
