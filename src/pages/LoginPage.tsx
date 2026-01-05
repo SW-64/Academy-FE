@@ -9,7 +9,6 @@ const LoginPage = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {}
   );
-  const [imageError, setImageError] = useState(false);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -75,23 +74,9 @@ const LoginPage = () => {
       <div className="flex flex-col items-center w-full max-w-[403px] rounded-2xl">
         {/* 로고 */}
         <div className="flex justify-center pt-8 px-8">
-          {imageError ? (
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-warm-brown text-center">
-              곽원근 수학연구소
-            </h1>
-          ) : (
-            <img
-              src="/logo.webp"
-              alt="곽원근 수학연구소"
-              className="h-auto max-w-[274px] md:max-w-[329px]"
-              width="274"
-              height="274"
-              style={{ aspectRatio: '1/1', maxWidth: '100%', height: 'auto' }}
-              loading="eager"
-              fetchPriority="high"
-              onError={() => setImageError(true)}
-            />
-          )}
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-warm-brown text-center">
+            곽원근 수학연구소
+          </h1>
         </div>
 
         {/* 로그인 카드 */}

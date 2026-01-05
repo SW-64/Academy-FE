@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X, Plus, ChevronDown } from 'lucide-react';
 import MainLayout from '../MainLayout';
 import { examRecords } from '../../data/gradesData';
@@ -17,13 +17,27 @@ const dummyClasses = [
 
 function AdminGradesPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const classIdParam = searchParams.get('classId');
   const [selectedMonth, setSelectedMonth] = useState<number>(2); // 기본값: 2월
   const [sortOption, setSortOption] = useState<SortOption>('latest');
   const [showCalendar, setShowCalendar] = useState(false);
   const [useMonthDropdown, setUseMonthDropdown] = useState(false);
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
   const monthDropdownRef = useRef<HTMLDivElement>(null);
-  const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(
+    classIdParam ? parseInt(classIdParam, 10) : null
+  );
+
+  // URL 쿼리 파라미터와 동기화
+  useEffect(() => {
+    if (classIdParam) {
+      const classId = parseInt(classIdParam, 10);
+      if (!isNaN(classId)) {
+        setSelectedClassId(classId);
+      }
+    }
+  }, [classIdParam]);
   const [selectedExam, setSelectedExam] = useState<{
     date: string;
     dateFormatted: string;
@@ -258,7 +272,10 @@ function AdminGradesPage() {
           <>
             <button
               type="button"
-              onClick={() => setSelectedClassId(null)}
+              onClick={() => {
+                setSelectedClassId(null);
+                setSearchParams({});
+              }}
               className="mt-2 text-sm font-medium text-slate-600 hover:text-slate-900"
             >
               ← 클래스 선택으로 돌아가기
@@ -283,7 +300,10 @@ function AdminGradesPage() {
               <button
                 key={classItem.id}
                 type="button"
-                onClick={() => setSelectedClassId(classItem.id)}
+                onClick={() => {
+                  setSelectedClassId(classItem.id);
+                  setSearchParams({ classId: classItem.id.toString() });
+                }}
                 className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70 transition-shadow hover:shadow-md text-left"
               >
                 <h3 className="text-lg font-semibold text-slate-900">
@@ -491,7 +511,9 @@ function AdminGradesPage() {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    navigate(`/admin/grades/${exam.date}`)
+                                    navigate(
+                                      `/admin/grades/${exam.date}?classId=${selectedClassId}`
+                                    )
                                   }
                                   className="rounded-lg bg-[#084773] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#063a5a]"
                                 >
