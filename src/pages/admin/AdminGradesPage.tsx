@@ -29,9 +29,6 @@ export type ExamRecord = {
 
 type SortOption = 'latest' | 'avgScore';
 
-// 빈 데이터
-const examRecords: ExamRecord[] = [];
-
 function AdminGradesPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -135,8 +132,6 @@ function AdminGradesPage() {
   } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddExamModalOpen, setIsAddExamModalOpen] = useState(false);
-  const [examRecordsState, setExamRecordsState] =
-    useState<ExamRecord[]>(examRecords);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editDate, setEditDate] = useState('');
   const [editExamName, setEditExamName] = useState('');

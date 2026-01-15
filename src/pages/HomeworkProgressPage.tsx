@@ -8,6 +8,11 @@ export type HomeworkProgress = {
   completed: boolean;
 };
 
+export type MajorUnitDetail = {
+  majorUnit: number;
+  minorUnitCount: number;
+};
+
 export type Homework = {
   id: number;
   textbookId: number;
@@ -17,6 +22,7 @@ export type Homework = {
   majorUnitCount: number;
   minorUnitCount: number;
   progress: HomeworkProgress[];
+  majorUnitsDetail?: MajorUnitDetail[];
 };
 
 export type StudentHomework = {
@@ -77,28 +83,33 @@ function HomeworkProgressPage() {
 
   // 진행도 데이터 계산
   const progressData = useMemo(() => {
+    const total = homework
+      ? homework.majorUnitsDetail
+        ? homework.majorUnitsDetail.reduce(
+            (sum: number, d: MajorUnitDetail) => sum + d.minorUnitCount,
+            0
+          )
+        : homework.majorUnitCount * homework.minorUnitCount
+      : 0;
+
     if (!homework || !studentProgress) {
       return {
         completed: 0,
-        total: homework
-          ? homework.majorUnitsDetail
-            ? homework.majorUnitsDetail.reduce(
-                (sum, d) => sum + d.minorUnitCount,
-                0
-              )
-            : homework.majorUnitCount * homework.minorUnitCount
-          : 0,
+        total,
         percentage: 0,
         currentMajorUnit: 1,
         currentMinorUnit: 1,
       };
     }
-    return calculateProgress(
+    const calculated = calculateProgress(
       studentProgress.progress,
       homework.majorUnitCount,
-      homework.minorUnitCount,
-      homework.majorUnitsDetail
+      homework.minorUnitCount
     );
+    return {
+      ...calculated,
+      total, // majorUnitsDetail이 있으면 그걸 사용한 total로 덮어쓰기
+    };
   }, [homework, studentProgress]);
 
   // 대단원별 소단원 진행도 그룹화
@@ -113,8 +124,9 @@ function HomeworkProgressPage() {
 
       // 대단원별 소단원 개수 가져오기
       const minorUnitCount = homework.majorUnitsDetail
-        ? homework.majorUnitsDetail.find(d => d.majorUnitIndex === major)
-            ?.minorUnitCount || homework.minorUnitCount
+        ? homework.majorUnitsDetail.find(
+            (d: MajorUnitDetail) => d.majorUnit === major
+          )?.minorUnitCount || homework.minorUnitCount
         : homework.minorUnitCount;
 
       for (let minor = 1; minor <= minorUnitCount; minor++) {
