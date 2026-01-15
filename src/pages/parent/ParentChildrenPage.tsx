@@ -55,6 +55,11 @@ export type HomeworkProgress = {
   completed: boolean;
 };
 
+export type MajorUnitDetail = {
+  majorUnit: number;
+  minorUnitCount: number;
+};
+
 export type Homework = {
   id: number;
   textbookId: number;
@@ -64,6 +69,7 @@ export type Homework = {
   majorUnitCount: number;
   minorUnitCount: number;
   progress: HomeworkProgress[];
+  majorUnitsDetail?: MajorUnitDetail[];
 };
 
 export type StudentHomework = {
@@ -92,18 +98,17 @@ const dailyStats: DailyStats[] = [];
 const students: Student[] = [];
 const dummyHomeworks: Homework[] = [];
 const studentHomeworkProgress: StudentHomework[] = [];
-const dummyProgressData: ProgressData[] = [];
 
 // 빈 함수들
-function getStudentClasses(studentId: number): ClassType[] {
+function getStudentClasses(_studentId: number): ClassType[] {
   return [];
 }
 
-function getClassExamRecords(studentId: number, classId: number | null): ExamRecord[] {
+function getClassExamRecords(_studentId: number, _classId: number | null): ExamRecord[] {
   return [];
 }
 
-function getStudentProgress(studentId: number, classId: number | null): ProgressData[] {
+function getStudentProgress(_studentId: number, _classId: number | null): ProgressData[] {
   return [];
 }
 
@@ -118,10 +123,12 @@ function calculateProgress(
   currentMajorUnit: number;
   currentMinorUnit: number;
 } {
+  const total = majorUnitCount * minorUnitCount;
+  const completed = progress.filter(p => p.completed).length;
   return {
-    completed: 0,
-    total: majorUnitCount * minorUnitCount,
-    percentage: 0,
+    completed,
+    total,
+    percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
     currentMajorUnit: 1,
     currentMinorUnit: 1,
   };
@@ -869,21 +876,24 @@ function ParentChildrenPage() {
           ) : (
             studentHomeworks.map(homework => {
               const progress = getStudentHomeworkProgress(homework.id);
-              const progressData = progress
-                ? calculateProgress(
-                    progress.progress,
-                    homework.majorUnitCount,
-                    homework.minorUnitCount,
-                    homework.majorUnitsDetail
+              const total = homework.majorUnitsDetail
+                ? homework.majorUnitsDetail.reduce(
+                    (sum: number, d: MajorUnitDetail) => sum + d.minorUnitCount,
+                    0
                   )
+                : homework.majorUnitCount * homework.minorUnitCount;
+              const progressData = progress
+                ? {
+                    ...calculateProgress(
+                      progress.progress,
+                      homework.majorUnitCount,
+                      homework.minorUnitCount
+                    ),
+                    total, // majorUnitsDetail이 있으면 그걸 사용한 total로 덮어쓰기
+                  }
                 : {
                     completed: 0,
-                    total: homework.majorUnitsDetail
-                      ? homework.majorUnitsDetail.reduce(
-                          (sum, d) => sum + d.minorUnitCount,
-                          0
-                        )
-                      : homework.majorUnitCount * homework.minorUnitCount,
+                    total,
                     percentage: 0,
                     currentMajorUnit: 1,
                     currentMinorUnit: 1,
