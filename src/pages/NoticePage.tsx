@@ -2,7 +2,21 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import MainLayout from './MainLayout';
-import { dummyNotices, type Notice } from '../data/noticesData';
+// 타입 정의
+export type Notice = {
+  id: number;
+  number: number | 'important';
+  title: string;
+  hasNewTag: boolean;
+  author: string;
+  createdAt: string;
+  isPinned?: boolean;
+  content?: string;
+  classIds?: number[];
+};
+
+// 빈 데이터
+const dummyNotices: Notice[] = [];
 
 function NoticePage() {
   const navigate = useNavigate();

@@ -9,34 +9,7 @@ type ClassType = {
   studentIds: number[];
 };
 
-const dummyClasses: ClassType[] = [
-  {
-    id: 1,
-    name: '예비고2 월금 정규반',
-    studentIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-  },
-  {
-    id: 2,
-    name: '예비고2 화목 정규반',
-    studentIds: [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27],
-  },
-  {
-    id: 3,
-    name: '미적분1 기본 특강반',
-    studentIds: [
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    ],
-  },
-  {
-    id: 4,
-    name: '미적분1+2 통합 특강반',
-    studentIds: [
-      1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 2, 4, 6,
-    ],
-  },
-];
-
-// 더미 학생 데이터
+// 타입 정의
 type Student = {
   id: number;
   name: string;
@@ -46,23 +19,9 @@ type Student = {
   grade: string;
 };
 
-const dummyStudents: Student[] = Array.from({ length: 30 }, (_, i) => ({
-  id: i + 1,
-  name: `학생${i + 1}`,
-  email: `student${i + 1}@example.com`,
-  phone: `010-${String(i + 1).padStart(4, '0')}-${String(i + 1).padStart(
-    4,
-    '0'
-  )}`,
-  school: [
-    '서울고등학교',
-    '부산고등학교',
-    '대전고등학교',
-    '인천고등학교',
-    '광주고등학교',
-  ][i % 5],
-  grade: `${(i % 3) + 1}학년`,
-}));
+// 빈 데이터
+const dummyClasses: ClassType[] = [];
+const dummyStudents: Student[] = [];
 
 type Video = {
   id: number;

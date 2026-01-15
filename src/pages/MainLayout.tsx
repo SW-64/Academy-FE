@@ -15,6 +15,7 @@ import {
   FileText,
   LogOut,
 } from 'lucide-react';
+import { logout } from '../api/auth';
 
 const menuItems = [
   { id: 'notice', label: '공지사항', icon: Megaphone, path: '/notice' },
@@ -299,7 +300,12 @@ function MainLayout({
               ? location.pathname === item.path ||
                 (item.path === '/admin' && location.pathname === '/admin') ||
                 (item.path !== '/admin' &&
-                  location.pathname.startsWith(item.path))
+                  location.pathname.startsWith(item.path) &&
+                  // /admin/homework-progress가 /admin/homework로 시작하는 것을 방지
+                  !(
+                    item.path === '/admin/homework' &&
+                    location.pathname.startsWith('/admin/homework-progress')
+                  ))
               : isParent
               ? location.pathname === item.path ||
                 (item.path === '/parent/main' &&
@@ -335,7 +341,17 @@ function MainLayout({
         <div className="border-t border-blue-100/70 px-2 sm:px-3 lg:px-4 py-1 sm:py-2">
           <button
             type="button"
-            onClick={() => navigate('/login')}
+            onClick={async () => {
+              try {
+                // 백엔드 로그아웃 API 호출 (httpOnly 쿠키 삭제)
+                await logout();
+              } catch (error) {
+                console.error('로그아웃 에러:', error);
+                // 에러가 발생해도 로그인 페이지로 이동
+              } finally {
+                navigate('/login');
+              }
+            }}
             className="flex w-full items-center gap-2 sm:gap-3 lg:gap-3 px-2 sm:px-3 lg:px-4 py-2 sm:py-3 lg:py-3 text-left transition-colors text-slate-700 hover:bg-red-50 hover:text-red-600"
           >
             <LogOut className="h-4 w-4 sm:h-5 sm:w-5 lg:h-5 lg:w-5 flex-shrink-0 text-slate-500" />

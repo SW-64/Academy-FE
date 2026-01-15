@@ -28,55 +28,10 @@ type LinkRelation = {
   linkedAt: string;
 };
 
-const dummyPendingUsers: PendingUser[] = [
-  {
-    id: 1,
-    name: '김학생',
-    email: 'student1@example.com',
-    role: '학생',
-    requestedAt: '2025-02-01',
-    status: '대기',
-  },
-  {
-    id: 2,
-    name: '이학부모',
-    email: 'parent1@example.com',
-    role: '학부모',
-    requestedAt: '2025-02-02',
-    status: '대기',
-  },
-];
-
-const dummyUsers: SimpleUser[] = [
-  {
-    id: 1,
-    name: '김학생',
-    email: 'student1@example.com',
-    role: '학생',
-    phone: '010-1111-2222',
-  },
-  {
-    id: 2,
-    name: '박학생',
-    email: 'student2@example.com',
-    role: '학생',
-    phone: '010-3333-4444',
-  },
-  {
-    id: 3,
-    name: '이학부모',
-    email: 'parent1@example.com',
-    role: '학부모',
-    phone: '010-5555-6666',
-  },
-];
-
-const dummyLinks: LinkRelation[] = [
-  {
-    id: 1,
-    parent: dummyUsers[2],
-    child: dummyUsers[0],
-    linkedAt: '2025-02-03',
+// 빈 데이터
+const dummyPendingUsers: PendingUser[] = [];
+const dummyUsers: SimpleUser[] = [];
+const dummyLinks: LinkRelation[] = [];
   },
 ];
 

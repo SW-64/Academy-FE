@@ -1,12 +1,57 @@
 import { useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import MainLayout from './MainLayout';
-import {
-  dummyHomeworks,
-  studentHomeworkProgress,
-  calculateProgress,
-  type HomeworkProgress,
-} from '../data/homeworkData';
+// 타입 정의
+export type HomeworkProgress = {
+  majorUnit: number;
+  minorUnit: number;
+  completed: boolean;
+};
+
+export type Homework = {
+  id: number;
+  textbookId: number;
+  textbookName: string;
+  classId: number;
+  className: string;
+  majorUnitCount: number;
+  minorUnitCount: number;
+  progress: HomeworkProgress[];
+};
+
+export type StudentHomework = {
+  studentId: number;
+  homeworkId: number;
+  progress: HomeworkProgress[];
+  lastUpdated: string;
+};
+
+// 빈 데이터
+const dummyHomeworks: Homework[] = [];
+const studentHomeworkProgress: StudentHomework[] = [];
+
+// 진행도 계산 함수
+function calculateProgress(
+  progress: HomeworkProgress[],
+  majorUnitCount: number,
+  minorUnitCount: number
+): {
+  completed: number;
+  total: number;
+  percentage: number;
+  currentMajorUnit: number;
+  currentMinorUnit: number;
+} {
+  const total = majorUnitCount * minorUnitCount;
+  const completed = progress.filter(p => p.completed).length;
+  return {
+    completed,
+    total,
+    percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+    currentMajorUnit: 1,
+    currentMinorUnit: 1,
+  };
+}
 import { ArrowLeft, Check, X } from 'lucide-react';
 
 // TODO: 실제 로그인한 학생 ID로 교체
@@ -20,9 +65,7 @@ function HomeworkProgressPage() {
   const classId = searchParams.get('classId');
 
   const homework = useMemo(() => {
-    return homeworkId
-      ? dummyHomeworks.find(h => h.id === homeworkId)
-      : null;
+    return homeworkId ? dummyHomeworks.find(h => h.id === homeworkId) : null;
   }, [homeworkId]);
 
   const studentProgress = useMemo(() => {
@@ -63,23 +106,23 @@ function HomeworkProgressPage() {
     if (!homework) return {};
 
     const groups: Record<number, HomeworkProgress[]> = {};
-    
+
     // 모든 대단원과 소단원을 포함하도록 생성
     for (let major = 1; major <= homework.majorUnitCount; major++) {
       groups[major] = [];
-      
+
       // 대단원별 소단원 개수 가져오기
       const minorUnitCount = homework.majorUnitsDetail
         ? homework.majorUnitsDetail.find(d => d.majorUnitIndex === major)
             ?.minorUnitCount || homework.minorUnitCount
         : homework.minorUnitCount;
-      
+
       for (let minor = 1; minor <= minorUnitCount; minor++) {
         // studentProgress에서 해당 항목 찾기
         const existingProgress = studentProgress?.progress.find(
           p => p.majorUnit === major && p.minorUnit === minor
         );
-        
+
         if (existingProgress) {
           groups[major].push(existingProgress);
         } else {
@@ -94,7 +137,7 @@ function HomeworkProgressPage() {
       // 소단원 순서대로 정렬
       groups[major].sort((a, b) => a.minorUnit - b.minorUnit);
     }
-    
+
     return groups;
   }, [homework, studentProgress]);
 
@@ -241,4 +284,3 @@ function HomeworkProgressPage() {
 }
 
 export default HomeworkProgressPage;
-

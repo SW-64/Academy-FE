@@ -1,6 +1,20 @@
 import { useNavigate } from 'react-router-dom';
 import MainLayout from './MainLayout';
-import { examRecords } from '../data/gradesData';
+// 타입 정의
+export interface ExamRecord {
+  studentId: number;
+  studentName: string;
+  date: string;
+  dateFormatted: string;
+  score: number;
+  average: number;
+  grade: string;
+  targetScore: number;
+  differenceFromTarget: number;
+}
+
+// 빈 데이터
+const examRecords: ExamRecord[] = [];
 
 // TODO: API 연결 시 이 더미 데이터를 실제 API 호출로 교체
 const dummyNotices = [

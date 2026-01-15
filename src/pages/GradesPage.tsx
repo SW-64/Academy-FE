@@ -1,13 +1,47 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import MainLayout from './MainLayout';
-import {
-  examRecords,
-  studentSummaries,
-  dailyStats,
-  type GradeLevel,
-  type ExamRecord,
-} from '../data/gradesData';
+// 타입 정의
+export type GradeLevel = 'A' | 'B' | 'C' | 'D' | 'F';
+
+export interface ExamRecord {
+  studentId: number;
+  studentName: string;
+  date: string;
+  dateFormatted: string;
+  score: number;
+  average: number;
+  grade: GradeLevel;
+  targetScore: number;
+  differenceFromTarget: number;
+  wrongAnswers?: number[];
+  classId?: number;
+}
+
+export interface StudentSummary {
+  studentId: number;
+  studentName: string;
+  targetScore: number;
+  latestScore: number;
+  latestAverage: number;
+  latestGrade: GradeLevel;
+  totalExams: number;
+  gradeDistribution: Record<GradeLevel, number>;
+  trend: 'improving' | 'stable' | 'declining';
+}
+
+export interface DailyStats {
+  date: string;
+  dateFormatted: string;
+  averageScore: number;
+  totalStudents: number;
+  gradeDistribution: Record<GradeLevel, number>;
+}
+
+// 빈 데이터
+const examRecords: ExamRecord[] = [];
+const studentSummaries: StudentSummary[] = [];
+const dailyStats: DailyStats[] = [];
 
 // TODO: 실제 로그인한 학생 ID로 교체
 const CURRENT_STUDENT_ID = 1;

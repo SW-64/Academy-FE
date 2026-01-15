@@ -1,19 +1,36 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X, Plus, ChevronDown } from 'lucide-react';
 import MainLayout from '../MainLayout';
-import { examRecords } from '../../data/gradesData';
-import type { ExamRecord } from '../../data/gradesData';
+import {
+  getClasses,
+  getClassExams,
+  createExam,
+  getExamDetail,
+  updateExam,
+  deleteExam,
+  type ClassData,
+  type ExamItem,
+} from '../../api/class';
+// 타입 정의
+export type ExamRecord = {
+  studentId: number;
+  studentName: string;
+  date: string;
+  dateFormatted: string;
+  score: number;
+  average: number;
+  grade: string;
+  targetScore: number;
+  differenceFromTarget: number;
+  wrongAnswers?: number[];
+  classId?: number;
+};
 
 type SortOption = 'latest' | 'avgScore';
 
-// 더미 클래스 데이터
-const dummyClasses = [
-  { id: 1, name: '예비고2 월금 정규반' },
-  { id: 2, name: '예비고2 화목 정규반' },
-  { id: 3, name: '미적분1 기본 특강반' },
-  { id: 4, name: '미적분1+2 통합 특강반' },
-];
+// 빈 데이터
+const examRecords: ExamRecord[] = [];
 
 function AdminGradesPage() {
   const navigate = useNavigate();
@@ -29,19 +46,84 @@ function AdminGradesPage() {
     classIdParam ? parseInt(classIdParam, 10) : null
   );
 
+  // 클래스 목록 상태
+  const [classes, setClasses] = useState<ClassData[]>([]);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(false);
+  const [selectedClassName, setSelectedClassName] = useState<string>('');
+
+  // 시험 목록 상태
+  const [exams, setExams] = useState<ExamItem[]>([]);
+  const [isLoadingExams, setIsLoadingExams] = useState(false);
+
+  // 클래스 목록 조회
+  useEffect(() => {
+    const fetchClasses = async () => {
+      setIsLoadingClasses(true);
+      try {
+        const response = await getClasses();
+        setClasses(response.data);
+      } catch (error) {
+        console.error('클래스 목록 조회 에러:', error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : '클래스 목록을 가져오는데 실패했습니다.';
+        alert(errorMessage);
+      } finally {
+        setIsLoadingClasses(false);
+      }
+    };
+
+    fetchClasses();
+  }, []);
+
   // URL 쿼리 파라미터와 동기화
   useEffect(() => {
     if (classIdParam) {
       const classId = parseInt(classIdParam, 10);
       if (!isNaN(classId)) {
         setSelectedClassId(classId);
+        // 클래스 이름 찾기
+        const classData = classes.find(c => c.classId === classId);
+        if (classData) {
+          setSelectedClassName(classData.className);
+        }
       }
     }
-  }, [classIdParam]);
+  }, [classIdParam, classes]);
+
+  // 시험 목록 새로고침 함수
+  const refreshExams = useCallback(async () => {
+    if (!selectedClassId) {
+      setExams([]);
+      return;
+    }
+
+    setIsLoadingExams(true);
+    try {
+      const response = await getClassExams(selectedClassId);
+      setExams(response.data.items);
+    } catch (error) {
+      console.error('시험 목록 조회 에러:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : '시험 목록을 가져오는데 실패했습니다.';
+      alert(errorMessage);
+    } finally {
+      setIsLoadingExams(false);
+    }
+  }, [selectedClassId]);
+
+  // 클래스 선택 시 시험 목록 조회
+  useEffect(() => {
+    refreshExams();
+  }, [refreshExams]);
   const [selectedExam, setSelectedExam] = useState<{
     date: string;
     dateFormatted: string;
     name: string;
+    examId?: number;
     records: ExamRecord[];
     averageScore: number;
     totalStudents: number;
@@ -101,41 +183,33 @@ function AdminGradesPage() {
     };
   }, [isMonthDropdownOpen]);
 
-  // 고유한 시험 날짜 목록 추출
-  const uniqueExamDates = Array.from(
-    new Set(examRecordsState.map(record => record.date))
-  ).sort();
-
-  // 날짜별로 그룹화된 시험 기록
-  const allExamsByDate = uniqueExamDates.map(date => {
-    const records = examRecordsState.filter(record => record.date === date);
-    const dateObj = new Date(date);
-    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(
-      2,
-      '0'
-    )}/${String(dateObj.getDate()).padStart(2, '0')}`;
+  // API에서 받은 시험 데이터를 기존 형식으로 변환
+  const allExamsByDate = exams.map(exam => {
+    const date = exam.examDate.split('T')[0]; // YYYY-MM-DD 형식
+    // 날짜 문자열에서 직접 월과 일 추출 (타임존 변환 방지)
+    const [, month, day] = date.split('-').map(Number);
+    const dateFormatted = `${String(month).padStart(2, '0')}/${String(
+      day
+    ).padStart(2, '0')}`;
 
     return {
       date,
       dateFormatted,
-      name: `${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일 시험`, // 기본 시험 이름
-      records,
-      averageScore:
-        Math.round(
-          (records.reduce((sum, r) => sum + r.score, 0) / records.length) * 10
-        ) / 10,
-      totalStudents: records.length,
+      name: exam.examTitle,
+      examId: exam.examId,
+      records: [] as ExamRecord[], // 시험 상세는 별도 API로 가져와야 함
+      averageScore: exam.studentAverage || 0,
+      totalStudents: 0, // 시험 상세에서 가져와야 함
     };
   });
 
   // 선택된 월에 해당하는 시험만 필터링
   const filteredExams = allExamsByDate
     .filter(exam => {
-      const examDate = new Date(exam.date);
-      return (
-        examDate.getMonth() + 1 === selectedMonth &&
-        examDate.getFullYear() === 2026
-      );
+      // 날짜 문자열에서 직접 월 추출 (타임존 변환 방지)
+      const [year, month] = exam.date.split('-').map(Number);
+      const currentYear = new Date().getFullYear();
+      return month === selectedMonth && year === currentYear;
     })
     .sort((a, b) => {
       if (sortOption === 'latest') {
@@ -145,73 +219,143 @@ function AdminGradesPage() {
       }
     });
 
-  const handleExamClick = (exam: (typeof allExamsByDate)[0]) => {
-    // 시험 추가에서 설정한 문항 정보를 가져옴 (임시로 더미 데이터 사용)
-    // 실제로는 시험 저장 시 questions 정보도 함께 저장되어야 함
-    const examQuestions = [
-      { questionNumber: 1, points: 5, errorRate: undefined },
-      { questionNumber: 2, points: 5, errorRate: undefined },
-      { questionNumber: 3, points: 10, errorRate: undefined },
-    ];
+  const handleExamClick = async (exam: (typeof allExamsByDate)[0]) => {
+    // 시험 상세 조회 API 호출
+    if (exam.examId && selectedClassId) {
+      try {
+        const response = await getExamDetail(selectedClassId, exam.examId);
+        const examData = response.data;
 
-    setSelectedExam({
-      ...exam,
-      questions: examQuestions,
-    });
-    setEditDate(exam.date);
-    setEditExamName(exam.name);
-    setIsEditMode(false);
-    setIsModalOpen(true);
+        // examDetails를 questions 형식으로 변환
+        const examQuestions = examData.examDetails.map(detail => ({
+          questionNumber: detail.question,
+          points: detail.points,
+          errorRate: undefined,
+        }));
+
+        const date = examData.examDate.split('T')[0];
+        // 날짜 문자열에서 직접 월과 일 추출 (타임존 변환 방지)
+        const [, month, day] = date.split('-').map(Number);
+        const dateFormatted = `${String(month).padStart(2, '0')}/${String(
+          day
+        ).padStart(2, '0')}`;
+
+        setSelectedExam({
+          date,
+          dateFormatted,
+          name: examData.examTitle,
+          examId: examData.examId,
+          records: [] as ExamRecord[],
+          averageScore: examData.studentAverage || 0,
+          totalStudents: 0,
+          questions: examQuestions,
+        });
+        setEditDate(date);
+        setEditExamName(examData.examTitle);
+        setEditQuestions(examQuestions);
+        setIsEditMode(false);
+        setIsModalOpen(true);
+      } catch (error) {
+        console.error('시험 상세 조회 에러:', error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : '시험 상세 정보를 가져오는데 실패했습니다.';
+        alert(errorMessage);
+      }
+    } else {
+      // examId가 없는 경우 (더미 데이터 등)
+      const examQuestions = [
+        { questionNumber: 1, points: 5, errorRate: undefined },
+        { questionNumber: 2, points: 5, errorRate: undefined },
+        { questionNumber: 3, points: 10, errorRate: undefined },
+      ];
+
+      setSelectedExam({
+        ...exam,
+        questions: examQuestions,
+      });
+      setEditDate(exam.date);
+      setEditExamName(exam.name);
+      setEditQuestions(examQuestions);
+      setIsEditMode(false);
+      setIsModalOpen(true);
+    }
   };
 
   //
-  const handleSaveEdit = () => {
-    if (!selectedExam) return;
+  const handleSaveEdit = async () => {
+    if (!selectedExam || !selectedClassId || !selectedExam.examId) return;
 
     if (!editExamName.trim()) {
       alert('시험 이름을 입력해주세요.');
       return;
     }
 
-    // 날짜 변경 시 examRecordsState 업데이트
-    if (editDate !== selectedExam.date) {
-      setExamRecordsState(prev =>
-        prev.map(r =>
-          r.date === selectedExam.date ? { ...r, date: editDate } : r
-        )
-      );
+    if (editQuestions.length === 0) {
+      alert('최소 한 개의 문항을 추가해주세요.');
+      return;
     }
 
-    // selectedExam 업데이트
-    const dateObj = new Date(editDate);
-    const dateFormatted = `${String(dateObj.getMonth() + 1).padStart(
-      2,
-      '0'
-    )}/${String(dateObj.getDate()).padStart(2, '0')}`;
+    try {
+      // API 요청 데이터 구성
+      const questionNumbers = editQuestions.map(q => q.questionNumber);
+      const points = editQuestions.map(q => q.points);
 
-    setSelectedExam({
-      ...selectedExam,
-      name: editExamName,
-      date: editDate,
-      dateFormatted,
-    });
+      const response = await updateExam(selectedClassId, selectedExam.examId, {
+        examTitle: editExamName,
+        examDate: editDate,
+        question: questionNumbers,
+        points: points,
+      });
 
-    setIsEditMode(false);
-    // eslint-disable-next-line no-alert
-    alert('수정이 완료되었습니다.');
+      alert(response.message || '수정이 완료되었습니다.');
+
+      // 시험 목록 새로고침
+      await refreshExams();
+
+      // selectedExam 업데이트
+      const [, month, day] = editDate.split('-').map(Number);
+      const dateFormatted = `${String(month).padStart(2, '0')}/${String(
+        day
+      ).padStart(2, '0')}`;
+
+      setSelectedExam({
+        ...selectedExam,
+        name: editExamName,
+        date: editDate,
+        dateFormatted,
+        questions: editQuestions,
+      });
+
+      setIsEditMode(false);
+    } catch (error) {
+      console.error('시험 수정 에러:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : '시험 수정에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
-  const handleDeleteExam = () => {
-    if (!selectedExam) return;
+  const handleDeleteExam = async () => {
+    if (!selectedExam || !selectedClassId || !selectedExam.examId) return;
     if (!confirm('정말 이 시험을 삭제하시겠습니까?')) return;
 
-    // examRecordsState에서 해당 날짜의 모든 기록 삭제
-    setExamRecordsState(prev => prev.filter(r => r.date !== selectedExam.date));
+    try {
+      const response = await deleteExam(selectedClassId, selectedExam.examId);
+      alert(response.message || '시험이 삭제되었습니다.');
 
-    setIsModalOpen(false);
-    setSelectedExam(null);
-    // eslint-disable-next-line no-alert
-    alert('시험이 삭제되었습니다.');
+      // 시험 목록 새로고침
+      await refreshExams();
+
+      setIsModalOpen(false);
+      setSelectedExam(null);
+    } catch (error) {
+      console.error('시험 삭제 에러:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : '시험 삭제에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
   const handleAddExam = () => {
@@ -222,7 +366,7 @@ function AdminGradesPage() {
     setIsAddExamModalOpen(true);
   };
 
-  const handleSaveExam = () => {
+  const handleSaveExam = async () => {
     if (!newExam.name) {
       alert('시험 이름을 입력해주세요.');
       return;
@@ -236,10 +380,36 @@ function AdminGradesPage() {
       return;
     }
 
-    // 시험 저장 로직 (나중에 API로 교체)
-    alert('시험이 추가되었습니다.');
-    setNewExam({ name: '', date: '', questions: [] });
-    setIsAddExamModalOpen(false);
+    if (!selectedClassId) {
+      alert('클래스를 선택해주세요.');
+      return;
+    }
+
+    try {
+      // API 요청 데이터 구성
+      const questionNumbers = newExam.questions.map(q => q.questionNumber);
+      const points = newExam.questions.map(q => q.points);
+
+      const response = await createExam(selectedClassId, {
+        examTitle: newExam.name,
+        examDate: newExam.date,
+        question: questionNumbers,
+        points: points,
+      });
+
+      alert(response.message || '시험이 추가되었습니다.');
+
+      // 시험 목록 새로고침
+      await refreshExams();
+
+      setNewExam({ name: '', date: '', questions: [] });
+      setIsAddExamModalOpen(false);
+    } catch (error) {
+      console.error('시험 생성 에러:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : '시험 생성에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
   const handleAddQuestion = () => {
@@ -260,6 +430,18 @@ function AdminGradesPage() {
     }));
   };
 
+  const handleAddQuestionEdit = () => {
+    const nextQuestionNumber = editQuestions.length + 1;
+    setEditQuestions([
+      ...editQuestions,
+      { questionNumber: nextQuestionNumber, points: 0 },
+    ]);
+  };
+
+  const handleRemoveQuestionEdit = (index: number) => {
+    setEditQuestions(editQuestions.filter((_, i) => i !== index));
+  };
+
   ``;
   return (
     <MainLayout showCalendar={showCalendar} isAdmin={true}>
@@ -274,7 +456,9 @@ function AdminGradesPage() {
               type="button"
               onClick={() => {
                 setSelectedClassId(null);
+                setSelectedClassName('');
                 setSearchParams({});
+                setExams([]);
               }}
               className="mt-2 text-sm font-medium text-slate-600 hover:text-slate-900"
             >
@@ -282,7 +466,7 @@ function AdminGradesPage() {
             </button>
             <div className="mt-4">
               <h2 className="text-lg font-semibold text-slate-900">
-                {dummyClasses.find(c => c.id === selectedClassId)?.name}
+                {selectedClassName}
               </h2>
             </div>
           </>
@@ -295,23 +479,32 @@ function AdminGradesPage() {
           <h2 className="mb-4 text-lg font-semibold text-slate-900">
             클래스 선택
           </h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {dummyClasses.map(classItem => (
-              <button
-                key={classItem.id}
-                type="button"
-                onClick={() => {
-                  setSelectedClassId(classItem.id);
-                  setSearchParams({ classId: classItem.id.toString() });
-                }}
-                className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70 transition-shadow hover:shadow-md text-left"
-              >
-                <h3 className="text-lg font-semibold text-slate-900">
-                  {classItem.name}
-                </h3>
-              </button>
-            ))}
-          </div>
+          {isLoadingClasses ? (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-sm text-slate-600">
+                클래스 목록을 불러오는 중...
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {classes.map(classItem => (
+                <button
+                  key={classItem.classId}
+                  type="button"
+                  onClick={() => {
+                    setSelectedClassId(classItem.classId);
+                    setSelectedClassName(classItem.className);
+                    setSearchParams({ classId: classItem.classId.toString() });
+                  }}
+                  className="rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all hover:border-amber-300 hover:shadow-md"
+                >
+                  <h3 className="font-semibold text-slate-900">
+                    {classItem.className}
+                  </h3>
+                </button>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
@@ -478,7 +671,16 @@ function AdminGradesPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredExams.length === 0 ? (
+                      {isLoadingExams ? (
+                        <tr>
+                          <td
+                            colSpan={3}
+                            className="px-4 py-8 text-center text-sm text-slate-500"
+                          >
+                            시험 목록을 불러오는 중...
+                          </td>
+                        </tr>
+                      ) : filteredExams.length === 0 ? (
                         <tr>
                           <td
                             colSpan={3}
@@ -490,14 +692,16 @@ function AdminGradesPage() {
                       ) : (
                         filteredExams.map(exam => (
                           <tr
-                            key={exam.date}
+                            key={exam.examId || exam.date}
                             className="border-b border-slate-100 transition-colors hover:bg-slate-50"
                           >
                             <td className="px-4 py-3 text-sm text-slate-900">
                               {exam.name}
                             </td>
                             <td className="px-4 py-3 text-sm font-medium text-slate-900 text-right">
-                              {exam.averageScore}점
+                              {exam.averageScore > 0
+                                ? `${exam.averageScore.toFixed(1)}점`
+                                : '-'}
                             </td>
                             <td className="px-4 py-3 text-right">
                               <div className="flex justify-end gap-2">
@@ -512,7 +716,10 @@ function AdminGradesPage() {
                                   type="button"
                                   onClick={() =>
                                     navigate(
-                                      `/admin/grades/${exam.date}?classId=${selectedClassId}`
+                                      `/admin/grades/${exam.date.replace(
+                                        /-/g,
+                                        ''
+                                      )}?classId=${selectedClassId}`
                                     )
                                   }
                                   className="rounded-lg bg-[#084773] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#063a5a]"
@@ -765,93 +972,136 @@ function AdminGradesPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
-              {/* 문항, 배점, 오답률 테이블 */}
-              {selectedExam.questions && selectedExam.questions.length > 0 ? (
-                <div className="overflow-x-auto rounded-lg border border-slate-200">
-                  <table className="min-w-full border-collapse">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
-                          문항
-                        </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
-                          배점
-                        </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
-                          오답률
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(isEditMode
-                        ? editQuestions
-                        : selectedExam.questions
-                      ).map((question, index) => (
-                        <tr
-                          key={index}
-                          className="border-b border-slate-100 hover:bg-slate-50"
-                        >
-                          <td className="px-4 py-3">
-                            {isEditMode ? (
-                              <input
-                                type="number"
-                                value={question.questionNumber}
-                                onChange={e => {
-                                  const updatedQuestions = [...editQuestions];
-                                  updatedQuestions[index] = {
-                                    ...updatedQuestions[index],
-                                    questionNumber: Number(e.target.value),
-                                  };
-                                  setEditQuestions(updatedQuestions);
-                                }}
-                                min="1"
-                                className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                              />
-                            ) : (
-                              <span className="text-sm text-slate-900">
-                                {question.questionNumber}번
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            {isEditMode ? (
-                              <input
-                                type="number"
-                                value={question.points}
-                                onChange={e => {
-                                  const updatedQuestions = [...editQuestions];
-                                  updatedQuestions[index] = {
-                                    ...updatedQuestions[index],
-                                    points: Number(e.target.value),
-                                  };
-                                  setEditQuestions(updatedQuestions);
-                                }}
-                                min="0"
-                                className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                              />
-                            ) : (
-                              <span className="text-sm text-slate-900">
-                                {question.points}점
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="text-sm text-slate-900">
-                              {question.errorRate !== undefined
-                                ? `${question.errorRate}%`
-                                : '-'}
-                            </span>
-                          </td>
+              <div>
+                {isEditMode && (
+                  <div className="mb-3 flex items-center justify-between">
+                    <label className="block text-sm font-medium text-slate-700">
+                      문항 관리
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAddQuestionEdit}
+                      className="flex items-center gap-1 rounded-lg bg-[#084773] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#063a5a]"
+                    >
+                      <Plus className="h-3 w-3" />
+                      문항 추가
+                    </button>
+                  </div>
+                )}
+                {/* 문항, 배점, 오답률 테이블 */}
+                {(isEditMode ? editQuestions : selectedExam.questions) &&
+                (isEditMode ? editQuestions : selectedExam.questions)!.length >
+                  0 ? (
+                  <div className="overflow-x-auto rounded-lg border border-slate-200">
+                    <table className="min-w-full border-collapse">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                            문항
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                            배점
+                          </th>
+                          {!isEditMode && (
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                              오답률
+                            </th>
+                          )}
+                          {isEditMode && (
+                            <th className="px-4 py-3 text-right text-sm font-semibold text-slate-900">
+                              작업
+                            </th>
+                          )}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                  문항이 없습니다. 시험 추가에서 문항을 설정해주세요.
-                </div>
-              )}
+                      </thead>
+                      <tbody>
+                        {(isEditMode
+                          ? editQuestions
+                          : selectedExam.questions)!.map((question, index) => (
+                          <tr
+                            key={index}
+                            className="border-b border-slate-100 hover:bg-slate-50"
+                          >
+                            <td className="px-4 py-3">
+                              {isEditMode ? (
+                                <input
+                                  type="number"
+                                  value={question.questionNumber}
+                                  onChange={e => {
+                                    const updatedQuestions = [...editQuestions];
+                                    updatedQuestions[index] = {
+                                      ...updatedQuestions[index],
+                                      questionNumber: Number(e.target.value),
+                                    };
+                                    setEditQuestions(updatedQuestions);
+                                  }}
+                                  min="1"
+                                  className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                                />
+                              ) : (
+                                <span className="text-sm text-slate-900">
+                                  {question.questionNumber}번
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              {isEditMode ? (
+                                <input
+                                  type="number"
+                                  value={question.points}
+                                  onChange={e => {
+                                    const updatedQuestions = [...editQuestions];
+                                    updatedQuestions[index] = {
+                                      ...updatedQuestions[index],
+                                      points: Number(e.target.value),
+                                    };
+                                    setEditQuestions(updatedQuestions);
+                                  }}
+                                  min="0"
+                                  className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                                />
+                              ) : (
+                                <span className="text-sm text-slate-900">
+                                  {question.points}점
+                                </span>
+                              )}
+                            </td>
+                            {!isEditMode && (
+                              <td className="px-4 py-3">
+                                <span className="text-sm text-slate-900">
+                                  {question.errorRate !== undefined
+                                    ? `${question.errorRate}%`
+                                    : '-'}
+                                </span>
+                              </td>
+                            )}
+                            {isEditMode && (
+                              <td className="px-4 py-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleRemoveQuestionEdit(index)
+                                  }
+                                  className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                                >
+                                  삭제
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                    문항이 없습니다.{' '}
+                    {isEditMode
+                      ? '문항을 추가해주세요.'
+                      : '시험 추가에서 문항을 설정해주세요.'}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 하단 고정 버튼 영역 */}

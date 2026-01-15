@@ -3,13 +3,8 @@ import { Plus, X, Trash2, Save, Upload } from 'lucide-react';
 import MainLayout from '../MainLayout';
 import { dummyMaterials, type Material } from '../MaterialsPage';
 
-// 더미 클래스 데이터 (실제로는 API에서 가져와야 함)
-const dummyClasses = [
-  { id: 1, name: '예비고2 월금 정규반' },
-  { id: 2, name: '예비고2 화목 정규반' },
-  { id: 3, name: '미적분1 기본 특강반' },
-  { id: 4, name: '미적분1+2 통합 특강반' },
-];
+// 빈 데이터
+const dummyClasses: Array<{ id: number; name: string }> = [];
 
 type MaterialWithFile = Material & {
   content?: string;

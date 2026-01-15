@@ -1,22 +1,26 @@
 import { useState, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { login, getMe } from '../api/auth';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {}
   );
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setApiError(null);
 
     const newErrors: { email?: string; password?: string } = {};
 
@@ -34,12 +38,46 @@ const LoginPage = () => {
 
     setErrors(newErrors);
 
-    // 에러가 없으면 공지사항으로 이동
+    // 에러가 없으면 API 호출
     if (Object.keys(newErrors).length === 0) {
-      console.log('Email:', email);
-      console.log('Password:', password);
-      // 로그인 성공 시 공지사항으로 이동
-      navigate('/notice');
+      setIsLoading(true);
+      try {
+        const response = await login({ email, password });
+
+        // API 응답 콘솔 출력
+        console.log('로그인 API 응답:', response);
+
+        // 백엔드가 httpOnly 쿠키로 토큰을 설정하므로 프론트엔드에서 저장할 필요 없음
+        // 사용자 정보 가져오기 (role 확인용)
+        try {
+          const meResponse = await getMe();
+          console.log('사용자 정보 API 응답:', meResponse);
+
+          // role에 따라 적절한 대시보드로 이동
+          const role = meResponse.data?.role?.toUpperCase();
+
+          if (role === 'ADMIN') {
+            navigate('/admin');
+          } else if (role === 'PARENT') {
+            navigate('/parent/notice');
+          } else {
+            // STUDENT 또는 기본값
+            navigate('/notice');
+          }
+        } catch (meError) {
+          console.error('사용자 정보 가져오기 에러:', meError);
+          // 사용자 정보를 가져오지 못해도 기본적으로 공지사항으로 이동
+          navigate('/notice');
+        }
+      } catch (error) {
+        // 에러 콘솔 출력
+        console.error('로그인 API 에러:', error);
+        const errorMessage =
+          error instanceof Error ? error.message : '로그인에 실패했습니다.';
+        setApiError(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -209,12 +247,23 @@ const LoginPage = () => {
               )}
             </div>
 
+            {/* API 에러 메시지 */}
+            {apiError && (
+              <div
+                className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg"
+                role="alert"
+              >
+                {apiError}
+              </div>
+            )}
+
             {/* 로그인 버튼 */}
             <button
               type="submit"
-              className="w-full bg-[#084773] hover:bg-[#063a5a] text-white py-3 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-[#084773] focus:ring-offset-2 transition-colors"
+              disabled={isLoading}
+              className="w-full bg-[#084773] hover:bg-[#063a5a] disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-[#084773] focus:ring-offset-2 transition-colors"
             >
-              로그인
+              {isLoading ? '로그인 중...' : '로그인'}
             </button>
           </form>
 

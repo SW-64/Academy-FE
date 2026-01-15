@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { X } from 'lucide-react';
 import MainLayout from './MainLayout';
+import { getMyInfo, updateMyInfo, changePassword } from '../api/users';
 
 function MyPage() {
   const location = useLocation();
@@ -20,12 +21,14 @@ function MyPage() {
 
   // 사용자 정보 상태
   const [userInfo, setUserInfo] = useState({
-    name: '홍길동',
-    email: isAdmin ? 'admin@example.com' : 'student@example.com',
-    school: isStudent ? '서울고등학교' : '',
-    grade: isStudent ? '1학년' : '',
-    role: isAdmin ? '관리자' : '학생',
+    name: '',
+    email: '',
+    school: '',
+    grade: '',
+    role: '',
+    phone: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   // 모달 상태
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -33,9 +36,11 @@ function MyPage() {
 
   // 수정 폼 상태 (학교는 학교명만 저장)
   const [editForm, setEditForm] = useState({
-    name: userInfo.name,
-    email: userInfo.email,
-    school: isStudent ? getSchoolName(userInfo.school) : '',
+    name: '',
+    email: '',
+    phone: '',
+    school: '',
+    grade: '',
   });
 
   // 비밀번호 변경 폼 상태
@@ -45,38 +50,141 @@ function MyPage() {
     confirmPassword: '',
   });
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  // 내 정보 조회 API 호출
+  useEffect(() => {
+    const fetchMyInfo = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getMyInfo();
+        const data = response.data;
+
+        // 역할에 따른 표시 이름 변환
+        const roleName =
+          data.role === 'ADMIN'
+            ? '관리자'
+            : data.role === 'STUDENT'
+            ? '학생'
+            : data.role === 'PARENT'
+            ? '학부모'
+            : data.role;
+
+        setUserInfo({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          school: data.signupSchool || '',
+          grade: data.signupGrade ? `${data.signupGrade}학년` : '',
+          role: roleName,
+        });
+      } catch (error) {
+        console.error('내 정보 조회 에러:', error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : '내 정보를 가져오는데 실패했습니다.';
+        alert(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMyInfo();
+  }, []);
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUserInfo({
-      ...userInfo,
-      name: editForm.name,
-      email: editForm.email,
-      school: isStudent ? getFullSchoolName(editForm.school) : userInfo.school,
-    });
-    setIsEditModalOpen(false);
+
+    try {
+      // API 요청 데이터 구성
+      const updateData: {
+        name?: string;
+        email?: string;
+        phone?: string;
+        school?: string;
+        grade?: number;
+      } = {
+        name: editForm.name,
+        email: editForm.email,
+        phone: editForm.phone,
+      };
+
+      // 학생인 경우 학교와 학년 추가
+      if (isStudent) {
+        if (editForm.school) {
+          updateData.school = getFullSchoolName(editForm.school);
+        }
+        if (editForm.grade) {
+          const gradeNumber = parseInt(editForm.grade.replace('학년', ''), 10);
+          if (!isNaN(gradeNumber)) {
+            updateData.grade = gradeNumber;
+          }
+        }
+      }
+
+      const response = await updateMyInfo(updateData);
+      alert(response.message);
+
+      // userInfo 업데이트
+      setUserInfo({
+        ...userInfo,
+        name: editForm.name,
+        email: editForm.email,
+        phone: editForm.phone,
+        school: isStudent
+          ? getFullSchoolName(editForm.school)
+          : userInfo.school,
+        grade: isStudent ? editForm.grade : userInfo.grade,
+      });
+
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('내 정보 수정 에러:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : '내 정보 수정에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 클라이언트 측 검증
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       alert('새 비밀번호가 일치하지 않습니다.');
       return;
     }
-    // 비밀번호 변경 로직
-    setPasswordForm({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
-    setIsPasswordModalOpen(false);
-    alert('비밀번호가 변경되었습니다.');
+
+    try {
+      const response = await changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+        newPasswordConfirm: passwordForm.confirmPassword,
+      });
+
+      alert(response.message);
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setIsPasswordModalOpen(false);
+    } catch (error) {
+      console.error('비밀번호 변경 에러:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : '비밀번호 변경에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
   const openEditModal = () => {
     setEditForm({
       name: userInfo.name,
       email: userInfo.email,
+      phone: userInfo.phone,
       school: isStudent ? getSchoolName(userInfo.school) : '',
+      grade: isStudent ? userInfo.grade : '',
     });
     setIsEditModalOpen(true);
   };
@@ -91,42 +199,54 @@ function MyPage() {
       {/* 사용자 정보 카드 */}
       <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70">
         <h2 className="mb-4 text-lg font-semibold text-slate-900">내 정보</h2>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <span className="text-sm text-slate-600">이름</span>
-            <span className="text-sm font-medium text-slate-900">
-              {userInfo.name}
-            </span>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <p className="text-sm text-slate-600">내 정보를 불러오는 중...</p>
           </div>
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <span className="text-sm text-slate-600">이메일</span>
-            <span className="text-sm font-medium text-slate-900">
-              {userInfo.email}
-            </span>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <span className="text-sm text-slate-600">이름</span>
+              <span className="text-sm font-medium text-slate-900">
+                {userInfo.name}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <span className="text-sm text-slate-600">이메일</span>
+              <span className="text-sm font-medium text-slate-900">
+                {userInfo.email}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <span className="text-sm text-slate-600">연락처</span>
+              <span className="text-sm font-medium text-slate-900">
+                {userInfo.phone}
+              </span>
+            </div>
+            {isStudent && (
+              <>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <span className="text-sm text-slate-600">학교</span>
+                  <span className="text-sm font-medium text-slate-900">
+                    {userInfo.school}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <span className="text-sm text-slate-600">학년</span>
+                  <span className="text-sm font-medium text-slate-900">
+                    {userInfo.grade}
+                  </span>
+                </div>
+              </>
+            )}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600">역할</span>
+              <span className="text-sm font-medium text-slate-900">
+                {userInfo.role}
+              </span>
+            </div>
           </div>
-          {isStudent && (
-            <>
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <span className="text-sm text-slate-600">학교</span>
-                <span className="text-sm font-medium text-slate-900">
-                  {userInfo.school}
-                </span>
-              </div>
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <span className="text-sm text-slate-600">학년</span>
-                <span className="text-sm font-medium text-slate-900">
-                  {userInfo.grade}
-                </span>
-              </div>
-            </>
-          )}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-600">역할</span>
-            <span className="text-sm font-medium text-slate-900">
-              {userInfo.role}
-            </span>
-          </div>
-        </div>
+        )}
 
         {/* 버튼 영역 */}
         <div className="mt-6 flex gap-3">
@@ -192,26 +312,60 @@ function MyPage() {
                   required
                 />
               </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  연락처
+                </label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={e =>
+                    setEditForm({ ...editForm, phone: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                />
+              </div>
               {isStudent && (
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">
-                    학교
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={editForm.school}
-                      onChange={e =>
-                        setEditForm({ ...editForm, school: e.target.value })
-                      }
-                      className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      required
-                    />
-                    <span className="text-sm font-medium text-slate-700">
-                      고등학교
-                    </span>
+                <>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                      학교
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editForm.school}
+                        onChange={e =>
+                          setEditForm({ ...editForm, school: e.target.value })
+                        }
+                        className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        required
+                      />
+                      <span className="text-sm font-medium text-slate-700">
+                        고등학교
+                      </span>
+                    </div>
                   </div>
-                </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">
+                      학년
+                    </label>
+                    <select
+                      value={editForm.grade}
+                      onChange={e =>
+                        setEditForm({ ...editForm, grade: e.target.value })
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">학년을 선택하세요</option>
+                      <option value="1학년">1학년</option>
+                      <option value="2학년">2학년</option>
+                      <option value="3학년">3학년</option>
+                    </select>
+                  </div>
+                </>
               )}
               <div className="flex gap-3 pt-4">
                 <button

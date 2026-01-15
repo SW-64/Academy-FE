@@ -1,12 +1,63 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import MainLayout from './MainLayout';
-import {
-  dummyClasses,
-  dummyHomeworks,
-  studentHomeworkProgress,
-  calculateProgress,
-} from '../data/homeworkData';
+// 타입 정의
+export type ClassType = {
+  id: number;
+  name: string;
+};
+
+export type HomeworkProgress = {
+  majorUnit: number;
+  minorUnit: number;
+  completed: boolean;
+};
+
+export type Homework = {
+  id: number;
+  textbookId: number;
+  textbookName: string;
+  classId: number;
+  className: string;
+  majorUnitCount: number;
+  minorUnitCount: number;
+  progress: HomeworkProgress[];
+};
+
+export type StudentHomework = {
+  studentId: number;
+  homeworkId: number;
+  progress: HomeworkProgress[];
+  lastUpdated: string;
+};
+
+// 빈 데이터
+const dummyClasses: ClassType[] = [];
+const dummyHomeworks: Homework[] = [];
+const studentHomeworkProgress: StudentHomework[] = [];
+
+// 진행도 계산 함수
+function calculateProgress(
+  progress: HomeworkProgress[],
+  majorUnitCount: number,
+  minorUnitCount: number
+): {
+  completed: number;
+  total: number;
+  percentage: number;
+  currentMajorUnit: number;
+  currentMinorUnit: number;
+} {
+  const total = majorUnitCount * minorUnitCount;
+  const completed = progress.filter(p => p.completed).length;
+  return {
+    completed,
+    total,
+    percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+    currentMajorUnit: 1,
+    currentMinorUnit: 1,
+  };
+}
 import { BookOpen, ChevronRight } from 'lucide-react';
 
 // TODO: 실제 로그인한 학생 ID로 교체
@@ -149,8 +200,8 @@ function HomeworkPage() {
                           </div>
                         </div>
                         <p className="mt-3 text-sm text-slate-600">
-                          현재 진행: 대단원 {progressData.currentMajorUnit} - 소단원{' '}
-                          {progressData.currentMinorUnit}
+                          현재 진행: 대단원 {progressData.currentMajorUnit} -
+                          소단원 {progressData.currentMinorUnit}
                         </p>
                       </div>
                       <ChevronRight className="ml-4 h-5 w-5 flex-shrink-0 text-slate-400" />
@@ -178,4 +229,3 @@ function HomeworkPage() {
 }
 
 export default HomeworkPage;
-

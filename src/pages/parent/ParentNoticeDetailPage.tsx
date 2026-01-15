@@ -2,15 +2,22 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import MainLayout from '../MainLayout';
-import { dummyNotices } from '../../data/noticesData';
+// 타입 정의
+type Notice = {
+  id: number;
+  number: number | 'important';
+  title: string;
+  hasNewTag: boolean;
+  author: string;
+  createdAt: string;
+  isPinned?: boolean;
+  content?: string;
+  classIds?: number[];
+};
 
-// 더미 클래스 데이터 (실제로는 API에서 가져와야 함)
-const dummyClasses = [
-  { id: 1, name: '예비고2 월금 정규반' },
-  { id: 2, name: '예비고2 화목 정규반' },
-  { id: 3, name: '미적분1 기본 특강반' },
-  { id: 4, name: '미적분1+2 통합 특강반' },
-];
+// 빈 데이터
+const dummyNotices: Notice[] = [];
+const dummyClasses: Array<{ id: number; name: string }> = [];
 
 function ParentNoticeDetailPage() {
   const { id } = useParams<{ id: string }>();

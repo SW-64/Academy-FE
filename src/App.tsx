@@ -27,9 +27,6 @@ const AdminHomeworkPage = lazy(() => import('./pages/admin/AdminHomeworkPage'));
 const AdminHomeworkProgressPage = lazy(
   () => import('./pages/admin/HomeworkProgressPage')
 );
-const HomeworkProgressDetailPage = lazy(
-  () => import('./pages/admin/HomeworkProgressDetailPage')
-);
 const ParentNoticePage = lazy(() => import('./pages/parent/ParentNoticePage'));
 const ParentNoticeDetailPage = lazy(
   () => import('./pages/parent/ParentNoticeDetailPage')
@@ -55,7 +52,10 @@ function App() {
           <Route path="/notice/:id" element={<NoticeDetailPage />} />
           <Route path="/grades" element={<GradesPage />} />
           <Route path="/homework" element={<HomeworkPage />} />
-          <Route path="/homework/:id/progress" element={<HomeworkProgressPage />} />
+          <Route
+            path="/homework/:id/progress"
+            element={<HomeworkProgressPage />}
+          />
           <Route path="/materials" element={<MaterialsPage />} />
           <Route path="/materials/:id" element={<MaterialsDetailPage />} />
           <Route path="/videos" element={<VideosPage />} />
@@ -75,10 +75,6 @@ function App() {
           <Route
             path="/admin/homework-progress"
             element={<AdminHomeworkProgressPage />}
-          />
-          <Route
-            path="/admin/homework-progress/:classId"
-            element={<HomeworkProgressDetailPage />}
           />
           <Route path="/admin/mypage" element={<MyPage />} />
 

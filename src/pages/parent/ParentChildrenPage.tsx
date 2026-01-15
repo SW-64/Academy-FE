@@ -1,24 +1,131 @@
 import { useState } from 'react';
 import { X, GraduationCap, BookOpen, FileText } from 'lucide-react';
 import MainLayout from '../MainLayout';
-import {
-  examRecords,
-  studentSummaries,
-  dailyStats,
-  students,
-  type GradeLevel,
-  type ExamRecord,
-} from '../../data/gradesData';
-import {
-  getStudentClasses,
-  getClassExamRecords,
-  getStudentProgress,
-} from '../../data/parentData';
-import {
-  dummyHomeworks,
-  studentHomeworkProgress,
-  calculateProgress,
-} from '../../data/homeworkData';
+// 타입 정의
+export type GradeLevel = 'A' | 'B' | 'C' | 'D' | 'F';
+
+export type ExamRecord = {
+  studentId: number;
+  studentName: string;
+  date: string;
+  dateFormatted: string;
+  score: number;
+  average: number;
+  grade: GradeLevel;
+  targetScore: number;
+  differenceFromTarget: number;
+  wrongAnswers?: number[];
+  classId?: number;
+};
+
+export type StudentSummary = {
+  studentId: number;
+  studentName: string;
+  targetScore: number;
+  latestScore: number;
+  latestAverage: number;
+  latestGrade: GradeLevel;
+  totalExams: number;
+  gradeDistribution: Record<GradeLevel, number>;
+  trend: 'improving' | 'stable' | 'declining';
+};
+
+export type DailyStats = {
+  date: string;
+  dateFormatted: string;
+  averageScore: number;
+  totalStudents: number;
+  gradeDistribution: Record<GradeLevel, number>;
+};
+
+export type Student = {
+  id: number;
+  name: string;
+  targetScore: number;
+};
+
+export type ClassType = {
+  id: number;
+  name: string;
+};
+
+export type HomeworkProgress = {
+  majorUnit: number;
+  minorUnit: number;
+  completed: boolean;
+};
+
+export type Homework = {
+  id: number;
+  textbookId: number;
+  textbookName: string;
+  classId: number;
+  className: string;
+  majorUnitCount: number;
+  minorUnitCount: number;
+  progress: HomeworkProgress[];
+};
+
+export type StudentHomework = {
+  studentId: number;
+  homeworkId: number;
+  progress: HomeworkProgress[];
+  lastUpdated: string;
+};
+
+export type ProgressData = {
+  studentId: number;
+  classId: number;
+  className: string;
+  subject: string;
+  currentChapter: string;
+  completedChapters: number;
+  totalChapters: number;
+  progressPercentage: number;
+  lastUpdated: string;
+};
+
+// 빈 데이터
+const examRecords: ExamRecord[] = [];
+const studentSummaries: StudentSummary[] = [];
+const dailyStats: DailyStats[] = [];
+const students: Student[] = [];
+const dummyHomeworks: Homework[] = [];
+const studentHomeworkProgress: StudentHomework[] = [];
+const dummyProgressData: ProgressData[] = [];
+
+// 빈 함수들
+function getStudentClasses(studentId: number): ClassType[] {
+  return [];
+}
+
+function getClassExamRecords(studentId: number, classId: number | null): ExamRecord[] {
+  return [];
+}
+
+function getStudentProgress(studentId: number, classId: number | null): ProgressData[] {
+  return [];
+}
+
+function calculateProgress(
+  progress: HomeworkProgress[],
+  majorUnitCount: number,
+  minorUnitCount: number
+): {
+  completed: number;
+  total: number;
+  percentage: number;
+  currentMajorUnit: number;
+  currentMinorUnit: number;
+} {
+  return {
+    completed: 0,
+    total: majorUnitCount * minorUnitCount,
+    percentage: 0,
+    currentMajorUnit: 1,
+    currentMinorUnit: 1,
+  };
+}
 
 // 자녀 2명의 ID (실제로는 로그인한 학부모의 자녀 ID로 교체)
 const CHILDREN_IDS = [1, 2];
