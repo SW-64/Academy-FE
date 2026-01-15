@@ -5,11 +5,27 @@ React + Vite + TypeScript로 구성된 프론트엔드 프로젝트입니다.
 ## 설치 및 실행
 
 ### 1. 의존성 설치
+
 ```bash
 npm install
 ```
 
-### 2. 개발 서버 실행
+### 2. 환경 변수 설정
+
+프로젝트 루트에 `.env` 파일을 생성하고 다음을 추가하세요:
+
+```env
+VITE_API_BASE_URL=http://localhost:3000/api/v1
+```
+
+**주의**:
+
+- `.env` 파일은 `.gitignore`에 포함되어 있어 레포지토리에 올라가지 않습니다.
+- 실제 서버 IP나 프로덕션 URL은 `.env` 파일에만 작성하세요.
+- 레포지토리에는 `.env.example` 파일이 있어 참고할 수 있습니다.
+
+### 3. 개발 서버 실행
+
 ```bash
 npm run dev
 ```
@@ -45,4 +61,3 @@ src/
 - TypeScript
 - TailwindCSS
 - React Router DOM
-
