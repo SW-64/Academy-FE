@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { BookOpen, ChevronRight } from 'lucide-react';
 import MainLayout from './MainLayout';
 // 타입 정의
 export type ClassType = {
@@ -13,6 +14,11 @@ export type HomeworkProgress = {
   completed: boolean;
 };
 
+export type MajorUnitDetail = {
+  majorUnit: number;
+  minorUnitCount: number;
+};
+
 export type Homework = {
   id: number;
   textbookId: number;
@@ -22,6 +28,7 @@ export type Homework = {
   majorUnitCount: number;
   minorUnitCount: number;
   progress: HomeworkProgress[];
+  majorUnitsDetail?: MajorUnitDetail[];
 };
 
 export type StudentHomework = {
@@ -58,7 +65,6 @@ function calculateProgress(
     currentMinorUnit: 1,
   };
 }
-import { BookOpen, ChevronRight } from 'lucide-react';
 
 // TODO: 실제 로그인한 학생 ID로 교체
 const CURRENT_STUDENT_ID = 1;
@@ -146,21 +152,21 @@ function HomeworkPage() {
             <div className="space-y-4">
               {filteredHomeworks.map(homework => {
                 const progress = getStudentProgress(homework.id);
+                const total = homework.majorUnitsDetail
+                  ? homework.majorUnitsDetail.reduce(
+                      (sum: number, d) => sum + d.minorUnitCount,
+                      0
+                    )
+                  : homework.majorUnitCount * homework.minorUnitCount;
                 const progressData = progress
                   ? calculateProgress(
                       progress.progress,
                       homework.majorUnitCount,
-                      homework.minorUnitCount,
-                      homework.majorUnitsDetail
+                      homework.minorUnitCount
                     )
                   : {
                       completed: 0,
-                      total: homework.majorUnitsDetail
-                        ? homework.majorUnitsDetail.reduce(
-                            (sum, d) => sum + d.minorUnitCount,
-                            0
-                          )
-                        : homework.majorUnitCount * homework.minorUnitCount,
+                      total,
                       percentage: 0,
                       currentMajorUnit: 1,
                       currentMinorUnit: 1,
