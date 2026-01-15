@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X, Plus, ChevronDown } from 'lucide-react';
 import MainLayout from '../MainLayout';
@@ -183,41 +183,45 @@ function AdminGradesPage() {
     };
   }, [isMonthDropdownOpen]);
 
-  // API에서 받은 시험 데이터를 기존 형식으로 변환
-  const allExamsByDate = exams.map(exam => {
-    const date = exam.examDate.split('T')[0]; // YYYY-MM-DD 형식
-    // 날짜 문자열에서 직접 월과 일 추출 (타임존 변환 방지)
-    const [, month, day] = date.split('-').map(Number);
-    const dateFormatted = `${String(month).padStart(2, '0')}/${String(
-      day
-    ).padStart(2, '0')}`;
+  // API에서 받은 시험 데이터를 기존 형식으로 변환 (메모이제이션)
+  const allExamsByDate = useMemo(() => {
+    return exams.map(exam => {
+      const date = exam.examDate.split('T')[0]; // YYYY-MM-DD 형식
+      // 날짜 문자열에서 직접 월과 일 추출 (타임존 변환 방지)
+      const [, month, day] = date.split('-').map(Number);
+      const dateFormatted = `${String(month).padStart(2, '0')}/${String(
+        day
+      ).padStart(2, '0')}`;
 
-    return {
-      date,
-      dateFormatted,
-      name: exam.examTitle,
-      examId: exam.examId,
-      records: [] as ExamRecord[], // 시험 상세는 별도 API로 가져와야 함
-      averageScore: exam.studentAverage || 0,
-      totalStudents: 0, // 시험 상세에서 가져와야 함
-    };
-  });
-
-  // 선택된 월에 해당하는 시험만 필터링
-  const filteredExams = allExamsByDate
-    .filter(exam => {
-      // 날짜 문자열에서 직접 월 추출 (타임존 변환 방지)
-      const [year, month] = exam.date.split('-').map(Number);
-      const currentYear = new Date().getFullYear();
-      return month === selectedMonth && year === currentYear;
-    })
-    .sort((a, b) => {
-      if (sortOption === 'latest') {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      } else {
-        return b.averageScore - a.averageScore;
-      }
+      return {
+        date,
+        dateFormatted,
+        name: exam.examTitle,
+        examId: exam.examId,
+        records: [] as ExamRecord[], // 시험 상세는 별도 API로 가져와야 함
+        averageScore: exam.studentAverage || 0,
+        totalStudents: 0, // 시험 상세에서 가져와야 함
+      };
     });
+  }, [exams]);
+
+  // 선택된 월에 해당하는 시험만 필터링 (메모이제이션)
+  const filteredExams = useMemo(() => {
+    return allExamsByDate
+      .filter(exam => {
+        // 날짜 문자열에서 직접 월 추출 (타임존 변환 방지)
+        const [year, month] = exam.date.split('-').map(Number);
+        const currentYear = new Date().getFullYear();
+        return month === selectedMonth && year === currentYear;
+      })
+      .sort((a, b) => {
+        if (sortOption === 'latest') {
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        } else {
+          return b.averageScore - a.averageScore;
+        }
+      });
+  }, [allExamsByDate, selectedMonth, sortOption]);
 
   const handleExamClick = async (exam: (typeof allExamsByDate)[0]) => {
     // 시험 상세 조회 API 호출

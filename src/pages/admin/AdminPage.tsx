@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import MainLayout from '../MainLayout';
 import { getStudents, getStudentDetail } from '../../api/students';
@@ -51,6 +51,14 @@ function AdminPage() {
   const [studentPage, setStudentPage] = useState(1);
   const [parentPage, setParentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // 데이터 캐싱 (불필요한 API 호출 방지)
+  const dataCacheRef = useRef<{
+    students?: { data: Student[]; meta: typeof studentsMeta; page: number };
+    parents?: { data: Parent[]; meta: typeof parentsMeta; page: number };
+    pending?: PendingUser[];
+    blacklist?: BlacklistUser[];
+  }>({});
   const [studentsMeta, setStudentsMeta] = useState<{
     totalItems: number;
     itemCount: number;
@@ -85,9 +93,17 @@ function AdminPage() {
     setParentPage(1);
   }, [activeTab]);
 
-  // 학생 관리 탭 활성화 시 학생 목록 조회
+  // 학생 관리 탭 활성화 시 학생 목록 조회 (캐싱 적용)
   useEffect(() => {
     if (activeTab === 'students') {
+      // 캐시 확인
+      const cached = dataCacheRef.current.students;
+      if (cached && cached.page === studentPage) {
+        setStudents(cached.data);
+        setStudentsMeta(cached.meta);
+        return;
+      }
+
       const fetchStudents = async () => {
         setIsLoadingStudents(true);
         try {
@@ -106,6 +122,12 @@ function AdminPage() {
           );
           setStudents(transformedStudents);
           setStudentsMeta(response.data.meta);
+          // 캐시 저장
+          dataCacheRef.current.students = {
+            data: transformedStudents,
+            meta: response.data.meta,
+            page: studentPage,
+          };
         } catch (error) {
           console.error('학생 목록 조회 에러:', error);
           setStudents([]);
@@ -119,9 +141,17 @@ function AdminPage() {
     }
   }, [activeTab, studentPage, itemsPerPage]);
 
-  // 학부모 관리 탭 활성화 시 학부모 목록 조회
+  // 학부모 관리 탭 활성화 시 학부모 목록 조회 (캐싱 적용)
   useEffect(() => {
     if (activeTab === 'parents') {
+      // 캐시 확인
+      const cached = dataCacheRef.current.parents;
+      if (cached && cached.page === parentPage) {
+        setParents(cached.data);
+        setParentsMeta(cached.meta);
+        return;
+      }
+
       const fetchParents = async () => {
         setIsLoadingParents(true);
         try {
@@ -142,6 +172,12 @@ function AdminPage() {
           );
           setParents(transformedParents);
           setParentsMeta(response.data.meta);
+          // 캐시 저장
+          dataCacheRef.current.parents = {
+            data: transformedParents,
+            meta: response.data.meta,
+            page: parentPage,
+          };
         } catch (error) {
           console.error('학부모 목록 조회 에러:', error);
           setParents([]);
@@ -155,14 +191,22 @@ function AdminPage() {
     }
   }, [activeTab, parentPage, itemsPerPage]);
 
-  // 미승인 유저 탭 활성화 시 미승인 유저 목록 조회
+  // 미승인 유저 탭 활성화 시 미승인 유저 목록 조회 (캐싱 적용)
   useEffect(() => {
     if (activeTab === 'pending') {
+      // 캐시 확인
+      if (dataCacheRef.current.pending) {
+        setPendingUsers(dataCacheRef.current.pending);
+        return;
+      }
+
       const fetchPendingUsers = async () => {
         setIsLoadingPending(true);
         try {
           const response = await getPendingUsers();
           setPendingUsers(response.data.items);
+          // 캐시 저장
+          dataCacheRef.current.pending = response.data.items;
         } catch (error) {
           console.error('승인 대기 유저 목록 조회 에러:', error);
           setPendingUsers([]);
@@ -175,14 +219,22 @@ function AdminPage() {
     }
   }, [activeTab]);
 
-  // 블랙리스트 탭 활성화 시 블랙리스트 유저 목록 조회
+  // 블랙리스트 탭 활성화 시 블랙리스트 유저 목록 조회 (캐싱 적용)
   useEffect(() => {
     if (activeTab === 'blacklist') {
+      // 캐시 확인
+      if (dataCacheRef.current.blacklist) {
+        setBlacklistUsers(dataCacheRef.current.blacklist);
+        return;
+      }
+
       const fetchBlacklistUsers = async () => {
         setIsLoadingBlacklist(true);
         try {
           const response = await getBlacklistUsers();
           setBlacklistUsers(response.data.items);
+          // 캐시 저장
+          dataCacheRef.current.blacklist = response.data.items;
         } catch (error) {
           console.error('블랙리스트 유저 목록 조회 에러:', error);
           setBlacklistUsers([]);
@@ -234,12 +286,15 @@ function AdminPage() {
     try {
       const response = await approveUser(userId);
       alert(response.message);
-      // 목록 새로고침
+      // 캐시 무효화 및 목록 새로고침
+      dataCacheRef.current.pending = undefined;
       const fetchPendingUsers = async () => {
         setIsLoadingPending(true);
         try {
           const response = await getPendingUsers();
           setPendingUsers(response.data.items);
+          // 캐시 저장
+          dataCacheRef.current.pending = response.data.items;
         } catch (error) {
           console.error('승인 대기 유저 목록 조회 에러:', error);
           setPendingUsers([]);
@@ -263,12 +318,15 @@ function AdminPage() {
       try {
         const response = await rejectUser(userId);
         alert(response.message);
-        // 목록 새로고침
+        // 캐시 무효화 및 목록 새로고침
+        dataCacheRef.current.pending = undefined;
         const fetchPendingUsers = async () => {
           setIsLoadingPending(true);
           try {
             const response = await getPendingUsers();
             setPendingUsers(response.data.items);
+            // 캐시 저장
+            dataCacheRef.current.pending = response.data.items;
           } catch (error) {
             console.error('승인 대기 유저 목록 조회 에러:', error);
             setPendingUsers([]);
@@ -293,12 +351,15 @@ function AdminPage() {
       try {
         const response = await unblacklistUser(userId);
         alert(response.message);
-        // 목록 새로고침
+        // 캐시 무효화 및 목록 새로고침
+        dataCacheRef.current.blacklist = undefined;
         const fetchBlacklistUsers = async () => {
           setIsLoadingBlacklist(true);
           try {
             const response = await getBlacklistUsers();
             setBlacklistUsers(response.data.items);
+            // 캐시 저장
+            dataCacheRef.current.blacklist = response.data.items;
           } catch (error) {
             console.error('블랙리스트 유저 목록 조회 에러:', error);
             setBlacklistUsers([]);
@@ -393,7 +454,8 @@ function AdminPage() {
         );
         alert(response.message);
 
-        // 목록 새로고침
+        // 캐시 무효화 및 목록 새로고침
+        dataCacheRef.current.students = undefined;
         const fetchStudents = async () => {
           setIsLoadingStudents(true);
           try {
@@ -411,6 +473,12 @@ function AdminPage() {
             );
             setStudents(transformedStudents);
             setStudentsMeta(response.data.meta);
+            // 캐시 저장
+            dataCacheRef.current.students = {
+              data: transformedStudents,
+              meta: response.data.meta,
+              page: studentPage,
+            };
           } catch (error) {
             console.error('학생 목록 조회 에러:', error);
             setStudents([]);
@@ -439,7 +507,8 @@ function AdminPage() {
         const response = await updateUserInfo(editingParent.userId, updateData);
         alert(response.message);
 
-        // 목록 새로고침
+        // 캐시 무효화 및 목록 새로고침
+        dataCacheRef.current.parents = undefined;
         const fetchParents = async () => {
           setIsLoadingParents(true);
           try {
@@ -459,6 +528,12 @@ function AdminPage() {
             );
             setParents(transformedParents);
             setParentsMeta(response.data.meta);
+            // 캐시 저장
+            dataCacheRef.current.parents = {
+              data: transformedParents,
+              meta: response.data.meta,
+              page: parentPage,
+            };
           } catch (error) {
             console.error('학부모 목록 조회 에러:', error);
             setParents([]);

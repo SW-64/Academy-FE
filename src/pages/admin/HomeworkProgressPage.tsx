@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import MainLayout from '../MainLayout';
 import {
   getClasses,
@@ -56,6 +56,14 @@ function HomeworkProgressPage() {
     chapterId: number;
   } | null>(null);
   const [editPercent, setEditPercent] = useState<number>(0);
+
+  // 변경된 셀 추적 (성능 최적화: 변경된 셀만 API로 전송)
+  const changedCellsRef = useRef<
+    Map<string, { studentId: number; chapterId: number; percent: number }>
+  >(new Map());
+
+  // 초기 progressData 저장 (변경 감지용)
+  const initialProgressDataRef = useRef<typeof progressData>(null);
 
   // 클래스 목록 조회 API 호출
   useEffect(() => {
@@ -120,20 +128,29 @@ function HomeworkProgressPage() {
     setIsLoadingProgress(true);
     try {
       const response = await getProgressGrid(selectedClassId, textbookId);
-      setProgressData({
+      const newProgressData = {
         chapters: response.data.chapters,
         students: response.data.students,
-      });
+      };
+      setProgressData(newProgressData);
+      // 초기 데이터 저장 (변경 감지용)
+      initialProgressDataRef.current = JSON.parse(
+        JSON.stringify(newProgressData)
+      );
+      // 변경 추적 초기화
+      changedCellsRef.current.clear();
     } catch (error) {
       console.error('진도 그리드 조회 에러:', error);
       setProgressData(null);
+      initialProgressDataRef.current = null;
+      changedCellsRef.current.clear();
     } finally {
       setIsLoadingProgress(false);
     }
   };
 
-  // 대단원 헤더 생성
-  const generateMajorUnitHeaders = (chapters: Chapter[]) => {
+  // 대단원 헤더 생성 (메모이제이션)
+  const generateMajorUnitHeaders = useCallback((chapters: Chapter[]) => {
     const headers: Array<{
       majorUnit: number;
       colspan: number;
@@ -168,38 +185,47 @@ function HomeworkProgressPage() {
     }
 
     return headers;
-  };
+  }, []);
+
+  // 헤더 메모이제이션 (chapters가 변경될 때만 재계산)
+  const majorUnitHeaders = useMemo(() => {
+    if (!progressData) return [];
+    return generateMajorUnitHeaders(progressData.chapters);
+  }, [progressData, generateMajorUnitHeaders]);
 
   // 상태별 색상
-  const getStatusColor = (
-    status: ProgressStatus | null,
-    percent: number,
-    isEditing: boolean = false
-  ) => {
-    let baseColor = '';
-    if (!status || status === 'NOT_STARTED') {
-      baseColor = 'bg-slate-100 border-slate-300';
-    } else if (status === 'COMPLETED') {
-      baseColor = 'bg-green-100 border-green-300';
-    } else if (status === 'IN_PROGRESS') {
-      if (percent <= 30) baseColor = 'bg-yellow-100 border-yellow-300';
-      else if (percent <= 60) baseColor = 'bg-orange-100 border-orange-300';
-      else baseColor = 'bg-red-100 border-red-300';
-    } else {
-      baseColor = 'bg-slate-100 border-slate-300';
-    }
+  const getStatusColor = useCallback(
+    (
+      status: ProgressStatus | null,
+      percent: number,
+      isEditing: boolean = false
+    ) => {
+      let baseColor = '';
+      if (!status || status === 'NOT_STARTED') {
+        baseColor = 'bg-slate-100 border-slate-300';
+      } else if (status === 'COMPLETED') {
+        baseColor = 'bg-green-100 border-green-300';
+      } else if (status === 'IN_PROGRESS') {
+        if (percent <= 30) baseColor = 'bg-yellow-100 border-yellow-300';
+        else if (percent <= 60) baseColor = 'bg-orange-100 border-orange-300';
+        else baseColor = 'bg-red-100 border-red-300';
+      } else {
+        baseColor = 'bg-slate-100 border-slate-300';
+      }
 
-    // 편집 모드일 때 약간의 변화 추가
-    if (isEditMode) {
-      return `${baseColor} ${
-        isEditing
-          ? 'ring-2 ring-blue-400 ring-offset-1'
-          : 'hover:ring-1 hover:ring-blue-300 hover:ring-offset-0'
-      }`;
-    }
+      // 편집 모드일 때 약간의 변화 추가
+      if (isEditMode) {
+        return `${baseColor} ${
+          isEditing
+            ? 'ring-2 ring-blue-400 ring-offset-1'
+            : 'hover:ring-1 hover:ring-blue-300 hover:ring-offset-0'
+        }`;
+      }
 
-    return baseColor;
-  };
+      return baseColor;
+    },
+    [isEditMode]
+  );
 
   // 셀 더블클릭 핸들러
   const handleCellDoubleClick = (
@@ -226,6 +252,26 @@ function HomeworkProgressPage() {
         : percent > 0
         ? 'IN_PROGRESS'
         : 'NOT_STARTED';
+
+    // 초기값과 비교하여 변경된 셀만 추적
+    const cellKey = `${studentId}-${chapterId}`;
+    const initialCell = initialProgressDataRef.current?.students.find(
+      s => s.studentId === studentId
+    )?.cells[chapterId.toString()];
+
+    const initialPercent = initialCell?.percent ?? 0;
+
+    // 값이 실제로 변경된 경우에만 추적
+    if (percent !== initialPercent) {
+      changedCellsRef.current.set(cellKey, {
+        studentId,
+        chapterId,
+        percent,
+      });
+    } else {
+      // 원래 값으로 돌아간 경우 변경 추적에서 제거
+      changedCellsRef.current.delete(cellKey);
+    }
 
     // progressData 업데이트
     const updatedStudents = progressData.students.map(student => {
@@ -343,7 +389,7 @@ function HomeworkProgressPage() {
         )}
 
         {/* 진도 그리드 표시 */}
-        {selectedTextbookId && progressData && (
+        {selectedTextbookId && progressData && majorUnitHeaders && (
           <div className="mb-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">
@@ -362,32 +408,34 @@ function HomeworkProgressPage() {
                       return;
 
                     try {
-                      // progressData를 API 요청 형식으로 변환
+                      // 변경된 셀만 API 요청 형식으로 변환 (성능 최적화)
                       const items: Array<{
                         studentId: number;
                         chapterId: number;
                         percent: number;
-                      }> = [];
+                      }> = Array.from(changedCellsRef.current.values());
 
-                      progressData.students.forEach(student => {
-                        progressData.chapters.forEach(chapter => {
-                          const cell =
-                            student.cells[chapter.chapterId.toString()];
-                          if (cell) {
-                            items.push({
-                              studentId: student.studentId,
-                              chapterId: chapter.chapterId,
-                              percent: cell.percent,
-                            });
-                          }
-                        });
-                      });
+                      // 변경된 셀이 없으면 API 호출하지 않음
+                      if (items.length === 0) {
+                        alert('변경된 내용이 없습니다.');
+                        setIsEditMode(false);
+                        setEditingCell(null);
+                        return;
+                      }
 
                       const response = await updateProgressCells(
                         selectedClassId,
                         selectedTextbookId,
                         { items }
                       );
+
+                      // 성공 시 초기 데이터 업데이트 및 변경 추적 초기화
+                      if (progressData) {
+                        initialProgressDataRef.current = JSON.parse(
+                          JSON.stringify(progressData)
+                        );
+                        changedCellsRef.current.clear();
+                      }
 
                       alert(response.message);
                       setIsEditMode(false);
@@ -438,17 +486,15 @@ function HomeworkProgressPage() {
                       >
                         학생
                       </th>
-                      {generateMajorUnitHeaders(progressData.chapters).map(
-                        header => (
-                          <th
-                            key={header.majorUnit}
-                            colSpan={header.colspan}
-                            className="border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-900"
-                          >
-                            {header.label}
-                          </th>
-                        )
-                      )}
+                      {majorUnitHeaders.map(header => (
+                        <th
+                          key={header.majorUnit}
+                          colSpan={header.colspan}
+                          className="border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-900"
+                        >
+                          {header.label}
+                        </th>
+                      ))}
                     </tr>
                     {/* 소단원 헤더 */}
                     <tr>
