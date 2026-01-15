@@ -1,6 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, X, Trash2, BookOpen, Edit2 } from 'lucide-react';
 import MainLayout from '../MainLayout';
+import {
+  getTextbooks,
+  getTextbookDetail,
+  createTextbook,
+  updateTextbook,
+  deleteTextbook,
+} from '../../api/textbooks';
+import { getClasses } from '../../api/class';
 
 type ClassType = {
   id: number;
@@ -17,185 +25,22 @@ type Textbook = {
   id: number;
   name: string;
   grade: string;
-  classId: number;
-  className: string;
+  classIds: number[];
+  classNames: string[];
   unitCount: number;
   majorUnitCount: number;
   minorUnitCount: number;
   subUnits: SubUnit[];
 };
 
-// 더미 클래스 데이터
-const dummyClasses: ClassType[] = [
-  { id: 1, name: '예비고2 월금 정규반' },
-  { id: 2, name: '예비고2 화목 정규반' },
-  { id: 3, name: '미적분1 기본 특강반' },
-  { id: 4, name: '미적분1+2 통합 특강반' },
-];
+// 빈 데이터
+const initialClasses: ClassType[] = [];
 
 // 학년 옵션
-const gradeOptions = [
-  '1학년',
-  '2학년',
-  '3학년',
-  '예비고1',
-  '예비고2',
-  '예비고3',
-];
+const gradeOptions = ['1학년', '2학년', '3학년'];
 
-// 초기 예시 교재 데이터
-const initialTextbooks: Textbook[] = [
-  {
-    id: 1,
-    name: '수학의 정석',
-    grade: '예비고2',
-    classId: 1,
-    className: '예비고2 월금 정규반',
-    unitCount: 9,
-    majorUnitCount: 3,
-    minorUnitCount: 3,
-    subUnits: [
-      { id: '1', name: '대단원', subUnitCount: 3 },
-      { id: '2', name: '소단원', subUnitCount: 3 },
-      { id: '3', name: '스텝', subUnitCount: 2 },
-    ],
-  },
-  {
-    id: 2,
-    name: '미적분 기본서',
-    grade: '예비고1',
-    classId: 3,
-    className: '미적분1 기본 특강반',
-    unitCount: 8,
-    majorUnitCount: 4,
-    minorUnitCount: 2,
-    subUnits: [
-      { id: '4', name: '대단원', subUnitCount: 4 },
-      { id: '5', name: '소단원', subUnitCount: 2 },
-      { id: '6', name: '스텝', subUnitCount: 1 },
-    ],
-  },
-  {
-    id: 3,
-    name: '수학 I 완전정복',
-    grade: '1학년',
-    classId: 2,
-    className: '예비고2 화목 정규반',
-    unitCount: 12,
-    majorUnitCount: 6,
-    minorUnitCount: 4,
-    subUnits: [
-      { id: '7', name: '대단원', subUnitCount: 6 },
-      { id: '8', name: '소단원', subUnitCount: 4 },
-      { id: '9', name: '스텝', subUnitCount: 3 },
-    ],
-  },
-  {
-    id: 4,
-    name: '확률과 통계 마스터',
-    grade: '2학년',
-    classId: 4,
-    className: '미적분1+2 통합 특강반',
-    unitCount: 9,
-    majorUnitCount: 5,
-    minorUnitCount: 3,
-    subUnits: [
-      { id: '10', name: '대단원', subUnitCount: 5 },
-      { id: '11', name: '소단원', subUnitCount: 3 },
-      { id: '12', name: '스텝', subUnitCount: 2 },
-    ],
-  },
-  {
-    id: 5,
-    name: '기하와 벡터 완성',
-    grade: '3학년',
-    classId: 1,
-    className: '예비고2 월금 정규반',
-    unitCount: 11,
-    majorUnitCount: 6,
-    minorUnitCount: 4,
-    subUnits: [
-      { id: '13', name: '대단원', subUnitCount: 6 },
-      { id: '14', name: '소단원', subUnitCount: 4 },
-      { id: '15', name: '스텝', subUnitCount: 3 },
-    ],
-  },
-  {
-    id: 6,
-    name: '수학 II 실전 문제집',
-    grade: '예비고3',
-    classId: 2,
-    className: '예비고2 화목 정규반',
-    unitCount: 14,
-    majorUnitCount: 7,
-    minorUnitCount: 5,
-    subUnits: [
-      { id: '16', name: '대단원', subUnitCount: 7 },
-      { id: '17', name: '소단원', subUnitCount: 5 },
-      { id: '18', name: '스텝', subUnitCount: 4 },
-    ],
-  },
-  {
-    id: 7,
-    name: '미적분 II 심화',
-    grade: '예비고2',
-    classId: 3,
-    className: '미적분1 기본 특강반',
-    unitCount: 10,
-    majorUnitCount: 5,
-    minorUnitCount: 3,
-    subUnits: [
-      { id: '19', name: '대단원', subUnitCount: 5 },
-      { id: '20', name: '소단원', subUnitCount: 3 },
-      { id: '21', name: '스텝', subUnitCount: 2 },
-    ],
-  },
-  {
-    id: 8,
-    name: '수학 상하 통합',
-    grade: '1학년',
-    classId: 4,
-    className: '미적분1+2 통합 특강반',
-    unitCount: 16,
-    majorUnitCount: 8,
-    minorUnitCount: 6,
-    subUnits: [
-      { id: '22', name: '대단원', subUnitCount: 8 },
-      { id: '23', name: '소단원', subUnitCount: 6 },
-      { id: '24', name: '스텝', subUnitCount: 5 },
-    ],
-  },
-  {
-    id: 9,
-    name: '수능 수학 완벽 대비',
-    grade: '3학년',
-    classId: 1,
-    className: '예비고2 월금 정규반',
-    unitCount: 15,
-    majorUnitCount: 8,
-    minorUnitCount: 5,
-    subUnits: [
-      { id: '25', name: '대단원', subUnitCount: 8 },
-      { id: '26', name: '소단원', subUnitCount: 5 },
-      { id: '27', name: '스텝', subUnitCount: 4 },
-    ],
-  },
-  {
-    id: 10,
-    name: '수학의 바이블',
-    grade: '예비고1',
-    classId: 2,
-    className: '예비고2 화목 정규반',
-    unitCount: 13,
-    majorUnitCount: 7,
-    minorUnitCount: 4,
-    subUnits: [
-      { id: '28', name: '대단원', subUnitCount: 7 },
-      { id: '29', name: '소단원', subUnitCount: 4 },
-      { id: '30', name: '스텝', subUnitCount: 3 },
-    ],
-  },
-];
+// 빈 교재 데이터
+const initialTextbooks: Textbook[] = [];
 
 // 다른 파일에서 사용할 수 있도록 export
 export { initialTextbooks };
@@ -213,13 +58,69 @@ function AdminHomeworkPage() {
   const [newTextbook, setNewTextbook] = useState({
     name: '',
     grade: '',
-    classId: 0,
+    classIds: [] as number[],
     majorUnitCount: 0,
     minorUnitCount: 0,
   });
   const [majorUnits, setMajorUnits] = useState<
     Array<{ minorUnitCount: number }>
   >([]);
+  const [classes, setClasses] = useState<ClassType[]>(initialClasses);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+
+  // 교재 목록 조회 API 호출
+  useEffect(() => {
+    const fetchTextbooks = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getTextbooks();
+        // API 응답을 Textbook 형식으로 변환
+        const transformedTextbooks: Textbook[] = response.data.map(
+          textbook => ({
+            id: textbook.textbookId,
+            name: textbook.name,
+            grade: `${textbook.grade}학년`,
+            classIds: [], // 상세 조회에서 가져와야 함
+            classNames: [], // 상세 조회에서 가져와야 함
+            unitCount: textbook.largeUnit,
+            majorUnitCount: textbook.largeUnit,
+            minorUnitCount: textbook.smallUnit,
+            subUnits: [],
+          })
+        );
+        setTextbooks(transformedTextbooks);
+      } catch (error) {
+        console.error('교재 목록 조회 에러:', error);
+        setTextbooks([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTextbooks();
+  }, []);
+
+  // 클래스 목록 조회 API 호출
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const response = await getClasses();
+        const transformedClasses: ClassType[] = response.data.map(
+          classData => ({
+            id: classData.classId,
+            name: classData.className,
+          })
+        );
+        setClasses(transformedClasses);
+      } catch (error) {
+        console.error('클래스 목록 조회 에러:', error);
+        setClasses([]);
+      }
+    };
+
+    fetchClasses();
+  }, []);
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -228,55 +129,77 @@ function AdminHomeworkPage() {
     setNewTextbook({
       name: '',
       grade: '',
-      classId: 0,
+      classIds: [],
       majorUnitCount: 0,
       minorUnitCount: 0,
     });
     setMajorUnits([]);
   };
 
-  const handleOpenEditModal = (textbook: Textbook) => {
+  const handleOpenEditModal = async (textbook: Textbook) => {
     setIsModalOpen(true);
     setIsEditMode(true);
     setEditingTextbookId(textbook.id);
-    const majorUnitCount = textbook.majorUnitCount || textbook.unitCount;
-    
-    // 기존 데이터에 majorUnitsDetail이 있으면 사용, 없으면 전역 값으로 모든 대단원에 동일하게 적용
-    const textbookWithDetail = textbook as Textbook & {
-      majorUnitsDetail?: Array<{
-        majorUnitIndex: number;
-        minorUnitCount: number;
-      }>;
-    };
-    
-    let initialMajorUnits: Array<{ minorUnitCount: number }>;
-    
-    if (textbookWithDetail.majorUnitsDetail && textbookWithDetail.majorUnitsDetail.length > 0) {
-      // 기존에 저장된 대단원별 상세 정보가 있으면 사용
-      initialMajorUnits = Array.from({ length: majorUnitCount }, (_, index) => {
-        const detail = textbookWithDetail.majorUnitsDetail?.find(
-          d => d.majorUnitIndex === index + 1
-        );
-        return {
-          minorUnitCount: detail?.minorUnitCount || textbook.minorUnitCount || 0,
-        };
+
+    // 교재 상세 조회 API 호출
+    setIsLoadingDetail(true);
+    try {
+      const response = await getTextbookDetail(textbook.id);
+      const detail = response.data;
+
+      const majorUnitCount = detail.largeUnit;
+      const minorUnitCount = detail.smallUnit;
+
+      // 모든 대단원에 동일한 소단원 수 적용
+      const initialMajorUnits: Array<{ minorUnitCount: number }> = Array.from(
+        { length: majorUnitCount },
+        () => ({
+          minorUnitCount: minorUnitCount,
+        })
+      );
+
+      // 클래스 ID 목록 추출 (clazz가 null이 아닌 것만)
+      const classIds = detail.classTextbooks
+        .filter(
+          (ct): ct is typeof ct & { clazz: NonNullable<typeof ct.clazz> } =>
+            ct.clazz !== null
+        )
+        .map(ct => ct.clazz.classId);
+      const classNames = detail.classTextbooks
+        .filter(
+          (ct): ct is typeof ct & { clazz: NonNullable<typeof ct.clazz> } =>
+            ct.clazz !== null
+        )
+        .map(ct => ct.clazz.className);
+
+      setNewTextbook({
+        name: detail.name,
+        grade: `${detail.grade}학년`,
+        classIds: classIds,
+        majorUnitCount: majorUnitCount,
+        minorUnitCount: minorUnitCount,
       });
-    } else {
-      // 기존 데이터를 대단원별 구조로 변환
-      // 기존에는 전역 소단원 수만 있었으므로, 모든 대단원에 동일하게 적용
-      initialMajorUnits = Array.from({ length: majorUnitCount }, () => ({
-        minorUnitCount: textbook.minorUnitCount || 0,
-      }));
+      setMajorUnits(initialMajorUnits);
+
+      // selectedTextbook도 업데이트
+      setSelectedTextbook({
+        id: detail.textbookId,
+        name: detail.name,
+        grade: `${detail.grade}학년`,
+        classIds: classIds,
+        classNames: classNames,
+        unitCount: majorUnitCount,
+        majorUnitCount: majorUnitCount,
+        minorUnitCount: minorUnitCount,
+        subUnits: [],
+      });
+    } catch (error) {
+      console.error('교재 상세 조회 에러:', error);
+      alert('교재 상세 정보를 가져오는데 실패했습니다.');
+      setIsModalOpen(false);
+    } finally {
+      setIsLoadingDetail(false);
     }
-    
-    setNewTextbook({
-      name: textbook.name,
-      grade: textbook.grade,
-      classId: textbook.classId,
-      majorUnitCount: majorUnitCount,
-      minorUnitCount: textbook.minorUnitCount || 0,
-    });
-    setMajorUnits(initialMajorUnits);
   };
 
   const handleCloseModal = () => {
@@ -286,29 +209,32 @@ function AdminHomeworkPage() {
     setNewTextbook({
       name: '',
       grade: '',
-      classId: 0,
+      classIds: [],
       majorUnitCount: 0,
       minorUnitCount: 0,
     });
     setMajorUnits([]);
   };
 
-
   // 대단원 수 변경 시 majorUnits 배열 업데이트
   const handleMajorUnitCountChange = (value: string | number) => {
     // 문자열인 경우 숫자로 변환 (앞의 0 제거)
-    const numValue = typeof value === 'string' 
-      ? (value === '' ? 0 : parseInt(value, 10) || 0)
-      : value;
+    const numValue =
+      typeof value === 'string'
+        ? value === ''
+          ? 0
+          : parseInt(value, 10) || 0
+        : value;
     const newCount = Math.max(0, numValue);
     setNewTextbook(prev => ({ ...prev, majorUnitCount: newCount }));
-    
+
     if (newCount > majorUnits.length) {
       // 대단원 수가 증가하면 기본값으로 추가
-      const defaultMinorCount = majorUnits.length > 0 
-        ? majorUnits[0].minorUnitCount 
-        : newTextbook.minorUnitCount || 0;
-      
+      const defaultMinorCount =
+        majorUnits.length > 0
+          ? majorUnits[0].minorUnitCount
+          : newTextbook.minorUnitCount || 0;
+
       const newMajorUnits = [...majorUnits];
       for (let i = majorUnits.length; i < newCount; i++) {
         newMajorUnits.push({
@@ -332,9 +258,12 @@ function AdminHomeworkPage() {
     setMajorUnits(newMajorUnits);
   };
 
-
-  const handleSave = () => {
-    if (!newTextbook.name || !newTextbook.grade || !newTextbook.classId) {
+  const handleSave = async () => {
+    if (
+      !newTextbook.name ||
+      !newTextbook.grade ||
+      newTextbook.classIds.length === 0
+    ) {
       alert('교재 이름, 학년, 클래스를 모두 입력해주세요.');
       return;
     }
@@ -357,60 +286,211 @@ function AdminHomeworkPage() {
       }
     }
 
-    const selectedClass = dummyClasses.find(c => c.id === newTextbook.classId);
+    // 학년에서 숫자만 추출
+    const gradeNumber = parseInt(newTextbook.grade.replace('학년', ''), 10);
 
-    // 평균 소단원 수 계산 (하위 호환성 유지)
+    // 평균 소단원 수 계산 (API는 하나의 smallUnit 값만 받음)
     const avgMinorUnitCount = Math.round(
       majorUnits.reduce((sum, unit) => sum + unit.minorUnitCount, 0) /
         majorUnits.length
     );
 
-    // 대단원별 정보를 subUnits에 저장 (확장 가능한 구조)
-    // 각 대단원의 정보를 별도로 저장할 수도 있지만, 현재 구조 유지를 위해
-    // 평균값을 사용하되, 실제 데이터는 majorUnits 배열에 저장
-    const textbookData: Textbook = {
-      id:
-        isEditMode && editingTextbookId
-          ? editingTextbookId
-          : textbooks.length + 1,
-      name: newTextbook.name,
-      grade: newTextbook.grade,
-      classId: newTextbook.classId,
-      className: selectedClass?.name || '',
-      unitCount: newTextbook.majorUnitCount,
-      majorUnitCount: newTextbook.majorUnitCount,
-      minorUnitCount: avgMinorUnitCount, // 평균값 저장 (하위 호환성)
-      subUnits: [],
-      // 대단원별 상세 정보는 확장을 위해 별도 필드에 저장 가능
-      // majorUnitsDetail: majorUnits, // 필요시 추가
-    };
+    try {
+      if (isEditMode && editingTextbookId) {
+        // 교재 수정 API 호출
+        const response = await updateTextbook(editingTextbookId, {
+          name: newTextbook.name,
+          grade: gradeNumber,
+          classList: newTextbook.classIds,
+        });
+        alert(response.message);
 
-    // majorUnits 정보를 subUnits에 포함시키기 위해 확장
-    // 각 대단원별 정보를 저장할 수 있도록 구조 확장
-    (textbookData as any).majorUnitsDetail = majorUnits.map((unit, index) => ({
-      majorUnitIndex: index + 1,
-      minorUnitCount: unit.minorUnitCount,
-    }));
+        // 교재 목록 새로고침
+        const fetchTextbooks = async () => {
+          setIsLoading(true);
+          try {
+            const response = await getTextbooks();
+            const transformedTextbooks: Textbook[] = response.data.map(
+              textbook => ({
+                id: textbook.textbookId,
+                name: textbook.name,
+                grade: `${textbook.grade}학년`,
+                classIds: [],
+                classNames: [],
+                unitCount: textbook.largeUnit,
+                majorUnitCount: textbook.largeUnit,
+                minorUnitCount: textbook.smallUnit,
+                subUnits: [],
+              })
+            );
+            setTextbooks(transformedTextbooks);
+          } catch (error) {
+            console.error('교재 목록 조회 에러:', error);
+          } finally {
+            setIsLoading(false);
+          }
+        };
+        fetchTextbooks();
 
-    if (isEditMode && editingTextbookId) {
-      setTextbooks(
-        textbooks.map(t => (t.id === editingTextbookId ? textbookData : t))
-      );
-      if (selectedTextbook?.id === editingTextbookId) {
-        setSelectedTextbook(textbookData);
+        // 선택된 교재도 새로고침
+        if (selectedTextbook?.id === editingTextbookId) {
+          const detailResponse = await getTextbookDetail(editingTextbookId);
+          const detail = detailResponse.data;
+          const updatedClassIds = detail.classTextbooks
+            .filter(
+              (ct): ct is typeof ct & { clazz: NonNullable<typeof ct.clazz> } =>
+                ct.clazz !== null
+            )
+            .map(ct => ct.clazz.classId);
+          const updatedClassNames = detail.classTextbooks
+            .filter(
+              (ct): ct is typeof ct & { clazz: NonNullable<typeof ct.clazz> } =>
+                ct.clazz !== null
+            )
+            .map(ct => ct.clazz.className);
+          setSelectedTextbook({
+            id: detail.textbookId,
+            name: detail.name,
+            grade: `${detail.grade}학년`,
+            classIds: updatedClassIds,
+            classNames: updatedClassNames,
+            unitCount: detail.largeUnit,
+            majorUnitCount: detail.largeUnit,
+            minorUnitCount: detail.smallUnit,
+            subUnits: [],
+          });
+        }
+      } else {
+        // 교재 생성 API 호출
+        const response = await createTextbook({
+          name: newTextbook.name,
+          grade: gradeNumber,
+          largeUnit: newTextbook.majorUnitCount,
+          smallUnit: avgMinorUnitCount,
+          classList: newTextbook.classIds,
+        });
+        alert(response.message);
+
+        // 교재 목록 새로고침
+        const fetchTextbooks = async () => {
+          setIsLoading(true);
+          try {
+            const response = await getTextbooks();
+            const transformedTextbooks: Textbook[] = response.data.map(
+              textbook => ({
+                id: textbook.textbookId,
+                name: textbook.name,
+                grade: `${textbook.grade}학년`,
+                classIds: [],
+                classNames: [],
+                unitCount: textbook.largeUnit,
+                majorUnitCount: textbook.largeUnit,
+                minorUnitCount: textbook.smallUnit,
+                subUnits: [],
+              })
+            );
+            setTextbooks(transformedTextbooks);
+          } catch (error) {
+            console.error('교재 목록 조회 에러:', error);
+          } finally {
+            setIsLoading(false);
+          }
+        };
+        fetchTextbooks();
       }
-    } else {
-      setTextbooks([...textbooks, textbookData]);
+      handleCloseModal();
+    } catch (error) {
+      console.error('교재 저장 에러:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : isEditMode
+          ? '교재 수정에 실패했습니다.'
+          : '교재 생성에 실패했습니다.';
+      alert(errorMessage);
     }
-    handleCloseModal();
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('정말 이 교재를 삭제하시겠습니까?')) {
-      setTextbooks(textbooks.filter(t => t.id !== id));
+  const handleTextbookClick = async (textbookId: number) => {
+    setIsLoadingDetail(true);
+    try {
+      const response = await getTextbookDetail(textbookId);
+      const detail = response.data;
+
+      const classIds = detail.classTextbooks
+        .filter(
+          (ct): ct is typeof ct & { clazz: NonNullable<typeof ct.clazz> } =>
+            ct.clazz !== null
+        )
+        .map(ct => ct.clazz.classId);
+      const classNames = detail.classTextbooks
+        .filter(
+          (ct): ct is typeof ct & { clazz: NonNullable<typeof ct.clazz> } =>
+            ct.clazz !== null
+        )
+        .map(ct => ct.clazz.className);
+
+      setSelectedTextbook({
+        id: detail.textbookId,
+        name: detail.name,
+        grade: `${detail.grade}학년`,
+        classIds: classIds,
+        classNames: classNames,
+        unitCount: detail.largeUnit,
+        majorUnitCount: detail.largeUnit,
+        minorUnitCount: detail.smallUnit,
+        subUnits: [],
+      });
+    } catch (error) {
+      console.error('교재 상세 조회 에러:', error);
+      alert('교재 상세 정보를 가져오는데 실패했습니다.');
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('정말 이 교재를 삭제하시겠습니까?')) return;
+
+    try {
+      await deleteTextbook(id);
+      alert('교재가 삭제되었습니다.');
+
+      // 교재 목록 새로고침
+      const fetchTextbooks = async () => {
+        setIsLoading(true);
+        try {
+          const response = await getTextbooks();
+          const transformedTextbooks: Textbook[] = response.data.map(
+            textbook => ({
+              id: textbook.textbookId,
+              name: textbook.name,
+              grade: `${textbook.grade}학년`,
+              classIds: [],
+              classNames: [],
+              unitCount: textbook.largeUnit,
+              majorUnitCount: textbook.largeUnit,
+              minorUnitCount: textbook.smallUnit,
+              subUnits: [],
+            })
+          );
+          setTextbooks(transformedTextbooks);
+        } catch (error) {
+          console.error('교재 목록 조회 에러:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchTextbooks();
+
       if (selectedTextbook?.id === id) {
         setSelectedTextbook(null);
       }
+    } catch (error) {
+      console.error('교재 삭제 에러:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : '교재 삭제에 실패했습니다.';
+      alert(errorMessage);
     }
   };
 
@@ -440,7 +520,13 @@ function AdminHomeworkPage() {
             <h2 className="mb-4 text-lg font-semibold text-slate-900">
               교재 목록
             </h2>
-            {textbooks.length === 0 ? (
+            {isLoading ? (
+              <div className="rounded-lg border-2 border-dashed border-slate-300 bg-white p-8 text-center">
+                <p className="text-sm text-slate-600">
+                  교재 목록을 불러오는 중...
+                </p>
+              </div>
+            ) : textbooks.length === 0 ? (
               <div className="rounded-lg border-2 border-dashed border-slate-300 bg-white p-8 text-center">
                 <BookOpen className="mx-auto h-10 w-10 text-slate-400" />
                 <p className="mt-3 text-sm font-medium text-slate-900">
@@ -455,7 +541,7 @@ function AdminHomeworkPage() {
                 {textbooks.map(textbook => (
                   <div
                     key={textbook.id}
-                    onClick={() => setSelectedTextbook(textbook)}
+                    onClick={() => handleTextbookClick(textbook.id)}
                     className={`cursor-pointer rounded-lg border p-4 transition-all ${
                       selectedTextbook?.id === textbook.id
                         ? 'border-[#084773] bg-blue-50 shadow-md'
@@ -466,7 +552,10 @@ function AdminHomeworkPage() {
                       {textbook.name}
                     </h3>
                     <p className="mt-1 text-xs text-slate-600">
-                      {textbook.grade} · {textbook.className}
+                      {textbook.grade}
+                      {selectedTextbook?.id === textbook.id &&
+                        selectedTextbook.classNames.length > 0 &&
+                        ` · ${selectedTextbook.classNames.join(', ')}`}
                     </p>
                   </div>
                 ))}
@@ -476,36 +565,71 @@ function AdminHomeworkPage() {
 
           {/* 선택된 교재 정보 */}
           <div className="lg:col-span-2">
-            {selectedTextbook ? (
+            {isLoadingDetail ? (
+              <div className="flex h-full items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-white p-12">
+                <p className="text-sm text-slate-600">
+                  교재 정보를 불러오는 중...
+                </p>
+              </div>
+            ) : selectedTextbook ? (
               <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="mb-6 flex items-start justify-between">
                   <div className="flex-1">
                     <h2 className="text-2xl font-semibold text-slate-900">
                       {selectedTextbook.name}
                     </h2>
-                    <div className="mt-2 space-y-1 text-sm text-slate-600">
+                    <div className="mt-4 space-y-6 text-sm text-slate-600">
                       <p>학년: {selectedTextbook.grade}</p>
-                      <p>클래스: {selectedTextbook.className}</p>
-                      <p>
-                        대단원:{' '}
-                        {selectedTextbook.majorUnitCount ||
-                          selectedTextbook.unitCount}
-                        개
-                      </p>
-                      <p>소단원: {selectedTextbook.minorUnitCount}개</p>
-                      {/* 하위 단원 목록 */}
-                      {selectedTextbook.subUnits.length > 0 && (
-                        <div className="mt-2 space-y-1">
-                          {selectedTextbook.subUnits.map(subUnit => (
-                            <p
-                              key={subUnit.id}
-                              className="text-sm text-slate-600"
-                            >
-                              {subUnit.name}: {subUnit.subUnitCount}개
-                            </p>
-                          ))}
+                      <div className="mt-6">
+                        <label className="block text-sm font-medium text-slate-900 mb-2">
+                          클래스 지정
+                        </label>
+                        <div className="space-y-2">
+                          {classes.map((classItem: ClassType) => {
+                            const isSelected =
+                              selectedTextbook.classIds.includes(classItem.id);
+                            return (
+                              <label
+                                key={classItem.id}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                                  isSelected
+                                    ? 'bg-blue-100 border border-blue-300 cursor-default'
+                                    : 'cursor-default'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  disabled
+                                  className={`h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773] cursor-not-allowed ${
+                                    isSelected ? 'opacity-100' : 'opacity-40'
+                                  }`}
+                                />
+                                <span
+                                  className={`text-sm ${
+                                    isSelected
+                                      ? 'text-[#084773] font-medium'
+                                      : 'text-slate-500'
+                                  }`}
+                                >
+                                  {classItem.name}
+                                </span>
+                              </label>
+                            );
+                          })}
                         </div>
-                      )}
+                      </div>
+                      <div className="mt-6">
+                        <p>
+                          대단원:{' '}
+                          {selectedTextbook.majorUnitCount ||
+                            selectedTextbook.unitCount}
+                          개
+                        </p>
+                        <p className="mt-2">
+                          소단원: {selectedTextbook.minorUnitCount}개
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -609,25 +733,43 @@ function AdminHomeworkPage() {
                 {/* 클래스 선택 */}
                 <div>
                   <label className="block text-sm font-medium text-slate-900 mb-2">
-                    클래스
+                    클래스 지정
                   </label>
-                  <select
-                    value={newTextbook.classId}
-                    onChange={e =>
-                      setNewTextbook(prev => ({
-                        ...prev,
-                        classId: Number(e.target.value),
-                      }))
-                    }
-                    className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
-                  >
-                    <option value="0">클래스를 선택하세요</option>
-                    {dummyClasses.map(cls => (
-                      <option key={cls.id} value={cls.id}>
-                        {cls.name}
-                      </option>
+                  <div className="space-y-2">
+                    {classes.map(classItem => (
+                      <label
+                        key={classItem.id}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={newTextbook.classIds.includes(classItem.id)}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setNewTextbook({
+                                ...newTextbook,
+                                classIds: [
+                                  ...newTextbook.classIds,
+                                  classItem.id,
+                                ],
+                              });
+                            } else {
+                              setNewTextbook({
+                                ...newTextbook,
+                                classIds: newTextbook.classIds.filter(
+                                  id => id !== classItem.id
+                                ),
+                              });
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
+                        />
+                        <span className="text-sm text-slate-700">
+                          {classItem.name}
+                        </span>
+                      </label>
                     ))}
-                  </select>
+                  </div>
                 </div>
 
                 {/* 대단원 수 */}
@@ -641,13 +783,16 @@ function AdminHomeworkPage() {
                     value={newTextbook.majorUnitCount || ''}
                     onChange={e => {
                       const value = e.target.value;
-                      handleMajorUnitCountChange(value === '' ? 0 : parseInt(value, 10) || 0);
+                      handleMajorUnitCountChange(
+                        value === '' ? 0 : parseInt(value, 10) || 0
+                      );
                     }}
                     placeholder="대단원 수를 입력하세요"
                     className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-2 focus:ring-[#084773]/20"
                   />
                   <p className="mt-1 text-xs text-slate-500">
-                    대단원 수를 입력하면 각 대단원별로 소단원 수를 설정할 수 있습니다.
+                    대단원 수를 입력하면 각 대단원별로 소단원 수를 설정할 수
+                    있습니다.
                   </p>
                 </div>
 

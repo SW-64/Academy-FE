@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import MainLayout from '../MainLayout';
+import {
+  getClasses,
+  getClassStudents,
+  deleteClass,
+  createClass,
+  updateClass,
+} from '../../api/class';
+import { getStudents } from '../../api/students';
 
 type Student = {
   id: number;
@@ -18,48 +26,8 @@ type ClassType = {
   studentIds: number[];
 };
 
-// 더미 학생 데이터
-const dummyStudents: Student[] = Array.from({ length: 30 }, (_, i) => ({
-  id: i + 1,
-  name: `학생${i + 1}`,
-  email: `student${i + 1}@example.com`,
-  phone: `010-${String(i + 1).padStart(4, '0')}-${String(i + 1).padStart(4, '0')}`,
-  school: [
-    '서울고등학교',
-    '부산고등학교',
-    '대전고등학교',
-    '인천고등학교',
-    '광주고등학교',
-  ][i % 5],
-  grade: `${(i % 3) + 1}학년`,
-}));
-
-const dummyClasses: ClassType[] = [
-  {
-    id: 1,
-    name: '예비고2 월금 정규반',
-    studentCount: 15,
-    studentIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-  },
-  {
-    id: 2,
-    name: '예비고2 화목 정규반',
-    studentCount: 12,
-    studentIds: [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27],
-  },
-  {
-    id: 3,
-    name: '미적분1 기본 특강반',
-    studentCount: 20,
-    studentIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-  },
-  {
-    id: 4,
-    name: '미적분1+2 통합 특강반',
-    studentCount: 18,
-    studentIds: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 2, 4, 6],
-  },
-];
+// 빈 데이터
+const dummyClasses: ClassType[] = [];
 
 function AdminClassPage() {
   const [showCalendar, setShowCalendar] = useState(false);
@@ -73,7 +41,61 @@ function AdminClassPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editClassName, setEditClassName] = useState('');
   const [editSearchStudent, setEditSearchStudent] = useState('');
-  const [editSelectedStudentIds, setEditSelectedStudentIds] = useState<number[]>([]);
+  const [editSelectedStudentIds, setEditSelectedStudentIds] = useState<
+    number[]
+  >([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [classStudents, setClassStudents] = useState<Student[]>([]);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [isLoadingAllStudents, setIsLoadingAllStudents] = useState(false);
+  const [studentPage, setStudentPage] = useState(1);
+  const [studentsMeta, setStudentsMeta] = useState<{
+    totalItems: number;
+    itemCount: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+  } | null>(null);
+  const studentsPerPage = 10;
+  // 수정 모드용 학생 목록
+  const [editAllStudents, setEditAllStudents] = useState<Student[]>([]);
+  const [isLoadingEditStudents, setIsLoadingEditStudents] = useState(false);
+  const [editStudentPage, setEditStudentPage] = useState(1);
+  const [editStudentsMeta, setEditStudentsMeta] = useState<{
+    totalItems: number;
+    itemCount: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+  } | null>(null);
+
+  // 클래스 목록 조회 API 호출
+  useEffect(() => {
+    const fetchClasses = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getClasses();
+        // API 응답을 ClassType 형식으로 변환
+        const transformedClasses: ClassType[] = response.data.map(
+          classData => ({
+            id: classData.classId,
+            name: classData.className,
+            studentCount: 0, // 학생 수는 별도 API로 가져와야 할 수 있음
+            studentIds: [], // 학생 ID 목록은 별도 API로 가져와야 할 수 있음
+          })
+        );
+        setClasses(transformedClasses);
+      } catch (error) {
+        console.error('클래스 목록 조회 에러:', error);
+        // 에러 발생 시 빈 배열 유지
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchClasses();
+  }, []);
 
   // 캘린더 표시 여부 설정 (너비 1350px 이상일 때 표시)
   useEffect(() => {
@@ -86,13 +108,101 @@ function AdminClassPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 검색된 학생 목록 필터링
-  const filteredStudents = dummyStudents.filter(student =>
-    student.name.toLowerCase().includes(searchStudent.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchStudent.toLowerCase())
+  // 클래스 추가 모달이 열릴 때 학생 목록 조회 (페이지네이션)
+  useEffect(() => {
+    if (isAddModalOpen) {
+      const fetchAllStudents = async () => {
+        setIsLoadingAllStudents(true);
+        try {
+          const response = await getStudents(studentPage, studentsPerPage);
+          const transformedStudents: Student[] = response.data.items.map(
+            item => ({
+              id: item.student.studentId,
+              name: item.name,
+              email: item.email,
+              phone: item.phone,
+              school: item.student.school,
+              grade: `${item.student.grade}학년`,
+            })
+          );
+          setAllStudents(transformedStudents);
+          setStudentsMeta(response.data.meta);
+        } catch (error) {
+          console.error('학생 목록 조회 에러:', error);
+          setAllStudents([]);
+          setStudentsMeta(null);
+        } finally {
+          setIsLoadingAllStudents(false);
+        }
+      };
+
+      fetchAllStudents();
+    } else {
+      // 모달이 닫힐 때 페이지 리셋
+      setStudentPage(1);
+    }
+  }, [isAddModalOpen, studentPage, studentsPerPage]);
+
+  // 수정 모드일 때 전체 학생 목록 조회
+  useEffect(() => {
+    if (isEditMode && isDetailModalOpen) {
+      const fetchEditStudents = async () => {
+        setIsLoadingEditStudents(true);
+        try {
+          const response = await getStudents(editStudentPage, studentsPerPage);
+          const transformedStudents: Student[] = response.data.items.map(
+            item => ({
+              id: item.student.studentId,
+              name: item.name,
+              email: item.email,
+              phone: item.phone,
+              school: item.student.school,
+              grade: `${item.student.grade}학년`,
+            })
+          );
+          setEditAllStudents(transformedStudents);
+          setEditStudentsMeta(response.data.meta);
+        } catch (error) {
+          console.error('학생 목록 조회 에러:', error);
+          setEditAllStudents([]);
+          setEditStudentsMeta(null);
+        } finally {
+          setIsLoadingEditStudents(false);
+        }
+      };
+
+      fetchEditStudents();
+    } else {
+      // 수정 모드가 아닐 때 페이지 리셋
+      setEditStudentPage(1);
+    }
+  }, [isEditMode, isDetailModalOpen, editStudentPage, studentsPerPage]);
+
+  // 검색된 학생 목록 필터링 (클래스 추가 모달용)
+  const filteredStudents = allStudents.filter(
+    student =>
+      student.name.toLowerCase().includes(searchStudent.toLowerCase()) ||
+      student.email.toLowerCase().includes(searchStudent.toLowerCase())
   );
 
-  const handleAddClass = () => {
+  // 클래스 상세 모달에서 사용할 학생 목록 필터링 (수정 모드일 때는 전체 학생 목록 사용)
+  const filteredEditStudents = isEditMode
+    ? editAllStudents.filter(
+        student =>
+          student.name
+            .toLowerCase()
+            .includes(editSearchStudent.toLowerCase()) ||
+          student.email.toLowerCase().includes(editSearchStudent.toLowerCase())
+      )
+    : classStudents.filter(
+        student =>
+          student.name
+            .toLowerCase()
+            .includes(editSearchStudent.toLowerCase()) ||
+          student.email.toLowerCase().includes(editSearchStudent.toLowerCase())
+      );
+
+  const handleAddClass = async () => {
     if (!newClassName.trim()) {
       alert('클래스 이름을 입력해주세요.');
       return;
@@ -102,18 +212,47 @@ function AdminClassPage() {
       return;
     }
 
-    const newClass: ClassType = {
-      id: classes.length + 1,
-      name: newClassName,
-      studentCount: selectedStudentIds.length,
-      studentIds: selectedStudentIds,
-    };
+    try {
+      const response = await createClass({
+        name: newClassName,
+        studentIds: selectedStudentIds,
+      });
+      alert(response.message);
 
-    setClasses(prev => [...prev, newClass]);
-    setNewClassName('');
-    setSelectedStudentIds([]);
-    setSearchStudent('');
-    setIsAddModalOpen(false);
+      // 클래스 목록 새로고침
+      const fetchClasses = async () => {
+        setIsLoading(true);
+        try {
+          const response = await getClasses();
+          const transformedClasses: ClassType[] = response.data.map(
+            classData => ({
+              id: classData.classId,
+              name: classData.className,
+              studentCount: 0,
+              studentIds: [],
+            })
+          );
+          setClasses(transformedClasses);
+        } catch (error) {
+          console.error('클래스 목록 조회 에러:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchClasses();
+
+      // 모달 닫기 및 상태 초기화
+      setNewClassName('');
+      setSelectedStudentIds([]);
+      setSearchStudent('');
+      setStudentPage(1);
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error('클래스 생성 에러:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : '클래스 생성에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
   const handleToggleStudent = (studentId: number) => {
@@ -124,57 +263,156 @@ function AdminClassPage() {
     );
   };
 
-  const handleClassClick = (classItem: ClassType) => {
+  const handleClassClick = async (classItem: ClassType) => {
     setSelectedClass(classItem);
     setEditClassName(classItem.name);
-    setEditSelectedStudentIds([...classItem.studentIds]);
     setEditSearchStudent('');
     setIsEditMode(false);
     setIsDetailModalOpen(true);
+
+    // 클래스 학생 목록 조회 API 호출
+    setIsLoadingStudents(true);
+    try {
+      const response = await getClassStudents(classItem.id);
+      // API 응답을 Student 형식으로 변환
+      const transformedStudents: Student[] = response.data.studentClasses.map(
+        studentClass => ({
+          id: studentClass.student.studentId,
+          name: studentClass.student.user.name,
+          email: studentClass.student.user.email,
+          phone: '', // API 응답에 phone이 없으므로 빈 문자열
+          school: studentClass.student.school,
+          grade: `${studentClass.student.grade}학년`,
+        })
+      );
+      setClassStudents(transformedStudents);
+      setEditSelectedStudentIds(transformedStudents.map(s => s.id));
+
+      // 클래스 정보 업데이트 (학생 ID 목록만)
+      setClasses(prev =>
+        prev.map(c =>
+          c.id === classItem.id
+            ? {
+                ...c,
+                studentIds: transformedStudents.map(s => s.id),
+              }
+            : c
+        )
+      );
+      setSelectedClass(prev =>
+        prev
+          ? {
+              ...prev,
+              studentIds: transformedStudents.map(s => s.id),
+            }
+          : null
+      );
+    } catch (error) {
+      console.error('학생 목록 조회 에러:', error);
+      setClassStudents([]);
+      setEditSelectedStudentIds([]);
+    } finally {
+      setIsLoadingStudents(false);
+    }
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!selectedClass) return;
     if (!editClassName.trim()) {
       alert('클래스 이름을 입력해주세요.');
       return;
     }
 
-    setClasses(prev =>
-      prev.map(c =>
-        c.id === selectedClass.id
-          ? {
-              ...c,
-              name: editClassName,
-              studentIds: editSelectedStudentIds,
-              studentCount: editSelectedStudentIds.length,
-            }
-          : c
-      )
-    );
+    try {
+      const response = await updateClass(selectedClass.id, {
+        name: editClassName,
+        studentIds: editSelectedStudentIds,
+      });
+      alert(response.message);
 
-    setIsEditMode(false);
-    setSelectedClass(prev =>
-      prev
-        ? {
-            ...prev,
-            name: editClassName,
-            studentIds: editSelectedStudentIds,
-            studentCount: editSelectedStudentIds.length,
+      // 클래스 목록 새로고침
+      setIsLoading(true);
+      try {
+        const classesResponse = await getClasses();
+        const transformedClasses: ClassType[] = classesResponse.data.map(
+          classData => ({
+            id: classData.classId,
+            name: classData.className,
+            studentCount: 0,
+            studentIds: [],
+          })
+        );
+        setClasses(transformedClasses);
+
+        // 새로고침된 데이터에서 해당 클래스 찾기
+        const updatedClass = transformedClasses.find(
+          c => c.id === selectedClass.id
+        );
+        if (updatedClass) {
+          // 클래스 학생 목록도 새로고침
+          setIsLoadingStudents(true);
+          try {
+            const studentsResponse = await getClassStudents(selectedClass.id);
+            const transformedStudents: Student[] =
+              studentsResponse.data.studentClasses.map(studentClass => ({
+                id: studentClass.student.studentId,
+                name: studentClass.student.user.name,
+                email: studentClass.student.user.email,
+                phone: '',
+                school: studentClass.student.school,
+                grade: `${studentClass.student.grade}학년`,
+              }));
+            setClassStudents(transformedStudents);
+            setEditSelectedStudentIds(transformedStudents.map(s => s.id));
+
+            // selectedClass 업데이트 (클래스명과 학생 ID 모두)
+            setSelectedClass({
+              ...updatedClass,
+              studentIds: transformedStudents.map(s => s.id),
+            });
+            // editClassName도 업데이트
+            setEditClassName(updatedClass.name);
+          } catch (error) {
+            console.error('학생 목록 조회 에러:', error);
+            // 학생 목록 조회 실패해도 클래스명은 업데이트
+            setSelectedClass(updatedClass);
+            setEditClassName(updatedClass.name);
+          } finally {
+            setIsLoadingStudents(false);
           }
-        : null
-    );
-    alert('수정이 완료되었습니다.');
+        }
+      } catch (error) {
+        console.error('클래스 목록 조회 에러:', error);
+      } finally {
+        setIsLoading(false);
+      }
+
+      setIsEditMode(false);
+    } catch (error) {
+      console.error('클래스 수정 에러:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : '클래스 수정에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
-  const handleDeleteClass = () => {
+  const handleDeleteClass = async () => {
     if (!selectedClass) return;
     if (!confirm('정말 이 클래스를 삭제하시겠습니까?')) return;
 
-    setClasses(prev => prev.filter(c => c.id !== selectedClass.id));
-    setIsDetailModalOpen(false);
-    setSelectedClass(null);
-    alert('클래스가 삭제되었습니다.');
+    try {
+      await deleteClass(selectedClass.id);
+      // 삭제 성공 시 목록에서 제거
+      setClasses(prev => prev.filter(c => c.id !== selectedClass.id));
+      setIsDetailModalOpen(false);
+      setSelectedClass(null);
+      alert('클래스가 삭제되었습니다.');
+    } catch (error) {
+      console.error('클래스 삭제 에러:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : '클래스 삭제에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
   const handleToggleEditStudent = (studentId: number) => {
@@ -184,12 +422,6 @@ function AdminClassPage() {
         : [...prev, studentId]
     );
   };
-
-  // 수정 모달에서 검색된 학생 목록 필터링
-  const filteredEditStudents = dummyStudents.filter(student =>
-    student.name.toLowerCase().includes(editSearchStudent.toLowerCase()) ||
-    student.email.toLowerCase().includes(editSearchStudent.toLowerCase())
-  );
 
   return (
     <MainLayout showCalendar={showCalendar} isAdmin={true}>
@@ -213,36 +445,42 @@ function AdminClassPage() {
             클래스 추가
           </button>
         </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2">
-          {classes.map(classItem => (
-            <div
-              key={classItem.id}
-              onClick={() => handleClassClick(classItem)}
-              className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70 transition-shadow hover:shadow-md cursor-pointer"
-            >
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                {classItem.name}
-              </h3>
-              <div className="space-y-2 text-sm text-slate-600">
-                <div className="flex items-center justify-between">
-                  <span>수강 인원</span>
-                  <span className="font-medium text-slate-900">
-                    {classItem.studentCount}명
-                  </span>
-                </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <p className="text-sm text-slate-600">
+              클래스 목록을 불러오는 중...
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2">
+            {classes.length === 0 ? (
+              <div className="col-span-full flex items-center justify-center py-12">
+                <p className="text-sm text-slate-600">
+                  등록된 클래스가 없습니다.
+                </p>
               </div>
-            </div>
-          ))}
-        </div>
+            ) : (
+              classes.map(classItem => (
+                <div
+                  key={classItem.id}
+                  onClick={() => handleClassClick(classItem)}
+                  className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70 transition-shadow hover:shadow-md cursor-pointer"
+                >
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {classItem.name}
+                  </h3>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </section>
 
       {/* 클래스 추가 모달 */}
       {isAddModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
-            className="relative w-full max-w-3xl h-[90vh] rounded-2xl bg-white p-6 shadow-xl overflow-hidden flex flex-col"
+            className="relative w-full max-w-3xl h-[95vh] max-h-[900px] rounded-2xl bg-white p-6 shadow-xl overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             <button
@@ -277,7 +515,7 @@ function AdminClassPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   학생 추가
                 </label>
-                
+
                 {/* 검색 칸 */}
                 <div className="mb-4">
                   <input
@@ -292,18 +530,19 @@ function AdminClassPage() {
                 {/* 선택된 학생 목록 */}
                 {selectedStudentIds.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-xs font-medium text-slate-600 mb-2">
-                      선택된 학생 ({selectedStudentIds.length}명)
-                    </p>
                     <div className="flex flex-wrap gap-2">
                       {selectedStudentIds.map(studentId => {
-                        const student = dummyStudents.find(s => s.id === studentId);
+                        const student = allStudents.find(
+                          s => s.id === studentId
+                        );
                         return (
                           <div
                             key={studentId}
-                            className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-1.5 text-sm"
+                            className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-sm"
                           >
-                            <span className="text-slate-900">{student?.name}</span>
+                            <span className="text-slate-900">
+                              {student?.name || `학생 ID: ${studentId}`}
+                            </span>
                             <button
                               type="button"
                               onClick={() => handleToggleStudent(studentId)}
@@ -341,13 +580,24 @@ function AdminClassPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredStudents.length === 0 ? (
+                      {isLoadingAllStudents ? (
                         <tr>
                           <td
                             colSpan={5}
                             className="px-4 py-4 text-center text-sm text-slate-500"
                           >
-                            검색 결과가 없습니다.
+                            학생 목록을 불러오는 중...
+                          </td>
+                        </tr>
+                      ) : filteredStudents.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="px-4 py-4 text-center text-sm text-slate-500"
+                          >
+                            {searchStudent
+                              ? '검색 결과가 없습니다.'
+                              : '등록된 학생이 없습니다.'}
                           </td>
                         </tr>
                       ) : (
@@ -359,7 +609,9 @@ function AdminClassPage() {
                             <td className="px-4 py-2">
                               <input
                                 type="checkbox"
-                                checked={selectedStudentIds.includes(student.id)}
+                                checked={selectedStudentIds.includes(
+                                  student.id
+                                )}
                                 onChange={() => handleToggleStudent(student.id)}
                                 className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
                               />
@@ -382,6 +634,50 @@ function AdminClassPage() {
                     </tbody>
                   </table>
                 </div>
+                {/* 학생 목록 페이지네이션 */}
+                {studentsMeta && (
+                  <div className="mt-4 flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setStudentPage(prev => Math.max(1, prev - 1))
+                      }
+                      disabled={studentPage === 1}
+                      className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    {Array.from(
+                      { length: studentsMeta.totalPages },
+                      (_, i) => i + 1
+                    ).map(page => (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => setStudentPage(page)}
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                          studentPage === page
+                            ? 'bg-[#084773] text-white'
+                            : 'text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setStudentPage(prev =>
+                          Math.min(studentsMeta.totalPages, prev + 1)
+                        )
+                      }
+                      disabled={studentPage === studentsMeta.totalPages}
+                      className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -393,6 +689,7 @@ function AdminClassPage() {
                   setNewClassName('');
                   setSelectedStudentIds([]);
                   setSearchStudent('');
+                  setStudentPage(1);
                 }}
                 className="rounded-lg border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
               >
@@ -412,9 +709,7 @@ function AdminClassPage() {
 
       {/* 클래스 상세 모달 */}
       {isDetailModalOpen && selectedClass && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
             className="relative w-full max-w-4xl h-[90vh] rounded-2xl bg-white p-6 shadow-xl overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
@@ -450,7 +745,7 @@ function AdminClassPage() {
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       학생 관리
                     </label>
-                    
+
                     {/* 검색 칸 */}
                     <div className="mb-4">
                       <input
@@ -465,21 +760,24 @@ function AdminClassPage() {
                     {/* 선택된 학생 목록 */}
                     {editSelectedStudentIds.length > 0 && (
                       <div className="mb-4">
-                        <p className="text-xs font-medium text-slate-600 mb-2">
-                          선택된 학생 ({editSelectedStudentIds.length}명)
-                        </p>
                         <div className="flex flex-wrap gap-2">
                           {editSelectedStudentIds.map(studentId => {
-                            const student = dummyStudents.find(s => s.id === studentId);
+                            const student = isEditMode
+                              ? editAllStudents.find(s => s.id === studentId)
+                              : classStudents.find(s => s.id === studentId);
                             return (
                               <div
                                 key={studentId}
-                                className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-1.5 text-sm"
+                                className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-sm"
                               >
-                                <span className="text-slate-900">{student?.name}</span>
+                                <span className="text-slate-900">
+                                  {student?.name || `학생 ID: ${studentId}`}
+                                </span>
                                 <button
                                   type="button"
-                                  onClick={() => handleToggleEditStudent(studentId)}
+                                  onClick={() =>
+                                    handleToggleEditStudent(studentId)
+                                  }
                                   className="text-blue-600 hover:text-blue-800"
                                 >
                                   <X className="h-4 w-4" />
@@ -514,13 +812,33 @@ function AdminClassPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {filteredEditStudents.length === 0 ? (
+                          {isEditMode && isLoadingEditStudents ? (
                             <tr>
                               <td
                                 colSpan={5}
                                 className="px-4 py-4 text-center text-sm text-slate-500"
                               >
-                                검색 결과가 없습니다.
+                                학생 목록을 불러오는 중...
+                              </td>
+                            </tr>
+                          ) : !isEditMode && isLoadingStudents ? (
+                            <tr>
+                              <td
+                                colSpan={5}
+                                className="px-4 py-4 text-center text-sm text-slate-500"
+                              >
+                                학생 목록을 불러오는 중...
+                              </td>
+                            </tr>
+                          ) : filteredEditStudents.length === 0 ? (
+                            <tr>
+                              <td
+                                colSpan={5}
+                                className="px-4 py-4 text-center text-sm text-slate-500"
+                              >
+                                {editSearchStudent
+                                  ? '검색 결과가 없습니다.'
+                                  : '등록된 학생이 없습니다.'}
                               </td>
                             </tr>
                           ) : (
@@ -532,8 +850,12 @@ function AdminClassPage() {
                                 <td className="px-4 py-2">
                                   <input
                                     type="checkbox"
-                                    checked={editSelectedStudentIds.includes(student.id)}
-                                    onChange={() => handleToggleEditStudent(student.id)}
+                                    checked={editSelectedStudentIds.includes(
+                                      student.id
+                                    )}
+                                    onChange={() =>
+                                      handleToggleEditStudent(student.id)
+                                    }
                                     className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
                                   />
                                 </td>
@@ -555,13 +877,59 @@ function AdminClassPage() {
                         </tbody>
                       </table>
                     </div>
+                    {/* 수정 모드 학생 목록 페이지네이션 */}
+                    {isEditMode && editStudentsMeta && (
+                      <div className="mt-4 flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditStudentPage(prev => Math.max(1, prev - 1))
+                          }
+                          disabled={editStudentPage === 1}
+                          className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        {Array.from(
+                          { length: editStudentsMeta.totalPages },
+                          (_, i) => i + 1
+                        ).map(page => (
+                          <button
+                            key={page}
+                            type="button"
+                            onClick={() => setEditStudentPage(page)}
+                            className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                              editStudentPage === page
+                                ? 'bg-[#084773] text-white'
+                                : 'text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditStudentPage(prev =>
+                              Math.min(editStudentsMeta.totalPages, prev + 1)
+                            )
+                          }
+                          disabled={
+                            editStudentPage === editStudentsMeta.totalPages
+                          }
+                          className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
                 <div>
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-slate-900">
-                      학생 목록 ({selectedClass.studentCount}명)
+                      학생 목록
                     </h3>
                   </div>
                   <div className="overflow-x-auto rounded-lg border border-slate-200">
@@ -593,29 +961,25 @@ function AdminClassPage() {
                             </td>
                           </tr>
                         ) : (
-                          selectedClass.studentIds.map(studentId => {
-                            const student = dummyStudents.find(s => s.id === studentId);
-                            if (!student) return null;
-                            return (
-                              <tr
-                                key={studentId}
-                                className="border-b border-slate-100 hover:bg-slate-50"
-                              >
-                                <td className="px-4 py-3 text-sm text-slate-900">
-                                  {student.name}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-slate-600">
-                                  {student.email}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-slate-600">
-                                  {student.school}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-slate-600">
-                                  {student.grade}
-                                </td>
-                              </tr>
-                            );
-                          })
+                          classStudents.map(student => (
+                            <tr
+                              key={student.id}
+                              className="border-b border-slate-100 hover:bg-slate-50"
+                            >
+                              <td className="px-4 py-3 text-sm text-slate-900">
+                                {student.name}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-slate-600">
+                                {student.email}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-slate-600">
+                                {student.school}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-slate-600">
+                                {student.grade}
+                              </td>
+                            </tr>
+                          ))
                         )}
                       </tbody>
                     </table>
@@ -675,4 +1039,3 @@ function AdminClassPage() {
 }
 
 export default AdminClassPage;
-

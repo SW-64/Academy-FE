@@ -13,6 +13,8 @@ export interface Material {
   classIds?: number[];
 }
 
+export const dummyMaterials: Material[] = []; // 더미데이터 제거
+/*
 export const dummyMaterials: Material[] = [
   {
     id: 16,
@@ -129,6 +131,7 @@ export const dummyMaterials: Material[] = [
     classIds: [4], // 미적분1+2 통합 특강반
   },
 ];
+*/
 
 function MaterialsPage() {
   const navigate = useNavigate();
@@ -198,7 +201,6 @@ function MaterialsPage() {
           학습자료
         </h1>
       </header>
-
 
       {/* 학습자료 테이블 */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">

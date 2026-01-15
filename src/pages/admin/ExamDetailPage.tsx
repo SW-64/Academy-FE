@@ -2,8 +2,23 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import MainLayout from '../MainLayout';
-import { examRecords } from '../../data/gradesData';
-import type { ExamRecord } from '../../data/gradesData';
+// 타입 정의
+export type ExamRecord = {
+  studentId: number;
+  studentName: string;
+  date: string;
+  dateFormatted: string;
+  score: number;
+  average: number;
+  grade: string;
+  targetScore: number;
+  differenceFromTarget: number;
+  wrongAnswers?: number[];
+  classId?: number;
+};
+
+// 빈 데이터
+const examRecords: ExamRecord[] = [];
 
 function ExamDetailPage() {
   const { examDate } = useParams<{ examDate: string }>();

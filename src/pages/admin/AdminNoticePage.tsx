@@ -1,16 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Plus, X, Trash2, Save } from 'lucide-react';
 import MainLayout from '../MainLayout';
-import { dummyNotices } from '../../data/noticesData';
-import type { Notice } from '../../data/noticesData';
+// 타입 정의
+export type Notice = {
+  id: number;
+  number: number | 'important';
+  title: string;
+  hasNewTag: boolean;
+  author: string;
+  createdAt: string;
+  isPinned?: boolean;
+  content?: string;
+  classIds?: number[];
+};
 
-// 더미 클래스 데이터 (실제로는 API에서 가져와야 함)
-const dummyClasses = [
-  { id: 1, name: '예비고2 월금 정규반' },
-  { id: 2, name: '예비고2 화목 정규반' },
-  { id: 3, name: '미적분1 기본 특강반' },
-  { id: 4, name: '미적분1+2 통합 특강반' },
-];
+// 빈 데이터
+const dummyNotices: Notice[] = [];
+const dummyClasses: { id: number; name: string }[] = [];
 
 function AdminNoticePage() {
   const [notices, setNotices] = useState<Notice[]>(dummyNotices);
