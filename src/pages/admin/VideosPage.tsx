@@ -490,7 +490,7 @@ function AdminVideosPage() {
                         {newVideo.videoFileName || '영상 파일을 선택하세요'}
                       </span>
                       <p className="text-xs text-slate-500 mt-1">
-                        클릭하여 파일을 선택하거나 드래그하여 업로드
+                        클릭하여 파일을 선택하여 업로드하세요
                       </p>
                     </div>
                     <input
@@ -782,7 +782,7 @@ function AdminVideosPage() {
                           '영상 파일을 선택하세요'}
                       </span>
                       <p className="text-xs text-slate-500 mt-1">
-                        클릭하여 파일을 선택하거나 드래그하여 업로드
+                        클릭하여 파일을 선택하여 업로드하세요
                       </p>
                     </div>
                     <input
