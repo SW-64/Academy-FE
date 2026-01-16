@@ -2,9 +2,15 @@ import { useEffect, useState } from 'react';
 import { Plus, X, Trash2, Save, Upload } from 'lucide-react';
 import MainLayout from '../MainLayout';
 import { dummyMaterials, type Material } from '../MaterialsPage';
-
-// 빈 데이터
-const dummyClasses: Array<{ id: number; name: string }> = [];
+import { getClasses, type ClassData } from '../../api/class';
+import {
+  getMaterials,
+  createMaterial,
+  uploadMaterialFile,
+  getMaterialDetail,
+  deleteMaterial,
+  updateMaterial,
+} from '../../api/materials';
 
 type MaterialWithFile = Material & {
   content?: string;
@@ -14,6 +20,7 @@ type MaterialWithFile = Material & {
 };
 
 function AdminMaterialsPage() {
+  const [classes, setClasses] = useState<ClassData[]>([]);
   const [materials, setMaterials] =
     useState<MaterialWithFile[]>(dummyMaterials);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -23,6 +30,8 @@ function AdminMaterialsPage() {
   const [selectedMaterial, setSelectedMaterial] =
     useState<MaterialWithFile | null>(null);
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [newMaterial, setNewMaterial] = useState({
     title: '',
     content: '',
@@ -38,51 +47,128 @@ function AdminMaterialsPage() {
     classIds: [] as number[],
   });
 
-  const handleWrite = () => {
+  const handleWrite = async () => {
     if (!newMaterial.title.trim()) {
       // eslint-disable-next-line no-alert
       alert('제목을 입력해주세요.');
       return;
     }
 
-    const material: MaterialWithFile = {
-      id: materials.length + 1,
-      title: newMaterial.title,
-      content: newMaterial.content,
-      createdAt: new Date().toLocaleDateString('ko-KR'),
-      author: '관리자',
-      hasNewTag: true,
-      pdfFile: newMaterial.pdfFile,
-      pdfFileName:
-        newMaterial.pdfFileName ||
-        (newMaterial.pdfFile ? newMaterial.pdfFile.name : ''),
-      classIds: newMaterial.classIds,
-    };
+    if (newMaterial.classIds.length === 0) {
+      // eslint-disable-next-line no-alert
+      alert('최소 하나의 클래스를 선택해주세요.');
+      return;
+    }
 
-    setMaterials(prev => [material, ...prev]);
-    setNewMaterial({
-      title: '',
-      content: '',
-      pdfFile: null,
-      pdfFileName: '',
-      classIds: [],
-    });
-    setIsWriteModalOpen(false);
+    try {
+      setIsLoading(true);
+
+      // 1단계: 학습자료 생성 API 호출
+      const createResponse = await createMaterial({
+        title: newMaterial.title,
+        description: newMaterial.content || '',
+        classIds: newMaterial.classIds,
+      });
+
+      const materialId = createResponse.data.materialId;
+
+      // 2단계: 파일이 있으면 파일 업로드 API 호출
+      if (newMaterial.pdfFile) {
+        await uploadMaterialFile(materialId, newMaterial.pdfFile);
+      }
+
+      // 성공 메시지
+      // eslint-disable-next-line no-alert
+      alert('학습자료가 성공적으로 생성되었습니다.');
+
+      // 폼 초기화
+      setNewMaterial({
+        title: '',
+        content: '',
+        pdfFile: null,
+        pdfFileName: '',
+        classIds: [],
+      });
+      setIsWriteModalOpen(false);
+
+      // 선택된 클래스가 있으면 해당 클래스의 학습자료 목록 새로고침
+      if (selectedClassId) {
+        const response = await getMaterials({
+          page: currentPage,
+          limit: itemsPerPage,
+          sort: 'created_desc',
+          classId: selectedClassId,
+        });
+
+        const convertedMaterials: MaterialWithFile[] = response.data.items.map(
+          item => ({
+            id: item.materialId,
+            title: item.title,
+            createdAt: new Date(item.createdAt).toLocaleDateString('ko-KR'),
+            author: '관리자',
+            hasNewTag: false,
+            classIds: [selectedClassId],
+          })
+        );
+
+        setMaterials(convertedMaterials);
+        setTotalPages(response.data.meta.totalPages);
+      }
+    } catch (error) {
+      console.error('학습자료 생성 실패:', error);
+      // eslint-disable-next-line no-alert
+      alert(
+        error instanceof Error
+          ? error.message
+          : '학습자료 생성에 실패했습니다.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleMaterialClick = (material: MaterialWithFile) => {
-    setSelectedMaterial(material);
-    setEditMaterial({
-      title: material.title,
-      content: material.content || '',
-      pdfFile: null,
-      pdfFileName: material.pdfFileName || '',
-      classIds: material.classIds || [],
-    });
-    setIsDetailModalOpen(true);
+  const handleMaterialClick = async (material: MaterialWithFile) => {
+    try {
+      setIsLoading(true);
+      // 학습자료 상세 정보 조회
+      const response = await getMaterialDetail(material.id);
+
+      const detailData = response.data;
+      const materialWithDetail: MaterialWithFile = {
+        id: detailData.materialId,
+        title: detailData.title,
+        content: detailData.description,
+        createdAt: new Date(detailData.createdAt).toLocaleDateString('ko-KR'),
+        author: '관리자',
+        hasNewTag: false,
+        pdfFile: null,
+        pdfFileName: detailData.originalFileName || '',
+        classIds: detailData.classIds,
+      };
+
+      setSelectedMaterial(materialWithDetail);
+      setEditMaterial({
+        title: detailData.title,
+        content: detailData.description || '',
+        pdfFile: null,
+        pdfFileName: detailData.originalFileName || '',
+        classIds: detailData.classIds,
+      });
+      setIsDetailModalOpen(true);
+    } catch (error) {
+      console.error('학습자료 상세 조회 실패:', error);
+      // eslint-disable-next-line no-alert
+      alert(
+        error instanceof Error
+          ? error.message
+          : '학습자료를 불러오는데 실패했습니다.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!selectedMaterial) return;
     if (!editMaterial.title.trim()) {
       // eslint-disable-next-line no-alert
@@ -90,35 +176,121 @@ function AdminMaterialsPage() {
       return;
     }
 
-    setMaterials(prev =>
-      prev.map(material =>
-        material.id === selectedMaterial.id
-          ? {
-              ...material,
-              title: editMaterial.title,
-              content: editMaterial.content,
-              pdfFile: editMaterial.pdfFile || material.pdfFile,
-              pdfFileName:
-                editMaterial.pdfFileName || material.pdfFileName || '',
-              classIds: editMaterial.classIds,
-            }
-          : material
-      )
-    );
+    if (editMaterial.classIds.length === 0) {
+      // eslint-disable-next-line no-alert
+      alert('최소 하나의 클래스를 선택해주세요.');
+      return;
+    }
 
-    setIsDetailModalOpen(false);
-    setSelectedMaterial(null);
+    try {
+      setIsLoading(true);
+
+      // 1단계: 학습자료 수정 API 호출
+      await updateMaterial(selectedMaterial.id, {
+        title: editMaterial.title,
+        description: editMaterial.content || '',
+        classIds: editMaterial.classIds,
+      });
+
+      // 2단계: 파일이 있으면 파일 업로드 API 호출
+      if (editMaterial.pdfFile) {
+        await uploadMaterialFile(selectedMaterial.id, editMaterial.pdfFile);
+      }
+
+      // 성공 메시지
+      // eslint-disable-next-line no-alert
+      alert('학습자료가 성공적으로 수정되었습니다.');
+
+      setIsDetailModalOpen(false);
+      setSelectedMaterial(null);
+
+      // 선택된 클래스가 있으면 해당 클래스의 학습자료 목록 새로고침
+      if (selectedClassId) {
+        const response = await getMaterials({
+          page: currentPage,
+          limit: itemsPerPage,
+          sort: 'created_desc',
+          classId: selectedClassId,
+        });
+
+        const convertedMaterials: MaterialWithFile[] = response.data.items.map(
+          item => ({
+            id: item.materialId,
+            title: item.title,
+            createdAt: new Date(item.createdAt).toLocaleDateString('ko-KR'),
+            author: '관리자',
+            hasNewTag: false,
+            classIds: [selectedClassId],
+          })
+        );
+
+        setMaterials(convertedMaterials);
+        setTotalPages(response.data.meta.totalPages);
+      }
+    } catch (error) {
+      console.error('학습자료 수정 실패:', error);
+      // eslint-disable-next-line no-alert
+      alert(
+        error instanceof Error
+          ? error.message
+          : '학습자료 수정에 실패했습니다.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedMaterial) return;
     if (!confirm('정말 이 학습자료를 삭제하시겠습니까?')) return;
 
-    setMaterials(prev =>
-      prev.filter(material => material.id !== selectedMaterial.id)
-    );
-    setIsDetailModalOpen(false);
-    setSelectedMaterial(null);
+    try {
+      setIsLoading(true);
+      await deleteMaterial(selectedMaterial.id);
+
+      // 성공 메시지
+      // eslint-disable-next-line no-alert
+      alert('학습자료가 성공적으로 삭제되었습니다.');
+
+      setIsDetailModalOpen(false);
+      setSelectedMaterial(null);
+
+      // 선택된 클래스가 있으면 해당 클래스의 학습자료 목록 새로고침
+      if (selectedClassId) {
+        const response = await getMaterials({
+          page: currentPage,
+          limit: itemsPerPage,
+          sort: 'created_desc',
+          classId: selectedClassId,
+        });
+
+        const convertedMaterials: MaterialWithFile[] = response.data.items.map(
+          item => ({
+            id: item.materialId,
+            title: item.title,
+            createdAt: new Date(item.createdAt).toLocaleDateString('ko-KR'),
+            author: '관리자',
+            hasNewTag: false,
+            classIds: [selectedClassId],
+          })
+        );
+
+        setMaterials(convertedMaterials);
+        setTotalPages(response.data.meta.totalPages);
+      } else {
+        setMaterials([]);
+      }
+    } catch (error) {
+      console.error('학습자료 삭제 실패:', error);
+      // eslint-disable-next-line no-alert
+      alert(
+        error instanceof Error
+          ? error.message
+          : '학습자료 삭제에 실패했습니다.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFileChange = (
@@ -143,23 +315,72 @@ function AdminMaterialsPage() {
     }
   };
 
-  // 클래스 필터링 (클래스가 선택되었을 때만 필터링)
-  const filteredMaterials = selectedClassId
-    ? materials.filter(
-        material =>
-          material.classIds && material.classIds.includes(selectedClassId)
-      )
-    : [];
-
   const itemsPerPage = 10;
-  const sortedMaterials = [...filteredMaterials].sort((a, b) => b.id - a.id);
-  const totalPages = Math.max(
-    1,
-    Math.ceil(sortedMaterials.length / itemsPerPage)
-  );
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentMaterials = sortedMaterials.slice(startIndex, endIndex);
+
+  // 클래스 목록 조회
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        setIsLoading(true);
+        const response = await getClasses();
+        setClasses(response.data);
+      } catch (error) {
+        console.error('클래스 목록 조회 실패:', error);
+        // eslint-disable-next-line no-alert
+        alert('클래스 목록을 불러오는데 실패했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchClasses();
+  }, []);
+
+  // 학습자료 목록 조회 (클래스 선택 시)
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      if (!selectedClassId) {
+        setMaterials([]);
+        setTotalPages(1);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const response = await getMaterials({
+          page: currentPage,
+          limit: itemsPerPage,
+          sort: 'created_desc',
+          classId: selectedClassId,
+        });
+
+        // API 응답을 MaterialWithFile 형식으로 변환
+        const convertedMaterials: MaterialWithFile[] = response.data.items.map(
+          item => ({
+            id: item.materialId,
+            title: item.title,
+            createdAt: new Date(item.createdAt).toLocaleDateString('ko-KR'),
+            author: '관리자',
+            hasNewTag: false,
+            classIds: [selectedClassId],
+          })
+        );
+
+        setMaterials(convertedMaterials);
+        setTotalPages(response.data.meta.totalPages);
+      } catch (error) {
+        console.error('학습자료 목록 조회 실패:', error);
+        // eslint-disable-next-line no-alert
+        alert('학습자료 목록을 불러오는데 실패했습니다.');
+        setMaterials([]);
+        setTotalPages(1);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMaterials();
+  }, [selectedClassId, currentPage, itemsPerPage]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -202,20 +423,26 @@ function AdminMaterialsPage() {
 
         {/* 클래스 선택 */}
         <div className="mb-4 flex flex-wrap gap-2">
-          {dummyClasses.map(classItem => (
-            <button
-              key={classItem.id}
-              type="button"
-              onClick={() => setSelectedClassId(classItem.id)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                selectedClassId === classItem.id
-                  ? 'bg-[#084773] text-white'
-                  : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              {classItem.name}
-            </button>
-          ))}
+          {isLoading && classes.length === 0 ? (
+            <div className="text-sm text-slate-600">클래스 목록을 불러오는 중...</div>
+          ) : classes.length === 0 ? (
+            <div className="text-sm text-slate-600">등록된 클래스가 없습니다.</div>
+          ) : (
+            classes.map(classItem => (
+              <button
+                key={classItem.classId}
+                type="button"
+                onClick={() => setSelectedClassId(classItem.classId)}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  selectedClassId === classItem.classId
+                    ? 'bg-[#084773] text-white'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                {classItem.className}
+              </button>
+            ))
+          )}
         </div>
       </header>
 
@@ -241,26 +468,48 @@ function AdminMaterialsPage() {
                 </tr>
               </thead>
               <tbody>
-                {currentMaterials.map(material => (
-                  <tr
-                    key={material.id}
-                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors"
-                    onClick={() => handleMaterialClick(material)}
-                  >
-                    <td className="px-4 py-3 text-sm text-slate-900">
-                      {material.id}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-900">
-                      {material.title}
-                    </td>
-                    <td className="hidden min-[431px]:table-cell px-4 py-3 text-sm text-slate-600">
-                      {material.createdAt}
-                    </td>
-                    <td className="hidden min-[601px]:table-cell px-4 py-3 text-sm text-slate-600">
-                      {material.author}
+                {isLoading ? (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-4 py-8 text-center text-sm text-slate-600"
+                    >
+                      학습자료 목록을 불러오는 중...
                     </td>
                   </tr>
-                ))}
+                ) : materials.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-4 py-8 text-center text-sm text-slate-600"
+                    >
+                      {selectedClassId
+                        ? '등록된 학습자료가 없습니다.'
+                        : '클래스를 선택해주세요.'}
+                    </td>
+                  </tr>
+                ) : (
+                  materials.map(material => (
+                    <tr
+                      key={material.id}
+                      className="border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors"
+                      onClick={() => handleMaterialClick(material)}
+                    >
+                      <td className="px-4 py-3 text-sm text-slate-900">
+                        {material.id}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-900">
+                        {material.title}
+                      </td>
+                      <td className="hidden min-[431px]:table-cell px-4 py-3 text-sm text-slate-600">
+                        {material.createdAt}
+                      </td>
+                      <td className="hidden min-[601px]:table-cell px-4 py-3 text-sm text-slate-600">
+                        {material.author}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -358,25 +607,25 @@ function AdminMaterialsPage() {
                   클래스 지정
                 </label>
                 <div className="space-y-2">
-                  {dummyClasses.map(classItem => (
+                  {classes.map(classItem => (
                     <label
-                      key={classItem.id}
+                      key={classItem.classId}
                       className="flex items-center gap-2 cursor-pointer"
                     >
                       <input
                         type="checkbox"
-                        checked={newMaterial.classIds.includes(classItem.id)}
+                        checked={newMaterial.classIds.includes(classItem.classId)}
                         onChange={e => {
                           if (e.target.checked) {
                             setNewMaterial({
                               ...newMaterial,
-                              classIds: [...newMaterial.classIds, classItem.id],
+                              classIds: [...newMaterial.classIds, classItem.classId],
                             });
                           } else {
                             setNewMaterial({
                               ...newMaterial,
                               classIds: newMaterial.classIds.filter(
-                                id => id !== classItem.id
+                                id => id !== classItem.classId
                               ),
                             });
                           }
@@ -384,7 +633,7 @@ function AdminMaterialsPage() {
                         className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
                       />
                       <span className="text-sm text-slate-700">
-                        {classItem.name}
+                        {classItem.className}
                       </span>
                     </label>
                   ))}
@@ -403,7 +652,7 @@ function AdminMaterialsPage() {
                         {newMaterial.pdfFileName || 'PDF 파일을 선택하세요'}
                       </span>
                       <p className="text-xs text-slate-500 mt-1">
-                        클릭하여 파일을 선택하거나 드래그하여 업로드
+                        클릭하여 파일을 선택하여 업로드하세요
                       </p>
                     </div>
                     <input
@@ -458,9 +707,10 @@ function AdminMaterialsPage() {
               <button
                 type="button"
                 onClick={handleWrite}
-                className="rounded-lg bg-[#084773] px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
+                disabled={isLoading}
+                className="rounded-lg bg-[#084773] px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                작성하기
+                {isLoading ? '처리 중...' : '작성하기'}
               </button>
             </div>
           </div>
@@ -524,28 +774,28 @@ function AdminMaterialsPage() {
                   클래스 지정
                 </label>
                 <div className="space-y-2">
-                  {dummyClasses.map(classItem => (
+                  {classes.map(classItem => (
                     <label
-                      key={classItem.id}
+                      key={classItem.classId}
                       className="flex items-center gap-2 cursor-pointer"
                     >
                       <input
                         type="checkbox"
-                        checked={editMaterial.classIds.includes(classItem.id)}
+                        checked={editMaterial.classIds.includes(classItem.classId)}
                         onChange={e => {
                           if (e.target.checked) {
                             setEditMaterial({
                               ...editMaterial,
                               classIds: [
                                 ...editMaterial.classIds,
-                                classItem.id,
+                                classItem.classId,
                               ],
                             });
                           } else {
                             setEditMaterial({
                               ...editMaterial,
                               classIds: editMaterial.classIds.filter(
-                                id => id !== classItem.id
+                                id => id !== classItem.classId
                               ),
                             });
                           }
@@ -553,7 +803,7 @@ function AdminMaterialsPage() {
                         className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
                       />
                       <span className="text-sm text-slate-700">
-                        {classItem.name}
+                        {classItem.className}
                       </span>
                     </label>
                   ))}
@@ -569,12 +819,10 @@ function AdminMaterialsPage() {
                     <Upload className="h-5 w-5 text-slate-400" />
                     <div className="flex-1">
                       <span className="text-sm font-medium text-slate-700">
-                        {editMaterial.pdfFileName ||
-                          selectedMaterial.pdfFileName ||
-                          'PDF 파일을 선택하세요'}
+                        {editMaterial.pdfFileName || 'PDF 파일을 선택하세요'}
                       </span>
                       <p className="text-xs text-slate-500 mt-1">
-                        클릭하여 파일을 선택하거나 드래그하여 업로드
+                        클릭하여 파일을 선택하여 업로드하세요
                       </p>
                     </div>
                     <input
