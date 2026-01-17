@@ -51,8 +51,12 @@ function HomeworkPage() {
         setIsLoadingTextbooks(true);
         try {
           const response = await getClassTextbooks(selectedClassId);
-          if (response && response.data) {
-            setTextbooks(response.data);
+          if (response && response.data && Array.isArray(response.data)) {
+            // 데이터 검증 및 필터링
+            const validTextbooks = response.data.filter(
+              item => item && item.textbook && item.textbook.textbookId
+            );
+            setTextbooks(validTextbooks);
           } else {
             setTextbooks([]);
           }
@@ -224,31 +228,35 @@ function HomeworkPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {textbooks.map(item => (
-                <button
-                  key={item.textbook.textbookId}
-                  type="button"
-                  onClick={() => {
-                    setSelectedTextbookId(item.textbook.textbookId);
-                    setSearchParams({
-                      classId: selectedClassId.toString(),
-                      textbookId: item.textbook.textbookId.toString(),
-                    });
-                  }}
-                  className={`rounded-xl border-2 p-4 text-left transition-all ${
-                    selectedTextbookId === item.textbook.textbookId
-                      ? 'border-[#084773] bg-blue-50 shadow-md'
-                      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
-                  }`}
-                >
-                  <h3 className="font-semibold text-slate-900">
-                    {item.textbook.name}
-                  </h3>
-                  <p className="mt-1 text-xs text-slate-600">
-                    {item.textbook.grade}학년
-                  </p>
-                </button>
-              ))}
+              {textbooks
+                .filter(
+                  item => item && item.textbook && item.textbook.textbookId
+                )
+                .map(item => (
+                  <button
+                    key={item.textbook.textbookId}
+                    type="button"
+                    onClick={() => {
+                      setSelectedTextbookId(item.textbook.textbookId);
+                      setSearchParams({
+                        classId: selectedClassId!.toString(),
+                        textbookId: item.textbook.textbookId.toString(),
+                      });
+                    }}
+                    className={`rounded-xl border-2 p-4 text-left transition-all ${
+                      selectedTextbookId === item.textbook.textbookId
+                        ? 'border-[#084773] bg-blue-50 shadow-md'
+                        : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                    }`}
+                  >
+                    <h3 className="font-semibold text-slate-900">
+                      {item.textbook.name || '교재 이름 없음'}
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {item.textbook.grade || '?'}학년
+                    </p>
+                  </button>
+                ))}
             </div>
           )}
         </div>
