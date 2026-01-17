@@ -28,7 +28,12 @@ const menuItems = [
 
 const parentMenuItems = [
   { id: 'notice', label: '공지사항', icon: Megaphone, path: '/parent/notice' },
-  { id: 'children', label: '자녀 조회', icon: Users, path: '/parent/children' },
+  {
+    id: 'homework-progress',
+    label: '자녀 숙제 진도',
+    icon: FileText,
+    path: '/parent/homework-progress',
+  },
   {
     id: 'mypage',
     label: '마이페이지',
