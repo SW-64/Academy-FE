@@ -1,19 +1,31 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { BookOpen, ChevronRight } from 'lucide-react';
-import MainLayout from './MainLayout';
-import { getMyClasses, getMyHomeworkProgress } from '../api/students';
-import type { StudentClass, StudentHomeworkProgress } from '../api/students';
-import { getClassTextbooks } from '../api/class';
-import type { ClassTextbookItem } from '../api/class';
+import { useSearchParams } from 'react-router-dom';
+import { BookOpen } from 'lucide-react';
+import MainLayout from '../MainLayout';
+import {
+  getMyStudents,
+  getMyStudentClasses,
+  getMyStudentHomeworkProgress,
+} from '../../api/parents';
+import type {
+  ParentStudent,
+  ParentStudentClass,
+  ParentStudentHomeworkProgress,
+} from '../../api/parents';
+import { getClassTextbooks } from '../../api/class';
+import type { ClassTextbookItem } from '../../api/class';
 
-function HomeworkPage() {
-  const navigate = useNavigate();
+function ParentHomeworkProgressPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const studentIdParam = searchParams.get('studentId');
   const classIdParam = searchParams.get('classId');
   const textbookIdParam = searchParams.get('textbookId');
-  
-  const [classes, setClasses] = useState<StudentClass[]>([]);
+
+  const [students, setStudents] = useState<ParentStudent[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(
+    studentIdParam ? parseInt(studentIdParam, 10) : null
+  );
+  const [classes, setClasses] = useState<ParentStudentClass[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<number | null>(
     classIdParam ? parseInt(classIdParam, 10) : null
   );
@@ -21,28 +33,60 @@ function HomeworkPage() {
   const [selectedTextbookId, setSelectedTextbookId] = useState<number | null>(
     textbookIdParam ? parseInt(textbookIdParam, 10) : null
   );
-  const [homeworkProgress, setHomeworkProgress] = useState<StudentHomeworkProgress | null>(null);
+  const [homeworkProgress, setHomeworkProgress] =
+    useState<ParentStudentHomeworkProgress | null>(null);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   const [isLoadingClasses, setIsLoadingClasses] = useState(false);
   const [isLoadingTextbooks, setIsLoadingTextbooks] = useState(false);
   const [isLoadingProgress, setIsLoadingProgress] = useState(false);
 
-  // 내 클래스 목록 조회
+  // 자녀 목록 조회
   useEffect(() => {
-    const fetchClasses = async () => {
-      setIsLoadingClasses(true);
+    const fetchStudents = async () => {
+      setIsLoadingStudents(true);
       try {
-        const response = await getMyClasses();
-        setClasses(response.data);
+        const response = await getMyStudents();
+        setStudents(response.data);
       } catch (error) {
-        console.error('클래스 목록 조회 에러:', error);
-        setClasses([]);
+        console.error('자녀 목록 조회 에러:', error);
+        setStudents([]);
       } finally {
-        setIsLoadingClasses(false);
+        setIsLoadingStudents(false);
       }
     };
 
-    fetchClasses();
+    fetchStudents();
   }, []);
+
+  // 자녀 선택 시 클래스 목록 조회
+  useEffect(() => {
+    if (selectedStudentId) {
+      const fetchClasses = async () => {
+        setIsLoadingClasses(true);
+        try {
+          const response = await getMyStudentClasses(selectedStudentId);
+          setClasses(response.data);
+          setSelectedClassId(null);
+          setTextbooks([]);
+          setSelectedTextbookId(null);
+          setHomeworkProgress(null);
+        } catch (error) {
+          console.error('자녀 클래스 목록 조회 에러:', error);
+          setClasses([]);
+        } finally {
+          setIsLoadingClasses(false);
+        }
+      };
+
+      fetchClasses();
+    } else {
+      setClasses([]);
+      setSelectedClassId(null);
+      setTextbooks([]);
+      setSelectedTextbookId(null);
+      setHomeworkProgress(null);
+    }
+  }, [selectedStudentId]);
 
   // 클래스 선택 시 교재 목록 조회
   useEffect(() => {
@@ -72,14 +116,18 @@ function HomeworkPage() {
 
   // 교재 선택 시 숙제 진도 조회
   useEffect(() => {
-    if (selectedClassId && selectedTextbookId) {
+    if (selectedStudentId && selectedClassId && selectedTextbookId) {
       const fetchProgress = async () => {
         setIsLoadingProgress(true);
         try {
-          const response = await getMyHomeworkProgress(selectedClassId, selectedTextbookId);
+          const response = await getMyStudentHomeworkProgress(
+            selectedStudentId,
+            selectedClassId,
+            selectedTextbookId
+          );
           setHomeworkProgress(response.data);
         } catch (error) {
-          console.error('숙제 진도 조회 에러:', error);
+          console.error('자녀 숙제 진도 조회 에러:', error);
           setHomeworkProgress(null);
         } finally {
           setIsLoadingProgress(false);
@@ -90,13 +138,14 @@ function HomeworkPage() {
     } else {
       setHomeworkProgress(null);
     }
-  }, [selectedClassId, selectedTextbookId]);
+  }, [selectedStudentId, selectedClassId, selectedTextbookId]);
 
   // 진행도 계산
   const calculateProgress = () => {
     if (!homeworkProgress) {
       return {
         completed: 0,
+        inProgress: 0,
         total: 0,
         percentage: 0,
       };
@@ -120,65 +169,121 @@ function HomeworkPage() {
   };
 
   const progressData = calculateProgress();
+  const selectedStudent = students.find(s => s.studentId === selectedStudentId);
 
   return (
-    <MainLayout>
+    <MainLayout isParent={true}>
       {/* 헤더 */}
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900">숙제</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">
+          자녀 숙제 진도
+        </h1>
         <p className="mt-1 text-sm text-slate-600">
-          클래스를 선택하여 숙제 목록을 확인하세요.
+          자녀를 선택하여 숙제 진도를 확인하세요.
         </p>
       </header>
 
-      {/* 클래스 선택 */}
+      {/* 자녀 선택 */}
       <div className="mb-6">
-        <h2 className="mb-3 text-lg font-semibold text-slate-900">
-          클래스 선택
-        </h2>
-        {isLoadingClasses ? (
+        <h2 className="mb-3 text-lg font-semibold text-slate-900">자녀 선택</h2>
+        {isLoadingStudents ? (
           <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-8 text-center">
-            <p className="text-sm text-slate-600">클래스 목록을 불러오는 중...</p>
+            <p className="text-sm text-slate-600">자녀 목록을 불러오는 중...</p>
           </div>
-        ) : classes.length === 0 ? (
+        ) : students.length === 0 ? (
           <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-8 text-center">
             <BookOpen className="mx-auto h-10 w-10 text-slate-400" />
             <p className="mt-3 text-sm font-medium text-slate-900">
-              등록된 클래스가 없습니다
+              등록된 자녀가 없습니다
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {classes.map(cls => (
+            {students.map(student => (
               <button
-                key={cls.classId}
+                key={student.studentId}
                 type="button"
                 onClick={() => {
-                  setSelectedClassId(cls.classId);
-                  setSearchParams({ classId: cls.classId.toString() });
+                  setSelectedStudentId(student.studentId);
+                  setSearchParams({ studentId: student.studentId.toString() });
                 }}
                 className={`rounded-xl border-2 p-4 text-left transition-all ${
-                  selectedClassId === cls.classId
+                  selectedStudentId === student.studentId
                     ? 'border-[#084773] bg-blue-50 shadow-md'
                     : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
                 }`}
               >
-                <h3 className="font-semibold text-slate-900">{cls.className}</h3>
+                <h3 className="font-semibold text-slate-900">
+                  {student.user.name}
+                </h3>
+                <p className="mt-1 text-xs text-slate-600">
+                  {student.school} {student.grade}학년
+                </p>
               </button>
             ))}
           </div>
         )}
       </div>
 
+      {/* 클래스 선택 */}
+      {selectedStudentId && (
+        <div className="mb-6">
+          <h2 className="mb-3 text-lg font-semibold text-slate-900">
+            클래스 선택
+          </h2>
+          {isLoadingClasses ? (
+            <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-8 text-center">
+              <p className="text-sm text-slate-600">
+                클래스 목록을 불러오는 중...
+              </p>
+            </div>
+          ) : classes.length === 0 ? (
+            <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-8 text-center">
+              <BookOpen className="mx-auto h-10 w-10 text-slate-400" />
+              <p className="mt-3 text-sm font-medium text-slate-900">
+                등록된 클래스가 없습니다
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {classes.map(cls => (
+                <button
+                  key={cls.classId}
+                  type="button"
+                  onClick={() => {
+                    setSelectedClassId(cls.classId);
+                    setSearchParams({
+                      studentId: selectedStudentId.toString(),
+                      classId: cls.classId.toString(),
+                    });
+                  }}
+                  className={`rounded-xl border-2 p-4 text-left transition-all ${
+                    selectedClassId === cls.classId
+                      ? 'border-[#084773] bg-blue-50 shadow-md'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                  }`}
+                >
+                  <h3 className="font-semibold text-slate-900">
+                    {cls.className}
+                  </h3>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 교재 선택 */}
-      {selectedClassId && (
+      {selectedStudentId && selectedClassId && (
         <div className="mb-6">
           <h2 className="mb-3 text-lg font-semibold text-slate-900">
             교재 선택
           </h2>
           {isLoadingTextbooks ? (
             <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-8 text-center">
-              <p className="text-sm text-slate-600">교재 목록을 불러오는 중...</p>
+              <p className="text-sm text-slate-600">
+                교재 목록을 불러오는 중...
+              </p>
             </div>
           ) : textbooks.length === 0 ? (
             <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-8 text-center">
@@ -196,6 +301,7 @@ function HomeworkPage() {
                   onClick={() => {
                     setSelectedTextbookId(item.textbook.textbookId);
                     setSearchParams({
+                      studentId: selectedStudentId.toString(),
                       classId: selectedClassId.toString(),
                       textbookId: item.textbook.textbookId.toString(),
                     });
@@ -220,22 +326,29 @@ function HomeworkPage() {
       )}
 
       {/* 숙제 진도 */}
-      {selectedClassId && selectedTextbookId && (
+      {selectedStudentId && selectedClassId && selectedTextbookId && (
         <div>
           <h2 className="mb-4 text-lg font-semibold text-slate-900">
             숙제 진도
           </h2>
           {isLoadingProgress ? (
             <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-12 text-center">
-              <p className="text-sm text-slate-600">숙제 진도를 불러오는 중...</p>
+              <p className="text-sm text-slate-600">
+                숙제 진도를 불러오는 중...
+              </p>
             </div>
           ) : homeworkProgress ? (
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="mb-6">
                 <h3 className="text-xl font-semibold text-slate-900">
-                  {textbooks.find(t => t.textbook.textbookId === selectedTextbookId)?.textbook.name}
+                  {
+                    textbooks.find(
+                      t => t.textbook.textbookId === selectedTextbookId
+                    )?.textbook.name
+                  }
                 </h3>
                 <p className="mt-1 text-sm text-slate-600">
+                  {selectedStudent?.user.name} ·{' '}
                   {classes.find(c => c.classId === selectedClassId)?.className}
                 </p>
               </div>
@@ -257,10 +370,15 @@ function HomeworkPage() {
               </div>
 
               <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-slate-900">단원별 진도</h4>
+                <h4 className="text-sm font-semibold text-slate-900">
+                  단원별 진도
+                </h4>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                   {homeworkProgress.chapters.map(chapter => {
-                    const cell = homeworkProgress.student.cells[chapter.chapterId.toString()];
+                    const cell =
+                      homeworkProgress.student.cells[
+                        chapter.chapterId.toString()
+                      ];
                     const status = cell?.status || 'NOT_STARTED';
                     const percent = cell?.percent || 0;
 
@@ -306,15 +424,14 @@ function HomeworkPage() {
         </div>
       )}
 
-      {!selectedClassId && (
+      {!selectedStudentId && (
         <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-12 text-center">
           <BookOpen className="mx-auto h-12 w-12 text-slate-400" />
           <p className="mt-4 text-sm font-medium text-slate-900">
-            클래스를 선택해주세요
+            자녀를 선택해주세요
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            위에서 클래스를 선택하면 해당 클래스의 교재 목록을 확인할 수
-            있습니다.
+            위에서 자녀를 선택하면 해당 자녀의 클래스 목록을 확인할 수 있습니다.
           </p>
         </div>
       )}
@@ -322,4 +439,4 @@ function HomeworkPage() {
   );
 }
 
-export default HomeworkPage;
+export default ParentHomeworkProgressPage;
