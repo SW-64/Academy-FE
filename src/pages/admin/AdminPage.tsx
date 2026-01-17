@@ -34,6 +34,7 @@ type Student = {
   phone: string;
   school: string;
   grade: string;
+  parentName?: string; // 연동된 학부모 이름
 };
 
 type Parent = {
@@ -125,6 +126,10 @@ function AdminPage() {
               phone: item.phone,
               school: item.student!.school,
               grade: `${item.student!.grade}학년`,
+              parentName:
+                item.student!.parent != null
+                  ? item.student!.parent.user.name
+                  : undefined,
             }));
           setStudents(transformedStudents);
           setStudentsMeta(response.data.meta);
@@ -522,6 +527,10 @@ function AdminPage() {
                 phone: item.phone,
                 school: item.student!.school,
                 grade: `${item.student!.grade}학년`,
+                parentName:
+                  item.student!.parent != null
+                    ? item.student!.parent.user.name
+                    : undefined,
               }));
             setStudents(transformedStudents);
             setStudentsMeta(response.data.meta);
@@ -834,21 +843,11 @@ function AdminPage() {
                           {student.grade}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-600">
-                          {(() => {
-                            const linkedParentId =
-                              studentParentLinks[student.id];
-                            if (!linkedParentId) {
-                              return <span className="text-slate-400">-</span>;
-                            }
-                            const linkedParent = parents.find(
-                              p => p.id === linkedParentId
-                            );
-                            return linkedParent ? (
-                              <span>{linkedParent.name}</span>
-                            ) : (
-                              <span className="text-slate-400">-</span>
-                            );
-                          })()}
+                          {student.parentName ? (
+                            <span>{student.parentName}</span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex justify-end gap-2">

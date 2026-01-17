@@ -404,9 +404,9 @@ export const linkParent = async (
   parentId: number
 ): Promise<LinkParentResponse> => {
   const response = await fetch(
-    `${API_BASE_URL}/students/${studentId}/parent/${parentId}`,
+    `${API_BASE_URL}/users/link-parent/students/${studentId}/parents/${parentId}`,
     {
-      method: 'POST',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -435,9 +435,9 @@ export const unlinkParent = async (
   parentId: number
 ): Promise<LinkParentResponse> => {
   const response = await fetch(
-    `${API_BASE_URL}/students/${studentId}/parent/${parentId}`,
+    `${API_BASE_URL}/users/unlink-parent/students/${studentId}/parents/${parentId}`,
     {
-      method: 'DELETE',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },
