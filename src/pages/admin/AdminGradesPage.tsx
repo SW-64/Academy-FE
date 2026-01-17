@@ -301,28 +301,35 @@ function AdminGradesPage() {
       const questionNumbers = editQuestions.map(q => q.questionNumber);
       const points = editQuestions.map(q => q.points);
 
-      // 날짜 유효성 검사 및 ISO 형식으로 변환
+      // 날짜 유효성 검사
       if (!editDate || editDate.trim() === '') {
         alert('날짜를 선택해주세요.');
         return;
       }
 
-      // 날짜를 해당 날짜의 0시(자정)로 설정하여 시간대 문제 방지
-      // ISO 8601 형식: YYYY-MM-DDTHH:mm:ss
-      const examDate = `${editDate.trim()}T00:00:00`;
+      // 백엔드 DTO 예시에 맞춰 날짜만 전송 (YYYY-MM-DD 형식)
+      const examDate = editDate.trim();
 
-      // 날짜 형식 검증
-      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(examDate)) {
+      // 날짜 형식 검증 (YYYY-MM-DD)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(examDate)) {
         alert('날짜 형식이 올바르지 않습니다.');
         return;
       }
 
-      const response = await updateExam(selectedClassId, selectedExam.examId, {
+      // 디버깅: 전송할 데이터 확인
+      const requestData = {
         examTitle: editExamName.trim(),
         examDate: examDate,
         question: questionNumbers,
         points: points,
-      });
+      };
+      console.log('시험 수정 요청 데이터:', requestData);
+
+      const response = await updateExam(
+        selectedClassId,
+        selectedExam.examId,
+        requestData
+      );
 
       alert(response.message || '수정이 완료되었습니다.');
 
@@ -405,28 +412,31 @@ function AdminGradesPage() {
       const questionNumbers = newExam.questions.map(q => q.questionNumber);
       const points = newExam.questions.map(q => q.points);
 
-      // 날짜 유효성 검사 및 ISO 형식으로 변환
+      // 날짜 유효성 검사
       if (!newExam.date || newExam.date.trim() === '') {
         alert('날짜를 선택해주세요.');
         return;
       }
 
-      // 날짜를 해당 날짜의 0시(자정)로 설정하여 시간대 문제 방지
-      // ISO 8601 형식: YYYY-MM-DDTHH:mm:ss
-      const examDate = `${newExam.date.trim()}T00:00:00`;
+      // 백엔드 DTO 예시에 맞춰 날짜만 전송 (YYYY-MM-DD 형식)
+      const examDate = newExam.date.trim();
 
-      // 날짜 형식 검증
-      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(examDate)) {
+      // 날짜 형식 검증 (YYYY-MM-DD)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(examDate)) {
         alert('날짜 형식이 올바르지 않습니다.');
         return;
       }
 
-      const response = await createExam(selectedClassId, {
+      // 디버깅: 전송할 데이터 확인
+      const requestData = {
         examTitle: newExam.name.trim(),
         examDate: examDate,
         question: questionNumbers,
         points: points,
-      });
+      };
+      console.log('시험 생성 요청 데이터:', requestData);
+
+      const response = await createExam(selectedClassId, requestData);
 
       alert(response.message || '시험이 추가되었습니다.');
 
