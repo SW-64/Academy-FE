@@ -307,16 +307,18 @@ function AdminGradesPage() {
         return;
       }
 
-      // 한국 시간대(KST, UTC+9)를 고려하여 9시간을 더한 시간으로 설정
-      // 예: "2026-03-02" → "2026-03-02T09:00:00"
-      // 서버에서 UTC로 변환하면 "2026-03-02T00:00:00"이 되어 원하는 날짜가 유지됨
-      const examDate = `${editDate.trim()}T09:00:00`;
-
-      // 날짜 형식 검증 (YYYY-MM-DDTHH:mm:ss)
-      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(examDate)) {
+      // 선택한 날짜에서 하루를 더해 "YYYY-MM-DD" 형식으로 전송
+      // 예: 달력에서 5월 1일 선택 → "2026-05-02"로 요청
+      const raw = editDate.trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
         alert('날짜 형식이 올바르지 않습니다.');
         return;
       }
+      const [y, m, d] = raw.split('-').map(Number);
+      const next = new Date(y, m - 1, d + 1);
+      const examDate = `${next.getFullYear()}-${String(
+        next.getMonth() + 1
+      ).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
 
       // 디버깅: 전송할 데이터 확인
       const requestData = {
@@ -425,16 +427,18 @@ function AdminGradesPage() {
         return;
       }
 
-      // 한국 시간대(KST, UTC+9)를 고려하여 9시간을 더한 시간으로 설정
-      // 예: "2026-03-02" → "2026-03-02T09:00:00"
-      // 서버에서 UTC로 변환하면 "2026-03-02T00:00:00"이 되어 원하는 날짜가 유지됨
-      const examDate = `${newExam.date.trim()}T09:00:00`;
-
-      // 날짜 형식 검증 (YYYY-MM-DDTHH:mm:ss)
-      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(examDate)) {
+      // 선택한 날짜에서 하루를 더해 "YYYY-MM-DD" 형식으로 전송
+      // 예: 달력에서 5월 1일 선택 → "2026-05-02"로 요청
+      const raw = newExam.date.trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
         alert('날짜 형식이 올바르지 않습니다.');
         return;
       }
+      const [y, m, d] = raw.split('-').map(Number);
+      const next = new Date(y, m - 1, d + 1);
+      const examDate = `${next.getFullYear()}-${String(
+        next.getMonth() + 1
+      ).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
 
       // 디버깅: 전송할 데이터 확인
       const requestData = {
