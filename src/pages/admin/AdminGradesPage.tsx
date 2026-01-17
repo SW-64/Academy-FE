@@ -301,11 +301,24 @@ function AdminGradesPage() {
       const questionNumbers = editQuestions.map(q => q.questionNumber);
       const points = editQuestions.map(q => q.points);
 
+      // 날짜 유효성 검사 및 ISO 형식으로 변환
+      if (!editDate || editDate.trim() === '') {
+        alert('날짜를 선택해주세요.');
+        return;
+      }
+
       // 날짜를 해당 날짜의 0시(자정)로 설정하여 시간대 문제 방지
-      const examDate = `${editDate}T00:00:00`;
+      // ISO 8601 형식: YYYY-MM-DDTHH:mm:ss
+      const examDate = `${editDate.trim()}T00:00:00`;
+
+      // 날짜 형식 검증
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(examDate)) {
+        alert('날짜 형식이 올바르지 않습니다.');
+        return;
+      }
 
       const response = await updateExam(selectedClassId, selectedExam.examId, {
-        examTitle: editExamName,
+        examTitle: editExamName.trim(),
         examDate: examDate,
         question: questionNumbers,
         points: points,
@@ -392,11 +405,24 @@ function AdminGradesPage() {
       const questionNumbers = newExam.questions.map(q => q.questionNumber);
       const points = newExam.questions.map(q => q.points);
 
+      // 날짜 유효성 검사 및 ISO 형식으로 변환
+      if (!newExam.date || newExam.date.trim() === '') {
+        alert('날짜를 선택해주세요.');
+        return;
+      }
+
       // 날짜를 해당 날짜의 0시(자정)로 설정하여 시간대 문제 방지
-      const examDate = `${newExam.date}T00:00:00`;
+      // ISO 8601 형식: YYYY-MM-DDTHH:mm:ss
+      const examDate = `${newExam.date.trim()}T00:00:00`;
+
+      // 날짜 형식 검증
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(examDate)) {
+        alert('날짜 형식이 올바르지 않습니다.');
+        return;
+      }
 
       const response = await createExam(selectedClassId, {
-        examTitle: newExam.name,
+        examTitle: newExam.name.trim(),
         examDate: examDate,
         question: questionNumbers,
         points: points,

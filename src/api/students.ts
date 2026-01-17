@@ -164,7 +164,7 @@ export const getStudentClasses = async (): Promise<StudentClassesResponse> => {
         errorData.message || '인증이 필요합니다. 다시 로그인해주세요.'
       );
     }
-    
+
     const errorData = await response.json().catch(() => ({
       message: '클래스 목록을 가져오는데 실패했습니다.',
     }));
@@ -312,9 +312,7 @@ export const getMaterialDownloadUrl = async (
     const errorData = await response.json().catch(() => ({
       message: '다운로드 URL 발급에 실패했습니다.',
     }));
-    throw new Error(
-      errorData.message || '다운로드 URL 발급에 실패했습니다.'
-    );
+    throw new Error(errorData.message || '다운로드 URL 발급에 실패했습니다.');
   }
 
   return response.json();
