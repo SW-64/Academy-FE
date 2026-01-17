@@ -307,11 +307,13 @@ function AdminGradesPage() {
         return;
       }
 
-      // 백엔드 DTO 예시에 맞춰 날짜만 전송 (YYYY-MM-DD 형식)
-      const examDate = editDate.trim();
+      // 한국 시간대(KST, UTC+9)를 고려하여 9시간을 더한 시간으로 설정
+      // 예: "2026-03-02" → "2026-03-02T09:00:00"
+      // 서버에서 UTC로 변환하면 "2026-03-02T00:00:00"이 되어 원하는 날짜가 유지됨
+      const examDate = `${editDate.trim()}T09:00:00`;
 
-      // 날짜 형식 검증 (YYYY-MM-DD)
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(examDate)) {
+      // 날짜 형식 검증 (YYYY-MM-DDTHH:mm:ss)
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(examDate)) {
         alert('날짜 형식이 올바르지 않습니다.');
         return;
       }
@@ -423,11 +425,13 @@ function AdminGradesPage() {
         return;
       }
 
-      // 백엔드 DTO 예시에 맞춰 날짜만 전송 (YYYY-MM-DD 형식)
-      const examDate = newExam.date.trim();
+      // 한국 시간대(KST, UTC+9)를 고려하여 9시간을 더한 시간으로 설정
+      // 예: "2026-03-02" → "2026-03-02T09:00:00"
+      // 서버에서 UTC로 변환하면 "2026-03-02T00:00:00"이 되어 원하는 날짜가 유지됨
+      const examDate = `${newExam.date.trim()}T09:00:00`;
 
-      // 날짜 형식 검증 (YYYY-MM-DD)
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(examDate)) {
+      // 날짜 형식 검증 (YYYY-MM-DDTHH:mm:ss)
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(examDate)) {
         alert('날짜 형식이 올바르지 않습니다.');
         return;
       }
