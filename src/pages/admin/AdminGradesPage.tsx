@@ -194,7 +194,10 @@ function AdminGradesPage() {
         name: exam.examTitle,
         examId: exam.examId,
         records: [] as ExamRecord[], // 시험 상세는 별도 API로 가져와야 함
-        averageScore: exam.studentAverage || 0,
+        averageScore:
+          typeof exam.studentAverage === 'number' && !isNaN(exam.studentAverage)
+            ? exam.studentAverage
+            : 0,
         totalStudents: 0, // 시험 상세에서 가져와야 함
       };
     });
@@ -245,7 +248,11 @@ function AdminGradesPage() {
           name: examData.examTitle,
           examId: examData.examId,
           records: [] as ExamRecord[],
-          averageScore: examData.studentAverage || 0,
+          averageScore:
+            typeof examData.studentAverage === 'number' &&
+            !isNaN(examData.studentAverage)
+              ? examData.studentAverage
+              : 0,
           totalStudents: 0,
           questions: examQuestions,
         });
@@ -765,7 +772,8 @@ function AdminGradesPage() {
                               {exam.date}
                             </td>
                             <td className="px-4 py-3 text-sm font-medium text-slate-900 text-right">
-                              {exam.averageScore > 0
+                              {typeof exam.averageScore === 'number' &&
+                              exam.averageScore > 0
                                 ? `${exam.averageScore.toFixed(1)}점`
                                 : '-'}
                             </td>
@@ -1028,7 +1036,10 @@ function AdminGradesPage() {
                     평균 점수:
                   </label>
                   <span className="text-sm text-slate-900">
-                    {selectedExam.averageScore}점
+                    {typeof selectedExam.averageScore === 'number'
+                      ? selectedExam.averageScore.toFixed(1)
+                      : '0.0'}
+                    점
                   </span>
                 </div>
               </div>
