@@ -710,6 +710,92 @@ export const createErrorRates = async (
   return response.json();
 };
 
+export interface RankingItem {
+  studentId: number;
+  name: string;
+  isTaken: number | null;
+  score: number | null;
+  ranking: number | null;
+}
+
+export interface RankingsResponse {
+  statusCode: number;
+  message: string;
+  data: RankingItem[];
+}
+
+/**
+ * 시험 등수를 조회합니다.
+ */
+export const getRankings = async (
+  classId: number,
+  examId: number
+): Promise<RankingsResponse> => {
+  const response = await fetch(
+    `${API_BASE_URL}/classes/${classId}/exams/${examId}/rankings`,
+    {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    }
+  );
+  if (!response.ok) {
+    const err = await response
+      .json()
+      .catch(() => ({ message: '시험 등수 조회에 실패했습니다.' }));
+    throw new Error(err.message || '시험 등수 조회에 실패했습니다.');
+  }
+  return response.json();
+};
+
+/**
+ * 시험 등수를 계산(적용)합니다.
+ */
+export const createRankings = async (
+  classId: number,
+  examId: number
+): Promise<{ statusCode: number; message: string }> => {
+  const response = await fetch(
+    `${API_BASE_URL}/classes/${classId}/exams/${examId}/rankings`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    }
+  );
+  if (!response.ok) {
+    const err = await response
+      .json()
+      .catch(() => ({ message: '시험 등수 계산에 실패했습니다.' }));
+    throw new Error(err.message || '시험 등수 계산에 실패했습니다.');
+  }
+  return response.json();
+};
+
+/**
+ * 시험 평균 점수를 계산(적용)합니다.
+ */
+export const createAverage = async (
+  classId: number,
+  examId: number
+): Promise<{ statusCode: number; message: string }> => {
+  const response = await fetch(
+    `${API_BASE_URL}/classes/${classId}/exams/${examId}/average`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    }
+  );
+  if (!response.ok) {
+    const err = await response
+      .json()
+      .catch(() => ({ message: '평균 점수 계산에 실패했습니다.' }));
+    throw new Error(err.message || '평균 점수 계산에 실패했습니다.');
+  }
+  return response.json();
+};
+
 export interface DeleteExamResponse {
   statusCode: number;
   message: string;

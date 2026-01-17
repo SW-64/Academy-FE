@@ -7,6 +7,9 @@ import {
   patchWrongAnswers,
   getErrorRates,
   createErrorRates,
+  getRankings,
+  createRankings,
+  createAverage,
 } from '../../api/class';
 
 // 타입 정의
@@ -47,6 +50,19 @@ function ExamDetailPage() {
   >(null);
   const [isLoadingErrorRates, setIsLoadingErrorRates] = useState(false);
   const [isPatchingWrong, setIsPatchingWrong] = useState(false);
+  const [rankings, setRankings] = useState<
+    | {
+        studentId: number;
+        name: string;
+        isTaken: number | null;
+        score: number | null;
+        ranking: number | null;
+      }[]
+    | null
+  >(null);
+  const [isLoadingRankings, setIsLoadingRankings] = useState(false);
+  const [isCreatingRankings, setIsCreatingRankings] = useState(false);
+  const [isCreatingAverage, setIsCreatingAverage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showErrorRate, setShowErrorRate] = useState(false);
@@ -211,6 +227,31 @@ function ExamDetailPage() {
             <button
               type="button"
               onClick={async () => {
+                if (!classId || !examId) return;
+                setIsCreatingAverage(true);
+                try {
+                  await createAverage(Number(classId), Number(examId));
+                  alert('평균 점수가 계산되었습니다.');
+                  // 새로고침하여 같은 페이지로 다시 이동
+                  window.location.reload();
+                } catch (e) {
+                  alert(
+                    e instanceof Error
+                      ? e.message
+                      : '평균 점수 계산에 실패했습니다.'
+                  );
+                } finally {
+                  setIsCreatingAverage(false);
+                }
+              }}
+              disabled={isCreatingAverage}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+            >
+              {isCreatingAverage ? '계산 중...' : '평균 점수 생성'}
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
                 if (!showErrorRate && classId && examId) {
                   setIsLoadingErrorRates(true);
                   try {
@@ -258,19 +299,39 @@ function ExamDetailPage() {
             </button>
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
+                if (!showRanking && classId && examId) {
+                  setIsLoadingRankings(true);
+                  try {
+                    const res = await getRankings(
+                      Number(classId),
+                      Number(examId)
+                    );
+                    setRankings(res.data);
+                  } catch (e) {
+                    alert(
+                      e instanceof Error
+                        ? e.message
+                        : '시험 등수 조회에 실패했습니다.'
+                    );
+                    return;
+                  } finally {
+                    setIsLoadingRankings(false);
+                  }
+                }
                 setShowRanking(!showRanking);
                 setShowErrorRate(false);
                 setShowStudentAnswers(false);
                 setIsEditMode(false);
               }}
+              disabled={isLoadingRankings}
               className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                 showRanking
                   ? 'border-[#084773] bg-[#084773] text-white'
                   : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
               }`}
             >
-              성적 순위
+              {isLoadingRankings ? '로딩...' : '성적 순위'}
             </button>
             <button
               type="button"
@@ -799,12 +860,31 @@ function ExamDetailPage() {
               <div className="mb-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    // 순위 생성 (실제로는 서버에 요청)
+                  onClick={async () => {
+                    if (!classId || !examId) return;
+                    setIsCreatingRankings(true);
+                    try {
+                      await createRankings(Number(classId), Number(examId));
+                      const res = await getRankings(
+                        Number(classId),
+                        Number(examId)
+                      );
+                      setRankings(res.data);
+                      alert('등수가 계산되었습니다.');
+                    } catch (e) {
+                      alert(
+                        e instanceof Error
+                          ? e.message
+                          : '시험 등수 계산에 실패했습니다.'
+                      );
+                    } finally {
+                      setIsCreatingRankings(false);
+                    }
                   }}
-                  className="rounded-lg border border-[#084773] bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063d5c]"
+                  disabled={isCreatingRankings}
+                  className="rounded-lg border border-[#084773] bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063d5c] disabled:opacity-50"
                 >
-                  순위 생성
+                  {isCreatingRankings ? '계산 중...' : '순위 생성'}
                 </button>
               </div>
               <h3 className="mb-4 text-lg font-semibold text-slate-900">
@@ -812,27 +892,28 @@ function ExamDetailPage() {
               </h3>
               <div className="flex-1 overflow-y-auto min-h-0">
                 <div className="space-y-2">
-                  {examData.records
-                    .sort((a, b) => b.score - a.score)
-                    .map((record, index) => {
-                      const rank = index + 1;
-                      return (
-                        <div
-                          key={record.studentId}
-                          className="flex items-center gap-4 rounded border border-slate-200 p-3"
-                        >
-                          <div className="w-16 text-sm font-semibold text-slate-900 text-center">
-                            {rank}등
-                          </div>
-                          <div className="w-20 text-sm font-medium text-slate-900 text-center">
-                            {record.score}점
-                          </div>
-                          <div className="flex-1 text-sm text-slate-700">
-                            {record.studentName}
-                          </div>
+                  {rankings && rankings.length > 0 ? (
+                    rankings.map(item => (
+                      <div
+                        key={item.studentId}
+                        className="flex items-center gap-4 rounded border border-slate-200 p-3"
+                      >
+                        <div className="w-16 text-sm font-semibold text-slate-900 text-center">
+                          {item.ranking != null ? `${item.ranking}등` : '-'}
                         </div>
-                      );
-                    })}
+                        <div className="w-20 text-sm font-medium text-slate-900 text-center">
+                          {item.score != null ? `${item.score}점` : '-'}
+                        </div>
+                        <div className="flex-1 text-sm text-slate-700">
+                          {item.name}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-sm text-slate-500 py-4">
+                      등수 데이터가 없습니다.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
