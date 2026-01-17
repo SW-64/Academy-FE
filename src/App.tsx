@@ -31,8 +31,8 @@ const ParentNoticePage = lazy(() => import('./pages/parent/ParentNoticePage'));
 const ParentNoticeDetailPage = lazy(
   () => import('./pages/parent/ParentNoticeDetailPage')
 );
-const ParentChildrenPage = lazy(
-  () => import('./pages/parent/ParentChildrenPage')
+const ParentHomeworkProgressPage = lazy(
+  () => import('./pages/parent/ParentHomeworkProgressPage')
 );
 const ParentMyPage = lazy(() => import('./pages/parent/ParentMyPage'));
 
@@ -88,7 +88,10 @@ function App() {
             path="/parent/notice/:id"
             element={<ParentNoticeDetailPage />}
           />
-          <Route path="/parent/children" element={<ParentChildrenPage />} />
+          <Route
+            path="/parent/homework-progress"
+            element={<ParentHomeworkProgressPage />}
+          />
           <Route path="/parent/mypage" element={<ParentMyPage />} />
 
           {/* 기존 인증 관련 페이지들 */}
