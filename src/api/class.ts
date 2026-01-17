@@ -199,8 +199,6 @@ export interface ClassTextbookItem {
     textbookId: number;
     name: string;
     grade: number;
-    largeUnit: number;
-    smallUnit: number;
   };
 }
 
