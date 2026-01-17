@@ -34,7 +34,7 @@ export interface StudentItem {
         name: string;
       };
     } | null;
-  };
+  } | null;
 }
 
 export interface StudentDetailResponse {

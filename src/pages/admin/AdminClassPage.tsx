@@ -115,16 +115,16 @@ function AdminClassPage() {
         setIsLoadingAllStudents(true);
         try {
           const response = await getStudents(studentPage, studentsPerPage);
-          const transformedStudents: Student[] = response.data.items.map(
-            item => ({
-              id: item.student.studentId,
+          const transformedStudents: Student[] = response.data.items
+            .filter(item => item.student != null)
+            .map(item => ({
+              id: item.student!.studentId,
               name: item.name,
               email: item.email,
               phone: item.phone,
-              school: item.student.school,
-              grade: `${item.student.grade}학년`,
-            })
-          );
+              school: item.student!.school,
+              grade: `${item.student!.grade}학년`,
+            }));
           setAllStudents(transformedStudents);
           setStudentsMeta(response.data.meta);
         } catch (error) {
@@ -150,16 +150,16 @@ function AdminClassPage() {
         setIsLoadingEditStudents(true);
         try {
           const response = await getStudents(editStudentPage, studentsPerPage);
-          const transformedStudents: Student[] = response.data.items.map(
-            item => ({
-              id: item.student.studentId,
+          const transformedStudents: Student[] = response.data.items
+            .filter(item => item.student != null)
+            .map(item => ({
+              id: item.student!.studentId,
               name: item.name,
               email: item.email,
               phone: item.phone,
-              school: item.student.school,
-              grade: `${item.student.grade}학년`,
-            })
-          );
+              school: item.student!.school,
+              grade: `${item.student!.grade}학년`,
+            }));
           setEditAllStudents(transformedStudents);
           setEditStudentsMeta(response.data.meta);
         } catch (error) {

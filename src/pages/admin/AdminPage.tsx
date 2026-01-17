@@ -108,18 +108,18 @@ function AdminPage() {
         setIsLoadingStudents(true);
         try {
           const response = await getStudents(studentPage, itemsPerPage);
-          // API 응답을 Student 형식으로 변환
-          const transformedStudents: Student[] = response.data.items.map(
-            item => ({
-              id: item.student.studentId,
+          // API 응답을 Student 형식으로 변환 (student가 null인 항목은 제외)
+          const transformedStudents: Student[] = response.data.items
+            .filter(item => item.student != null)
+            .map(item => ({
+              id: item.student!.studentId,
               userId: item.userId,
               name: item.name,
               email: item.email,
               phone: item.phone,
-              school: item.student.school,
-              grade: `${item.student.grade}학년`,
-            })
-          );
+              school: item.student!.school,
+              grade: `${item.student!.grade}학년`,
+            }));
           setStudents(transformedStudents);
           setStudentsMeta(response.data.meta);
           // 캐시 저장
@@ -460,17 +460,17 @@ function AdminPage() {
           setIsLoadingStudents(true);
           try {
             const response = await getStudents(studentPage, itemsPerPage);
-            const transformedStudents: Student[] = response.data.items.map(
-              item => ({
-                id: item.student.studentId,
+            const transformedStudents: Student[] = response.data.items
+              .filter(item => item.student != null)
+              .map(item => ({
+                id: item.student!.studentId,
                 userId: item.userId,
                 name: item.name,
                 email: item.email,
                 phone: item.phone,
-                school: item.student.school,
-                grade: `${item.student.grade}학년`,
-              })
-            );
+                school: item.student!.school,
+                grade: `${item.student!.grade}학년`,
+              }));
             setStudents(transformedStudents);
             setStudentsMeta(response.data.meta);
             // 캐시 저장
@@ -1495,7 +1495,17 @@ function AdminPage() {
                                 </div>
                                 <button
                                   type="button"
-                                  onClick={() => {
+                                  onClick={async () => {
+                                    // 학부모 목록 조회 API 호출
+                                    try {
+                                      await getParents(1, 10);
+                                    } catch (error) {
+                                      console.error(
+                                        '학부모 목록 조회 에러:',
+                                        error
+                                      );
+                                    }
+
                                     setStudentParentLinks(prev => ({
                                       ...prev,
                                       [editingStudent.id]: parent.id,
