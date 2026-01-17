@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import MainLayout from '../MainLayout';
-import { getStudents, getStudentDetail } from '../../api/students';
+import {
+  getStudents,
+  getStudentDetail,
+  linkParent,
+  unlinkParent,
+} from '../../api/students';
 import { getParents, getParentDetail } from '../../api/parents';
 import {
   rejectUser,
@@ -408,6 +413,20 @@ function AdminPage() {
       };
 
       setEditingStudent(transformedStudent);
+
+      // 현재 연동된 학부모 정보 설정
+      if (studentData.parent && studentData.parentId) {
+        setStudentParentLinks(prev => ({
+          ...prev,
+          [studentData.studentId]: studentData.parentId!,
+        }));
+      } else {
+        setStudentParentLinks(prev => {
+          const newLinks = { ...prev };
+          delete newLinks[studentData.studentId];
+          return newLinks;
+        });
+      }
 
       // 학부모 목록 조회
       setIsLoadingAvailableParents(true);
@@ -1397,9 +1416,9 @@ function AdminPage() {
                           );
                         }
 
-                        const linkedParent = parents.find(
-                          p => p.id === linkedParentId
-                        );
+                        const linkedParent =
+                          availableParents.find(p => p.id === linkedParentId) ||
+                          parents.find(p => p.id === linkedParentId);
 
                         if (!linkedParent) {
                           return (
@@ -1424,12 +1443,27 @@ function AdminPage() {
                               </div>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setStudentParentLinks(prev => {
-                                    const newLinks = { ...prev };
-                                    delete newLinks[editingStudent.id];
-                                    return newLinks;
-                                  });
+                                onClick={async () => {
+                                  if (!editingStudent) return;
+                                  try {
+                                    await unlinkParent(
+                                      editingStudent.id,
+                                      linkedParent.id
+                                    );
+                                    setStudentParentLinks(prev => {
+                                      const newLinks = { ...prev };
+                                      delete newLinks[editingStudent.id];
+                                      return newLinks;
+                                    });
+                                    alert('학부모 연동이 해제되었습니다.');
+                                  } catch (error) {
+                                    console.error('연동 해제 에러:', error);
+                                    const errorMessage =
+                                      error instanceof Error
+                                        ? error.message
+                                        : '연동 해제에 실패했습니다.';
+                                    alert(errorMessage);
+                                  }
                                 }}
                                 className="ml-2 rounded-lg border border-red-300 bg-red-50 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
                               >
@@ -1444,18 +1478,9 @@ function AdminPage() {
 
                   {/* 학부모 목록 선택 */}
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium text-slate-700">
-                        학부모 선택
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setIsSignupModalOpen(true)}
-                        className="text-xs text-[#084773] hover:text-[#063a5a] font-medium"
-                      >
-                        + 회원가입
-                      </button>
-                    </div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      학부모 선택
+                    </label>
                     <div className="h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white">
                       {isLoadingAvailableParents ? (
                         <div className="px-3 py-4 text-center text-sm text-slate-500">
@@ -1468,54 +1493,68 @@ function AdminPage() {
                       ) : (
                         <div className="divide-y divide-slate-200">
                           {availableParents.map(parent => {
-                            const isSelected =
+                            const isLinked =
                               studentParentLinks[editingStudent.id] ===
                               parent.id;
                             return (
                               <div
                                 key={parent.id}
-                                className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-colors ${
-                                  isSelected
-                                    ? 'bg-blue-50 hover:bg-blue-100'
-                                    : 'hover:bg-slate-50'
-                                }`}
-                                onClick={() => {
-                                  // 1명만 선택 가능
-                                  if (isSelected) {
-                                    setStudentParentLinks(prev => {
-                                      const newLinks = { ...prev };
-                                      delete newLinks[editingStudent.id];
-                                      return newLinks;
-                                    });
-                                  } else {
-                                    setStudentParentLinks(prev => ({
-                                      ...prev,
-                                      [editingStudent.id]: parent.id,
-                                    }));
-                                  }
-                                }}
+                                className="flex items-center justify-between px-3 py-2 hover:bg-slate-50 transition-colors"
                               >
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                                        isSelected
-                                          ? 'border-[#084773] bg-[#084773]'
-                                          : 'border-slate-300'
-                                      }`}
-                                    >
-                                      {isSelected && (
-                                        <div className="w-2 h-2 rounded-full bg-white" />
-                                      )}
-                                    </div>
-                                    <div className="text-sm font-medium text-slate-900">
-                                      {parent.name}
-                                    </div>
+                                  <div className="text-sm font-medium text-slate-900">
+                                    {parent.name}
                                   </div>
-                                  <div className="text-xs text-slate-500 ml-6">
+                                  <div className="text-xs text-slate-500">
                                     {parent.email} | {parent.phone}
                                   </div>
                                 </div>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (!editingStudent) return;
+                                    try {
+                                      if (isLinked) {
+                                        // 연동 해제
+                                        await unlinkParent(
+                                          editingStudent.id,
+                                          parent.id
+                                        );
+                                        setStudentParentLinks(prev => {
+                                          const newLinks = { ...prev };
+                                          delete newLinks[editingStudent.id];
+                                          return newLinks;
+                                        });
+                                        alert('학부모 연동이 해제되었습니다.');
+                                      } else {
+                                        // 연동 등록
+                                        await linkParent(
+                                          editingStudent.id,
+                                          parent.id
+                                        );
+                                        setStudentParentLinks(prev => ({
+                                          ...prev,
+                                          [editingStudent.id]: parent.id,
+                                        }));
+                                        alert('학부모 연동이 완료되었습니다.');
+                                      }
+                                    } catch (error) {
+                                      console.error('연동 에러:', error);
+                                      const errorMessage =
+                                        error instanceof Error
+                                          ? error.message
+                                          : '연동 처리에 실패했습니다.';
+                                      alert(errorMessage);
+                                    }
+                                  }}
+                                  className={`ml-2 rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+                                    isLinked
+                                      ? 'border border-red-300 bg-red-50 text-red-700 hover:bg-red-100'
+                                      : 'border border-[#084773] bg-[#084773] text-white hover:bg-[#063a5a]'
+                                  }`}
+                                >
+                                  {isLinked ? '연동 해제' : '연동하기'}
+                                </button>
                               </div>
                             );
                           })}
