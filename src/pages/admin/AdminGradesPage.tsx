@@ -179,10 +179,19 @@ function AdminGradesPage() {
   const allExamsByDate = useMemo(() => {
     return exams.map(exam => {
       const date = exam.examDate.split('T')[0]; // YYYY-MM-DD 형식
-      const averageScore =
-        typeof exam.studentAverage === 'number' && !isNaN(exam.studentAverage)
-          ? exam.studentAverage
-          : null;
+
+      // studentAverage가 null이 아니면 숫자로 변환하여 사용
+      let averageScore: number | null = null;
+      if (exam.studentAverage != null) {
+        if (typeof exam.studentAverage === 'number') {
+          averageScore = !isNaN(exam.studentAverage)
+            ? exam.studentAverage
+            : null;
+        } else if (typeof exam.studentAverage === 'string') {
+          const parsed = parseFloat(exam.studentAverage);
+          averageScore = !isNaN(parsed) ? parsed : null;
+        }
+      }
 
       return {
         date,
@@ -228,11 +237,19 @@ function AdminGradesPage() {
         }));
 
         const date = examData.examDate.split('T')[0];
-        const averageScore =
-          typeof examData.studentAverage === 'number' &&
-          !isNaN(examData.studentAverage)
-            ? examData.studentAverage
-            : null;
+
+        // studentAverage가 null이 아니면 숫자로 변환하여 사용
+        let averageScore: number | null = null;
+        if (examData.studentAverage != null) {
+          if (typeof examData.studentAverage === 'number') {
+            averageScore = !isNaN(examData.studentAverage)
+              ? examData.studentAverage
+              : null;
+          } else if (typeof examData.studentAverage === 'string') {
+            const parsed = parseFloat(examData.studentAverage);
+            averageScore = !isNaN(parsed) ? parsed : null;
+          }
+        }
 
         setSelectedExam({
           date,
