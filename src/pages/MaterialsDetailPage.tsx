@@ -2,14 +2,53 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Download } from 'lucide-react';
 import MainLayout from './MainLayout';
-import { dummyMaterials } from './MaterialsPage';
+import { getMaterialDetail } from '../api/materials';
+import { getMaterialDownloadUrl } from '../api/students';
+
+interface MaterialDetail {
+  materialId: number;
+  adminId: number;
+  title: string;
+  description: string;
+  originalFileName: string | null;
+  createdAt: string;
+  updatedAt: string;
+  classIds: number[];
+}
 
 function MaterialsDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [showCalendar, setShowCalendar] = useState(false);
+  const [material, setMaterial] = useState<MaterialDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  const material = dummyMaterials.find(m => m.id === Number(id));
+  // 학습자료 상세 조회
+  useEffect(() => {
+    const fetchMaterialDetail = async () => {
+      if (!id) return;
+
+      try {
+        setIsLoading(true);
+        const response = await getMaterialDetail(Number(id));
+        setMaterial(response.data);
+      } catch (error) {
+        console.error('학습자료 상세 조회 실패:', error);
+        // eslint-disable-next-line no-alert
+        alert(
+          error instanceof Error
+            ? error.message
+            : '학습자료를 불러오는데 실패했습니다.'
+        );
+        navigate('/materials');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMaterialDetail();
+  }, [id, navigate]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -21,15 +60,47 @@ function MaterialsDetailPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleDownload = () => {
-    // 임시 PDF 파일 다운로드
-    const link = document.createElement('a');
-    link.href = '/temp-material.pdf';
-    link.download = `${material?.title || '학습자료'}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async () => {
+    if (!material || !material.originalFileName) {
+      // eslint-disable-next-line no-alert
+      alert('다운로드할 파일이 없습니다.');
+      return;
+    }
+
+    try {
+      setIsDownloading(true);
+      // 다운로드 URL 발급 API 호출
+      const response = await getMaterialDownloadUrl(material.materialId);
+
+      // 발급받은 URL로 파일 다운로드
+      const link = document.createElement('a');
+      link.href = response.data.url;
+      link.download = response.data.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('다운로드 URL 발급 실패:', error);
+      // eslint-disable-next-line no-alert
+      alert(
+        error instanceof Error
+          ? error.message
+          : '파일 다운로드에 실패했습니다.'
+      );
+    } finally {
+      setIsDownloading(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <MainLayout showCalendar={showCalendar}>
+        <div className="flex flex-col items-center justify-center py-12">
+          <p className="text-lg text-slate-600">학습자료를 불러오는 중...</p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (!material) {
     return (
@@ -67,28 +138,17 @@ function MaterialsDetailPage() {
       <div className="rounded-2xl border border-slate-200 bg-white">
         {/* 제목 영역 */}
         <div className="border-b border-slate-200 px-6 py-4">
-          <div className="flex items-center gap-2">
-            {material.hasNewTag && (
-              <span className="inline-flex rounded bg-blue-500 px-1.5 py-0.5 text-[10px] font-medium text-white flex-shrink-0">
-                N
-              </span>
-            )}
-            <h2 className="text-xl font-semibold text-slate-900">
-              {material.title}
-            </h2>
-          </div>
+          <h2 className="text-xl font-semibold text-slate-900">
+            {material.title}
+          </h2>
         </div>
 
-        {/* 작성일/작성자 영역 */}
+        {/* 작성일 영역 */}
         <div className="px-6 pt-4">
           <div className="flex justify-end gap-6 text-sm text-slate-600">
             <div>
-              <span className="font-medium text-slate-700"></span>{' '}
-              {material.createdAt.split(' ')[0]}
-            </div>
-            <div>
-              <span className="font-medium text-slate-700"></span>{' '}
-              {material.author}
+              <span className="font-medium text-slate-700">작성일: </span>
+              {new Date(material.createdAt).toLocaleDateString('ko-KR')}
             </div>
           </div>
         </div>
@@ -96,19 +156,25 @@ function MaterialsDetailPage() {
         {/* 내용 영역 */}
         <div className="px-6 pt-4 pb-6">
           <div className="prose prose-slate max-w-none text-slate-700 whitespace-pre-line">
-            <p className="text-slate-600 mb-4">
-              이 학습자료는 고등학교 수학 교육과정에 맞춰 제작되었습니다.
-            </p>
-            <p className="text-slate-600 mb-4">
-              아래 버튼을 클릭하여 PDF 파일을 다운로드하실 수 있습니다.
-            </p>
-            <button
-              onClick={handleDownload}
-              className="flex items-center gap-2 rounded-lg bg-[#084773] px-4 py-2 text-sm text-white transition-colors hover:bg-[#063a5a]"
-            >
-              <Download className="h-4 w-4" />
-              <span>PDF 다운로드</span>
-            </button>
+            {material.description && (
+              <p className="text-slate-600 mb-4 whitespace-pre-line">
+                {material.description}
+              </p>
+            )}
+            {material.originalFileName && (
+              <button
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="flex items-center gap-2 rounded-lg bg-[#084773] px-4 py-2 text-sm text-white transition-colors hover:bg-[#063a5a] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Download className="h-4 w-4" />
+                <span>
+                  {isDownloading
+                    ? '다운로드 중...'
+                    : `PDF 다운로드 (${material.originalFileName})`}
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </div>

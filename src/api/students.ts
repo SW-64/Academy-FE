@@ -122,3 +122,170 @@ export const getStudentDetail = async (
 
   return response.json();
 };
+
+export interface StudentClassItem {
+  classId: number;
+  className: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudentClassesResponse {
+  statusCode: number;
+  message: string;
+  data: StudentClassItem[];
+}
+
+/**
+ * 현재 로그인한 학생이 속한 클래스 목록을 조회합니다.
+ * @returns 학생이 속한 클래스 목록
+ */
+export const getStudentClasses = async (): Promise<StudentClassesResponse> => {
+  const response = await fetch(`${API_BASE_URL}/students/me/classes`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // 쿠키를 포함하여 요청
+  });
+
+  if (!response.ok) {
+    // 401 Unauthorized 에러인 경우
+    if (response.status === 401) {
+      const errorData = await response.json().catch(() => ({
+        message: '인증이 필요합니다. 다시 로그인해주세요.',
+      }));
+      throw new Error(
+        errorData.message || '인증이 필요합니다. 다시 로그인해주세요.'
+      );
+    }
+    
+    const errorData = await response.json().catch(() => ({
+      message: '클래스 목록을 가져오는데 실패했습니다.',
+    }));
+    throw new Error(
+      errorData.message || '클래스 목록을 가져오는데 실패했습니다.'
+    );
+  }
+
+  return response.json();
+};
+
+export interface StudentMaterialItem {
+  materialId: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  hasFile: boolean;
+}
+
+export interface StudentMaterialsResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    items: StudentMaterialItem[];
+    meta: {
+      totalItems: number;
+      itemCount: number;
+      itemsPerPage: number;
+      totalPages: number;
+      currentPage: number;
+    };
+  };
+}
+
+export interface GetStudentMaterialsParams {
+  page?: number;
+  limit?: number;
+  sort?: string;
+  classId?: number;
+}
+
+/**
+ * 학생용 학습자료 목록을 조회합니다.
+ * @param params 쿼리 파라미터 (page, limit, sort, classId)
+ * @returns 학습자료 목록
+ */
+export const getStudentMaterials = async (
+  params?: GetStudentMaterialsParams
+): Promise<StudentMaterialsResponse> => {
+  const queryParams = new URLSearchParams();
+
+  if (params?.page) {
+    queryParams.append('page', params.page.toString());
+  }
+  if (params?.limit) {
+    queryParams.append('limit', params.limit.toString());
+  }
+  if (params?.sort) {
+    queryParams.append('sort', params.sort);
+  }
+  if (params?.classId) {
+    queryParams.append('classId', params.classId.toString());
+  }
+
+  const url = `${API_BASE_URL}/students/materials${
+    queryParams.toString() ? `?${queryParams.toString()}` : ''
+  }`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // 쿠키를 포함하여 요청
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: '학습자료 목록을 가져오는데 실패했습니다.',
+    }));
+    throw new Error(
+      errorData.message || '학습자료 목록을 가져오는데 실패했습니다.'
+    );
+  }
+
+  return response.json();
+};
+
+export interface MaterialDownloadUrlResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    materialId: number;
+    url: string;
+    expiresInSeconds: number;
+    fileName: string;
+  };
+}
+
+/**
+ * 학습자료 다운로드 URL을 발급합니다.
+ * @param materialId 학습자료 ID
+ * @returns 다운로드 URL 정보
+ */
+export const getMaterialDownloadUrl = async (
+  materialId: number
+): Promise<MaterialDownloadUrlResponse> => {
+  const response = await fetch(
+    `${API_BASE_URL}/students/materials/${materialId}/download-url`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // 쿠키를 포함하여 요청
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: '다운로드 URL 발급에 실패했습니다.',
+    }));
+    throw new Error(
+      errorData.message || '다운로드 URL 발급에 실패했습니다.'
+    );
+  }
+
+  return response.json();
+};
