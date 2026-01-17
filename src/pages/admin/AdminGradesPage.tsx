@@ -118,12 +118,9 @@ function AdminGradesPage() {
   }, [refreshExams]);
   const [selectedExam, setSelectedExam] = useState<{
     date: string;
-    dateFormatted: string;
     name: string;
     examId?: number;
-    records: ExamRecord[];
-    averageScore: number;
-    totalStudents: number;
+    averageScore: number | null;
     questions?: {
       questionNumber: number;
       points: number;
@@ -182,23 +179,16 @@ function AdminGradesPage() {
   const allExamsByDate = useMemo(() => {
     return exams.map(exam => {
       const date = exam.examDate.split('T')[0]; // YYYY-MM-DD 형식
-      // 날짜 문자열에서 직접 월과 일 추출 (타임존 변환 방지)
-      const [, month, day] = date.split('-').map(Number);
-      const dateFormatted = `${String(month).padStart(2, '0')}/${String(
-        day
-      ).padStart(2, '0')}`;
+      const averageScore =
+        typeof exam.studentAverage === 'number' && !isNaN(exam.studentAverage)
+          ? exam.studentAverage
+          : null;
 
       return {
         date,
-        dateFormatted,
         name: exam.examTitle,
         examId: exam.examId,
-        records: [] as ExamRecord[], // 시험 상세는 별도 API로 가져와야 함
-        averageScore:
-          typeof exam.studentAverage === 'number' && !isNaN(exam.studentAverage)
-            ? exam.studentAverage
-            : 0,
-        totalStudents: 0, // 시험 상세에서 가져와야 함
+        averageScore,
       };
     });
   }, [exams]);
@@ -216,7 +206,9 @@ function AdminGradesPage() {
         if (sortOption === 'latest') {
           return new Date(b.date).getTime() - new Date(a.date).getTime();
         } else {
-          return b.averageScore - a.averageScore;
+          const scoreA = a.averageScore ?? -1;
+          const scoreB = b.averageScore ?? -1;
+          return scoreB - scoreA;
         }
       });
   }, [allExamsByDate, selectedMonth, sortOption]);
@@ -236,24 +228,17 @@ function AdminGradesPage() {
         }));
 
         const date = examData.examDate.split('T')[0];
-        // 날짜 문자열에서 직접 월과 일 추출 (타임존 변환 방지)
-        const [, month, day] = date.split('-').map(Number);
-        const dateFormatted = `${String(month).padStart(2, '0')}/${String(
-          day
-        ).padStart(2, '0')}`;
+        const averageScore =
+          typeof examData.studentAverage === 'number' &&
+          !isNaN(examData.studentAverage)
+            ? examData.studentAverage
+            : null;
 
         setSelectedExam({
           date,
-          dateFormatted,
           name: examData.examTitle,
           examId: examData.examId,
-          records: [] as ExamRecord[],
-          averageScore:
-            typeof examData.studentAverage === 'number' &&
-            !isNaN(examData.studentAverage)
-              ? examData.studentAverage
-              : 0,
-          totalStudents: 0,
+          averageScore,
           questions: examQuestions,
         });
         setEditDate(date);
@@ -345,16 +330,10 @@ function AdminGradesPage() {
       alert(response.message || '수정이 완료되었습니다.');
 
       // selectedExam 업데이트
-      const [, month, day] = editDate.split('-').map(Number);
-      const dateFormatted = `${String(month).padStart(2, '0')}/${String(
-        day
-      ).padStart(2, '0')}`;
-
       setSelectedExam({
         ...selectedExam,
         name: editExamName,
         date: editDate,
-        dateFormatted,
         questions: editQuestions,
       });
 
@@ -772,8 +751,8 @@ function AdminGradesPage() {
                               {exam.date}
                             </td>
                             <td className="px-4 py-3 text-sm font-medium text-slate-900 text-right">
-                              {typeof exam.averageScore === 'number' &&
-                              exam.averageScore > 0
+                              {exam.averageScore != null &&
+                              typeof exam.averageScore === 'number'
                                 ? `${exam.averageScore.toFixed(1)}점`
                                 : '-'}
                             </td>
@@ -1036,10 +1015,10 @@ function AdminGradesPage() {
                     평균 점수:
                   </label>
                   <span className="text-sm text-slate-900">
-                    {typeof selectedExam.averageScore === 'number'
-                      ? selectedExam.averageScore.toFixed(1)
-                      : '0.0'}
-                    점
+                    {selectedExam.averageScore != null &&
+                    typeof selectedExam.averageScore === 'number'
+                      ? `${selectedExam.averageScore.toFixed(1)}점`
+                      : '-'}
                   </span>
                 </div>
               </div>
