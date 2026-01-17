@@ -301,9 +301,12 @@ function AdminGradesPage() {
       const questionNumbers = editQuestions.map(q => q.questionNumber);
       const points = editQuestions.map(q => q.points);
 
+      // 날짜를 해당 날짜의 0시(자정)로 설정하여 시간대 문제 방지
+      const examDate = `${editDate}T00:00:00`;
+
       const response = await updateExam(selectedClassId, selectedExam.examId, {
         examTitle: editExamName,
-        examDate: editDate,
+        examDate: examDate,
         question: questionNumbers,
         points: points,
       });
@@ -389,9 +392,12 @@ function AdminGradesPage() {
       const questionNumbers = newExam.questions.map(q => q.questionNumber);
       const points = newExam.questions.map(q => q.points);
 
+      // 날짜를 해당 날짜의 0시(자정)로 설정하여 시간대 문제 방지
+      const examDate = `${newExam.date}T00:00:00`;
+
       const response = await createExam(selectedClassId, {
         examTitle: newExam.name,
-        examDate: newExam.date,
+        examDate: examDate,
         question: questionNumbers,
         points: points,
       });
