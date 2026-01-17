@@ -68,7 +68,7 @@ function App() {
           <Route path="/admin/students" element={<AdminPage />} />
           <Route path="/admin/notice" element={<AdminNoticePage />} />
           <Route path="/admin/grades" element={<AdminGradesPage />} />
-          <Route path="/admin/grades/:examDate" element={<ExamDetailPage />} />
+          <Route path="/admin/grades/:examId" element={<ExamDetailPage />} />
           <Route path="/admin/materials" element={<AdminMaterialsPage />} />
           <Route path="/admin/videos" element={<AdminVideosPage />} />
           <Route path="/admin/homework" element={<AdminHomeworkPage />} />

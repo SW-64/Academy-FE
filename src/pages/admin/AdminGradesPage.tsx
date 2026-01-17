@@ -722,6 +722,9 @@ function AdminGradesPage() {
                         <th className="px-4 py-3 text-left text-sm font-bold text-slate-900">
                           회차
                         </th>
+                        <th className="px-4 py-3 text-left text-sm font-bold text-slate-900">
+                          날짜
+                        </th>
                         <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
                           평균 점수
                         </th>
@@ -734,7 +737,7 @@ function AdminGradesPage() {
                       {isLoadingExams ? (
                         <tr>
                           <td
-                            colSpan={3}
+                            colSpan={4}
                             className="px-4 py-8 text-center text-sm text-slate-500"
                           >
                             시험 목록을 불러오는 중...
@@ -743,7 +746,7 @@ function AdminGradesPage() {
                       ) : filteredExams.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={3}
+                            colSpan={4}
                             className="px-4 py-8 text-center text-sm text-slate-500"
                           >
                             {selectedMonth}월에 시험 기록이 없습니다.
@@ -757,6 +760,9 @@ function AdminGradesPage() {
                           >
                             <td className="px-4 py-3 text-sm text-slate-900">
                               {exam.name}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-700">
+                              {exam.date}
                             </td>
                             <td className="px-4 py-3 text-sm font-medium text-slate-900 text-right">
                               {exam.averageScore > 0
@@ -776,10 +782,7 @@ function AdminGradesPage() {
                                   type="button"
                                   onClick={() =>
                                     navigate(
-                                      `/admin/grades/${exam.date.replace(
-                                        /-/g,
-                                        ''
-                                      )}?classId=${selectedClassId}`
+                                      `/admin/grades/${exam.examId}?classId=${selectedClassId}`
                                     )
                                   }
                                   className="rounded-lg bg-[#084773] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#063a5a]"
