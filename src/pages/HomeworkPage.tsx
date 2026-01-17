@@ -51,12 +51,18 @@ function HomeworkPage() {
         setIsLoadingTextbooks(true);
         try {
           const response = await getClassTextbooks(selectedClassId);
-          setTextbooks(response.data);
+          if (response && response.data) {
+            setTextbooks(response.data);
+          } else {
+            setTextbooks([]);
+          }
           setSelectedTextbookId(null);
           setHomeworkProgress(null);
         } catch (error) {
           console.error('교재 목록 조회 에러:', error);
           setTextbooks([]);
+          setSelectedTextbookId(null);
+          setHomeworkProgress(null);
         } finally {
           setIsLoadingTextbooks(false);
         }
@@ -80,7 +86,11 @@ function HomeworkPage() {
             selectedClassId,
             selectedTextbookId
           );
-          setHomeworkProgress(response.data);
+          if (response && response.data) {
+            setHomeworkProgress(response.data);
+          } else {
+            setHomeworkProgress(null);
+          }
         } catch (error) {
           console.error('숙제 진도 조회 에러:', error);
           setHomeworkProgress(null);
@@ -97,29 +107,45 @@ function HomeworkPage() {
 
   // 진행도 계산
   const calculateProgress = () => {
-    if (!homeworkProgress) {
+    if (
+      !homeworkProgress ||
+      !homeworkProgress.student ||
+      !homeworkProgress.chapters
+    ) {
       return {
         completed: 0,
+        inProgress: 0,
         total: 0,
         percentage: 0,
       };
     }
 
-    const cells = homeworkProgress.student.cells;
-    const total = homeworkProgress.chapters.length;
-    const completed = Object.values(cells).filter(
-      cell => cell?.status === 'COMPLETED'
-    ).length;
-    const inProgress = Object.values(cells).filter(
-      cell => cell?.status === 'IN_PROGRESS'
-    ).length;
+    try {
+      const cells = homeworkProgress.student.cells || {};
+      const chapters = homeworkProgress.chapters || [];
+      const total = chapters.length;
+      const completed = Object.values(cells).filter(
+        cell => cell?.status === 'COMPLETED'
+      ).length;
+      const inProgress = Object.values(cells).filter(
+        cell => cell?.status === 'IN_PROGRESS'
+      ).length;
 
-    return {
-      completed,
-      inProgress,
-      total,
-      percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
-    };
+      return {
+        completed,
+        inProgress,
+        total,
+        percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+      };
+    } catch (error) {
+      console.error('진행도 계산 에러:', error);
+      return {
+        completed: 0,
+        inProgress: 0,
+        total: 0,
+        percentage: 0,
+      };
+    }
   };
 
   const progressData = calculateProgress();
@@ -244,14 +270,13 @@ function HomeworkPage() {
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="mb-6">
                 <h3 className="text-xl font-semibold text-slate-900">
-                  {
-                    textbooks.find(
-                      t => t.textbook.textbookId === selectedTextbookId
-                    )?.textbook.name
-                  }
+                  {textbooks.find(
+                    t => t.textbook.textbookId === selectedTextbookId
+                  )?.textbook.name || '교재 정보 없음'}
                 </h3>
                 <p className="mt-1 text-sm text-slate-600">
-                  {classes.find(c => c.classId === selectedClassId)?.className}
+                  {classes.find(c => c.classId === selectedClassId)
+                    ?.className || '클래스 정보 없음'}
                 </p>
               </div>
 
@@ -275,44 +300,53 @@ function HomeworkPage() {
                 <h4 className="text-sm font-semibold text-slate-900">
                   단원별 진도
                 </h4>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                  {homeworkProgress.chapters.map(chapter => {
-                    const cell =
-                      homeworkProgress.student.cells[
-                        chapter.chapterId.toString()
-                      ];
-                    const status = cell?.status || 'NOT_STARTED';
-                    const percent = cell?.percent || 0;
+                {homeworkProgress.chapters &&
+                homeworkProgress.chapters.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                    {homeworkProgress.chapters.map(chapter => {
+                      const cell =
+                        homeworkProgress.student?.cells?.[
+                          chapter.chapterId.toString()
+                        ];
+                      const status = cell?.status || 'NOT_STARTED';
+                      const percent = cell?.percent || 0;
 
-                    return (
-                      <div
-                        key={chapter.chapterId}
-                        className={`rounded-lg border-2 p-3 text-center transition-all ${
-                          status === 'COMPLETED'
-                            ? 'border-green-500 bg-green-50'
-                            : status === 'IN_PROGRESS'
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-slate-200 bg-slate-50'
-                        }`}
-                      >
-                        <p className="text-sm font-semibold text-slate-900">
-                          {chapter.label}
-                        </p>
-                        {status === 'IN_PROGRESS' && (
-                          <p className="mt-1 text-xs text-slate-600">
-                            {percent}%
+                      return (
+                        <div
+                          key={chapter.chapterId}
+                          className={`rounded-lg border-2 p-3 text-center transition-all ${
+                            status === 'COMPLETED'
+                              ? 'border-green-500 bg-green-50'
+                              : status === 'IN_PROGRESS'
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-slate-200 bg-slate-50'
+                          }`}
+                        >
+                          <p className="text-sm font-semibold text-slate-900">
+                            {chapter.label || '단원 정보 없음'}
                           </p>
-                        )}
-                        {status === 'COMPLETED' && (
-                          <p className="mt-1 text-xs text-green-700">완료</p>
-                        )}
-                        {status === 'NOT_STARTED' && (
-                          <p className="mt-1 text-xs text-slate-500">미시작</p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                          {status === 'IN_PROGRESS' && (
+                            <p className="mt-1 text-xs text-slate-600">
+                              {percent}%
+                            </p>
+                          )}
+                          {status === 'COMPLETED' && (
+                            <p className="mt-1 text-xs text-green-700">완료</p>
+                          )}
+                          {status === 'NOT_STARTED' && (
+                            <p className="mt-1 text-xs text-slate-500">
+                              미시작
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-600">
+                    단원 정보가 없습니다.
+                  </p>
+                )}
               </div>
             </div>
           ) : (
