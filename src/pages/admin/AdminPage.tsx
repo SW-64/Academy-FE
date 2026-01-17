@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import MainLayout from '../MainLayout';
 import { getStudents, getStudentDetail } from '../../api/students';
 import { getParents, getParentDetail } from '../../api/parents';
@@ -13,6 +13,7 @@ import {
   type PendingUser,
   type BlacklistUser,
 } from '../../api/users';
+import { signup } from '../../api/auth';
 
 // 빈 데이터
 const initialStudents: Student[] = [];
@@ -268,14 +269,24 @@ function AdminPage() {
     Record<number, number>
   >({});
 
-  // 부모 검색 상태
-  const [parentSearchQuery, setParentSearchQuery] = useState('');
+  // 학부모 목록 상태 (학생 수정 시 표시)
+  const [availableParents, setAvailableParents] = useState<Parent[]>([]);
+  const [isLoadingAvailableParents, setIsLoadingAvailableParents] =
+    useState(false);
 
-  // 검색 결과 상태 (검색 버튼을 눌렀을 때만 표시)
-  const [searchResults, setSearchResults] = useState<Parent[]>([]);
-
-  // 검색 실행 여부
-  const [hasSearched, setHasSearched] = useState(false);
+  // 회원가입 모달 상태
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [signupForm, setSignupForm] = useState({
+    name: '',
+    email: '',
+    role: 'STUDENT' as 'STUDENT' | 'PARENT',
+    phone: '',
+    password: '',
+    passwordConfirm: '',
+    signupSchool: '',
+    signupGrade: 1,
+  });
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
   // 삭제 확인 모달 상태
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -397,9 +408,31 @@ function AdminPage() {
       };
 
       setEditingStudent(transformedStudent);
-      setParentSearchQuery(''); // 검색어 초기화
-      setSearchResults([]); // 검색 결과 초기화
-      setHasSearched(false); // 검색 여부 초기화
+
+      // 학부모 목록 조회
+      setIsLoadingAvailableParents(true);
+      try {
+        const parentsResponse = await getParents(1, 100); // 충분한 수량 조회
+        const transformedParents: Parent[] = parentsResponse.data.items.map(
+          item => ({
+            id: item.parent.parentId,
+            userId: item.userId,
+            name: item.name,
+            email: item.email,
+            phone: item.phone,
+            linkedStudent:
+              item.parent.student.length > 0
+                ? item.parent.student.map(s => s.user.name).join(', ')
+                : '-',
+          })
+        );
+        setAvailableParents(transformedParents);
+      } catch (error) {
+        console.error('학부모 목록 조회 에러:', error);
+        setAvailableParents([]);
+      } finally {
+        setIsLoadingAvailableParents(false);
+      }
 
       // 학교 이름에서 "고등학교" 제거한 앞부분만 추출
       const schoolName = studentData.school.replace('고등학교', '');
@@ -648,33 +681,6 @@ function AdminPage() {
           : `${editingParent?.name} 학부모의 비밀번호가 초기화되었습니다. (데모)`
       );
     }
-  };
-
-  // 부모 검색 함수 (검색 버튼 클릭 시 실행)
-  const handleSearchParents = () => {
-    if (!editingStudent) return;
-
-    const linkedParentId = studentParentLinks[editingStudent.id];
-    const query = parentSearchQuery.trim().toLowerCase();
-
-    // 검색어가 있으면 필터링, 없으면 모든 부모 표시
-    const filtered = parents.filter(parent => {
-      // 이미 연동된 부모는 제외
-      if (linkedParentId && parent.id === linkedParentId) {
-        return false;
-      }
-      // 검색어 필터링
-      if (query) {
-        return (
-          parent.name.toLowerCase().includes(query) ||
-          parent.email.toLowerCase().includes(query)
-        );
-      }
-      return true;
-    });
-
-    setSearchResults(filtered);
-    setHasSearched(true);
   };
 
   return (
@@ -1436,95 +1442,87 @@ function AdminPage() {
                     </div>
                   </div>
 
-                  {/* 부모 검색 */}
+                  {/* 학부모 목록 선택 */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      부모 검색
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={parentSearchQuery}
-                        onChange={e => setParentSearchQuery(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') {
-                            handleSearchParents();
-                          }
-                        }}
-                        placeholder="부모 이름 또는 이메일로 검색..."
-                        className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                      />
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-slate-700">
+                        학부모 선택
+                      </label>
                       <button
                         type="button"
-                        onClick={handleSearchParents}
-                        className="rounded-lg border border-[#084773] bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a] flex items-center gap-1"
+                        onClick={() => setIsSignupModalOpen(true)}
+                        className="text-xs text-[#084773] hover:text-[#063a5a] font-medium"
                       >
-                        <Search className="h-4 w-4" />
-                        검색
+                        + 회원가입
                       </button>
                     </div>
-                  </div>
-
-                  {/* 검색 가능한 부모 목록 (검색 버튼을 눌렀을 때만 표시) */}
-                  {hasSearched && (
-                    <div className="mt-3">
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        검색 결과
-                      </label>
-                      <div className="h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white">
-                        {searchResults.length === 0 ? (
-                          <div className="px-3 py-4 text-center text-sm text-slate-500">
-                            {parentSearchQuery.trim()
-                              ? '검색 결과가 없습니다.'
-                              : '검색 결과가 없습니다.'}
-                          </div>
-                        ) : (
-                          <div className="divide-y divide-slate-200">
-                            {searchResults.map(parent => (
+                    <div className="h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white">
+                      {isLoadingAvailableParents ? (
+                        <div className="px-3 py-4 text-center text-sm text-slate-500">
+                          학부모 목록을 불러오는 중...
+                        </div>
+                      ) : availableParents.length === 0 ? (
+                        <div className="px-3 py-4 text-center text-sm text-slate-500">
+                          학부모 목록이 없습니다.
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-slate-200">
+                          {availableParents.map(parent => {
+                            const isSelected =
+                              studentParentLinks[editingStudent.id] ===
+                              parent.id;
+                            return (
                               <div
                                 key={parent.id}
-                                className="flex items-center justify-between px-3 py-2 hover:bg-slate-50"
-                              >
-                                <div className="flex-1">
-                                  <div className="text-sm font-medium text-slate-900">
-                                    {parent.name}
-                                  </div>
-                                  <div className="text-xs text-slate-500">
-                                    {parent.email} | {parent.phone}
-                                  </div>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    // 학부모 목록 조회 API 호출
-                                    try {
-                                      await getParents(1, 10);
-                                    } catch (error) {
-                                      console.error(
-                                        '학부모 목록 조회 에러:',
-                                        error
-                                      );
-                                    }
-
+                                className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-colors ${
+                                  isSelected
+                                    ? 'bg-blue-50 hover:bg-blue-100'
+                                    : 'hover:bg-slate-50'
+                                }`}
+                                onClick={() => {
+                                  // 1명만 선택 가능
+                                  if (isSelected) {
+                                    setStudentParentLinks(prev => {
+                                      const newLinks = { ...prev };
+                                      delete newLinks[editingStudent.id];
+                                      return newLinks;
+                                    });
+                                  } else {
                                     setStudentParentLinks(prev => ({
                                       ...prev,
                                       [editingStudent.id]: parent.id,
                                     }));
-                                    setSearchResults([]);
-                                    setHasSearched(false);
-                                    setParentSearchQuery('');
-                                  }}
-                                  className="ml-2 rounded-lg border border-[#084773] bg-[#084773] px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-[#063a5a]"
-                                >
-                                  연동
-                                </button>
+                                  }
+                                }}
+                              >
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                        isSelected
+                                          ? 'border-[#084773] bg-[#084773]'
+                                          : 'border-slate-300'
+                                      }`}
+                                    >
+                                      {isSelected && (
+                                        <div className="w-2 h-2 rounded-full bg-white" />
+                                      )}
+                                    </div>
+                                    <div className="text-sm font-medium text-slate-900">
+                                      {parent.name}
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-slate-500 ml-6">
+                                    {parent.email} | {parent.phone}
+                                  </div>
+                                </div>
                               </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 
@@ -1579,6 +1577,287 @@ function AdminPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 회원가입 모달 */}
+      {isSignupModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div
+            className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignupModalOpen(false);
+                setSignupForm({
+                  name: '',
+                  email: '',
+                  role: 'STUDENT',
+                  phone: '',
+                  password: '',
+                  passwordConfirm: '',
+                  signupSchool: '',
+                  signupGrade: 1,
+                });
+              }}
+              className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h2 className="mb-4 text-xl font-semibold text-slate-900">
+              회원가입
+            </h2>
+
+            <form
+              onSubmit={async e => {
+                e.preventDefault();
+                setIsSigningUp(true);
+                try {
+                  const signupData: {
+                    name: string;
+                    email: string;
+                    role: 'STUDENT' | 'PARENT';
+                    phone: string;
+                    password: string;
+                    passwordConfirm: string;
+                    signupSchool?: string;
+                    signupGrade?: number;
+                  } = {
+                    name: signupForm.name.trim(),
+                    email: signupForm.email.trim(),
+                    role: signupForm.role,
+                    phone: signupForm.phone.trim(),
+                    password: signupForm.password,
+                    passwordConfirm: signupForm.passwordConfirm,
+                  };
+
+                  if (signupForm.role === 'STUDENT') {
+                    signupData.signupSchool = signupForm.signupSchool.trim();
+                    signupData.signupGrade = Number(signupForm.signupGrade);
+                  }
+
+                  const response = await signup(signupData);
+                  alert(response.message || '회원가입이 완료되었습니다.');
+
+                  // 학부모 목록 새로고침
+                  if (signupForm.role === 'PARENT' && editingStudent) {
+                    const parentsResponse = await getParents(1, 100);
+                    const transformedParents: Parent[] =
+                      parentsResponse.data.items.map(item => ({
+                        id: item.parent.parentId,
+                        userId: item.userId,
+                        name: item.name,
+                        email: item.email,
+                        phone: item.phone,
+                        linkedStudent:
+                          item.parent.student.length > 0
+                            ? item.parent.student
+                                .map(s => s.user.name)
+                                .join(', ')
+                            : '-',
+                      }));
+                    setAvailableParents(transformedParents);
+                  }
+
+                  setIsSignupModalOpen(false);
+                  setSignupForm({
+                    name: '',
+                    email: '',
+                    role: 'STUDENT',
+                    phone: '',
+                    password: '',
+                    passwordConfirm: '',
+                    signupSchool: '',
+                    signupGrade: 1,
+                  });
+                } catch (error) {
+                  alert(
+                    error instanceof Error
+                      ? error.message
+                      : '회원가입에 실패했습니다.'
+                  );
+                } finally {
+                  setIsSigningUp(false);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  이름 *
+                </label>
+                <input
+                  type="text"
+                  value={signupForm.name}
+                  onChange={e =>
+                    setSignupForm({ ...signupForm, name: e.target.value })
+                  }
+                  required
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  이메일 *
+                </label>
+                <input
+                  type="email"
+                  value={signupForm.email}
+                  onChange={e =>
+                    setSignupForm({ ...signupForm, email: e.target.value })
+                  }
+                  required
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  역할 *
+                </label>
+                <select
+                  value={signupForm.role}
+                  onChange={e =>
+                    setSignupForm({
+                      ...signupForm,
+                      role: e.target.value as 'STUDENT' | 'PARENT',
+                    })
+                  }
+                  required
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                >
+                  <option value="STUDENT">학생</option>
+                  <option value="PARENT">학부모</option>
+                </select>
+              </div>
+
+              {signupForm.role === 'STUDENT' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      학교 *
+                    </label>
+                    <input
+                      type="text"
+                      value={signupForm.signupSchool}
+                      onChange={e =>
+                        setSignupForm({
+                          ...signupForm,
+                          signupSchool: e.target.value,
+                        })
+                      }
+                      required
+                      placeholder="예: 서울고등학교"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      학년 *
+                    </label>
+                    <select
+                      value={signupForm.signupGrade}
+                      onChange={e =>
+                        setSignupForm({
+                          ...signupForm,
+                          signupGrade: Number(e.target.value),
+                        })
+                      }
+                      required
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                    >
+                      <option value={1}>1학년</option>
+                      <option value={2}>2학년</option>
+                      <option value={3}>3학년</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  전화번호 *
+                </label>
+                <input
+                  type="tel"
+                  value={signupForm.phone}
+                  onChange={e =>
+                    setSignupForm({ ...signupForm, phone: e.target.value })
+                  }
+                  required
+                  placeholder="01012345678"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  비밀번호 *
+                </label>
+                <input
+                  type="password"
+                  value={signupForm.password}
+                  onChange={e =>
+                    setSignupForm({ ...signupForm, password: e.target.value })
+                  }
+                  required
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  비밀번호 확인 *
+                </label>
+                <input
+                  type="password"
+                  value={signupForm.passwordConfirm}
+                  onChange={e =>
+                    setSignupForm({
+                      ...signupForm,
+                      passwordConfirm: e.target.value,
+                    })
+                  }
+                  required
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignupModalOpen(false);
+                    setSignupForm({
+                      name: '',
+                      email: '',
+                      role: 'STUDENT',
+                      phone: '',
+                      password: '',
+                      passwordConfirm: '',
+                      signupSchool: '',
+                      signupGrade: 1,
+                    });
+                  }}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSigningUp}
+                  className="rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a] disabled:opacity-50"
+                >
+                  {isSigningUp ? '가입 중...' : '회원가입'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -94,3 +94,50 @@ export const logout = async (): Promise<void> => {
     throw new Error(errorData.message || '로그아웃에 실패했습니다.');
   }
 };
+
+export interface SignupRequest {
+  name: string;
+  email: string;
+  role: 'STUDENT' | 'PARENT';
+  phone: string;
+  password: string;
+  passwordConfirm: string;
+  signupSchool?: string;
+  signupGrade?: number;
+}
+
+export interface SignupResponse {
+  statusCode: number;
+  message: string;
+  data?: {
+    userId: number;
+    email: string;
+    name: string;
+    role: string;
+  };
+}
+
+/**
+ * 회원가입을 수행합니다.
+ */
+export const signup = async (
+  data: SignupRequest
+): Promise<SignupResponse> => {
+  const response = await fetch(`${API_BASE_URL}/auth/sign-up`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: '회원가입에 실패했습니다.',
+    }));
+    throw new Error(errorData.message || '회원가입에 실패했습니다.');
+  }
+
+  return response.json();
+};
