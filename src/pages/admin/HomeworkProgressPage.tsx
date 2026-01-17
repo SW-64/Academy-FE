@@ -24,13 +24,6 @@ type Textbook = {
   grade: string;
   classIds: number[];
   classNames: string[];
-  majorUnitCount: number;
-  minorUnitCount: number;
-  subUnits: Array<{
-    id: string;
-    name: string;
-    subUnitCount: number;
-  }>;
 };
 
 type ProgressStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
@@ -106,10 +99,6 @@ function HomeworkProgressPage() {
         grade: `${item.textbook.grade}학년`,
         classIds: [item.classId],
         classNames: [],
-        unitCount: item.textbook.largeUnit,
-        majorUnitCount: item.textbook.largeUnit,
-        minorUnitCount: item.textbook.smallUnit,
-        subUnits: [],
       }));
       setTextbooks(transformedTextbooks);
     } catch (error) {

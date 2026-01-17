@@ -4,8 +4,6 @@ export interface Textbook {
   textbookId: number;
   name: string;
   grade: number;
-  largeUnit: number;
-  smallUnit: number;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -32,8 +30,6 @@ export interface TextbookDetailResponse {
     textbookId: number;
     name: string;
     grade: number;
-    largeUnit: number;
-    smallUnit: number;
     classTextbooks: ClassTextbook[];
   };
 }
@@ -41,8 +37,7 @@ export interface TextbookDetailResponse {
 export interface CreateTextbookRequest {
   name: string;
   grade: number;
-  largeUnit: number;
-  smallUnit: number;
+  units: number[];
   classList: number[];
 }
 
@@ -52,8 +47,6 @@ export interface CreateTextbookResponse {
   data: {
     name: string;
     grade: number;
-    largeUnit: number;
-    smallUnit: number;
     textbookId: number;
     createdAt: string;
     updatedAt: string;
@@ -62,9 +55,10 @@ export interface CreateTextbookResponse {
 }
 
 export interface UpdateTextbookRequest {
-  name: string;
-  grade: number;
-  classList: number[];
+  name?: string;
+  grade?: number;
+  units?: number[];
+  classList?: number[];
 }
 
 export interface UpdateTextbookResponse {
