@@ -333,9 +333,6 @@ function AdminGradesPage() {
 
       alert(response.message || '수정이 완료되었습니다.');
 
-      // 시험 목록 새로고침
-      await refreshExams();
-
       // selectedExam 업데이트
       const [, month, day] = editDate.split('-').map(Number);
       const dateFormatted = `${String(month).padStart(2, '0')}/${String(
@@ -351,6 +348,14 @@ function AdminGradesPage() {
       });
 
       setIsEditMode(false);
+
+      // 시험 목록 새로고침 (상태 업데이트 후 실행)
+      try {
+        await refreshExams();
+      } catch (refreshError) {
+        console.error('시험 목록 새로고침 에러:', refreshError);
+        // 새로고침 실패해도 사용자에게는 알리지 않음 (이미 시험 수정은 성공했으므로)
+      }
     } catch (error) {
       console.error('시험 수정 에러:', error);
       const errorMessage =
@@ -440,11 +445,17 @@ function AdminGradesPage() {
 
       alert(response.message || '시험이 추가되었습니다.');
 
-      // 시험 목록 새로고침
-      await refreshExams();
-
+      // 모달 닫기 및 폼 초기화
       setNewExam({ name: '', date: '', questions: [] });
       setIsAddExamModalOpen(false);
+
+      // 시험 목록 새로고침 (모달 닫은 후 실행)
+      try {
+        await refreshExams();
+      } catch (refreshError) {
+        console.error('시험 목록 새로고침 에러:', refreshError);
+        // 새로고침 실패해도 사용자에게는 알리지 않음 (이미 시험 생성은 성공했으므로)
+      }
     } catch (error) {
       console.error('시험 생성 에러:', error);
       const errorMessage =
