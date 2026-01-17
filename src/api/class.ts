@@ -355,7 +355,7 @@ export interface ExamItem {
   examId: number;
   examTitle: string;
   examDate: string;
-  studentAverage: number | null;
+  studentAverage: number | string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -416,7 +416,7 @@ export interface ExamDetailResponse {
     examId: number;
     examTitle: string;
     examDate: string;
-    studentAverage: number | null;
+    studentAverage: number | string | null;
     createdAt: string;
     updatedAt: string;
     examDetails: ExamDetail[];
