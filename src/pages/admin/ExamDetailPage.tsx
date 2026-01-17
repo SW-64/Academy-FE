@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import MainLayout from '../MainLayout';
+import { getWrongAnswers } from '../../api/class';
+
 // 타입 정의
 export type ExamRecord = {
   studentId: number;
@@ -15,13 +17,13 @@ export type ExamRecord = {
   differenceFromTarget: number;
   wrongAnswers?: number[];
   classId?: number;
+  school?: string;
+  isTaken?: boolean;
+  scoreForAvg?: number | null;
 };
 
-// 빈 데이터
-const examRecords: ExamRecord[] = [];
-
 function ExamDetailPage() {
-  const { examDate } = useParams<{ examDate: string }>();
+  const { examId } = useParams<{ examId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const classId = searchParams.get('classId');
@@ -31,6 +33,8 @@ function ExamDetailPage() {
     questions: { questionNumber: number; points: number }[];
     records: ExamRecord[];
   } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showErrorRate, setShowErrorRate] = useState(false);
   const [showStudentAnswers, setShowStudentAnswers] = useState(false);
   const [showRanking, setShowRanking] = useState(false);
@@ -39,92 +43,102 @@ function ExamDetailPage() {
     Record<number, number[]>
   >({});
 
+  // 시험 오답 문제 조회 API
   useEffect(() => {
-    if (!examDate) return;
-
-    // 해당 날짜의 시험 기록 가져오기
-    const records = examRecords.filter(r => r.date === examDate);
-    if (records.length === 0) {
+    if (!examId || !classId) {
       navigate('/admin/grades');
       return;
     }
 
-    // 더미 문항 데이터 (실제로는 시험 저장 시 함께 저장되어야 함)
-    const questionCount = 25;
-    const questions = Array.from({ length: questionCount }, (_, i) => ({
-      questionNumber: i + 1,
-      points: 1,
-    }));
+    const cid = Number(classId);
+    const eid = Number(examId);
+    if (isNaN(cid) || isNaN(eid)) {
+      navigate('/admin/grades');
+      return;
+    }
 
-    // 학생별 무작위 오답 생성
-    // 일부 문제는 많은 학생들이 틀리도록 설정 (50% 이상 오답률을 만들기 위해)
-    const wrongAnswersMap: Record<number, number[]> = {};
-    const popularWrongQuestions = [3, 7, 12, 18, 22]; // 많은 학생이 틀릴 문제들
+    const fetchWrongAnswers = async () => {
+      setIsLoading(true);
+      setLoadError(null);
+      try {
+        const res = await getWrongAnswers(cid, eid);
+        const { exam, questions, students } = res.data;
 
-    records.forEach(record => {
-      const wrongAnswers: number[] = [];
+        const dateStr = exam.examDate.split('T')[0];
+        const dateFormatted =
+          dateStr && dateStr.length >= 10
+            ? `${dateStr.slice(5, 7)}/${dateStr.slice(8, 10)}`
+            : '';
 
-      // 인기 오답 문제 중 일부를 포함 (약 70% 확률로)
-      popularWrongQuestions.forEach(qNum => {
-        if (Math.random() > 0.3) {
-          wrongAnswers.push(qNum);
-        }
-      });
+        const wrongMap: Record<number, number[]> = {};
+        students.forEach(s => {
+          wrongMap[s.studentId] = s.wrongQuestions || [];
+        });
 
-      // 추가로 무작위 오답 생성 (1~5개)
-      const additionalWrongCount = Math.floor(Math.random() * 5) + 1;
-      const allQuestions = Array.from(
-        { length: questionCount },
-        (_, i) => i + 1
-      );
-      const availableQuestions = allQuestions.filter(
-        q => !wrongAnswers.includes(q)
-      );
-      const shuffled = [...availableQuestions].sort(() => Math.random() - 0.5);
-      wrongAnswers.push(...shuffled.slice(0, additionalWrongCount));
+        const records: ExamRecord[] = students
+          .map(s => ({
+            studentId: s.studentId,
+            studentName: s.name,
+            date: dateStr,
+            dateFormatted,
+            score: s.score ?? 0,
+            average: 0,
+            grade: '',
+            targetScore: 0,
+            differenceFromTarget: 0,
+            school: s.school,
+            isTaken: s.isTaken,
+            scoreForAvg: s.score,
+          }))
+          .sort((a, b) => a.studentName.localeCompare(b.studentName, 'ko'));
 
-      wrongAnswersMap[record.studentId] = wrongAnswers;
-    });
+        setStudentWrongAnswers(wrongMap);
+        setExamData({
+          date: dateStr,
+          name: exam.examTitle,
+          questions: questions.map(q => ({
+            questionNumber: q.question,
+            points: q.points,
+          })),
+          records,
+        });
+      } catch (err) {
+        const msg =
+          err instanceof Error
+            ? err.message
+            : '시험 오답 문제 조회에 실패했습니다.';
+        setLoadError(msg);
+        alert(msg);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    setStudentWrongAnswers(wrongAnswersMap);
+    fetchWrongAnswers();
+  }, [examId, classId, navigate]);
 
-    setExamData({
-      date: examDate,
-      name: `${new Date(examDate).getMonth() + 1}월 ${new Date(
-        examDate
-      ).getDate()}일 시험`,
-      questions,
-      records: records.sort((a, b) =>
-        a.studentName.localeCompare(b.studentName, 'ko')
-      ),
-    });
-  }, [examDate, navigate]);
-
-  if (!examData) {
+  if (isLoading || !examData) {
     return (
       <MainLayout showCalendar={false} isAdmin={true}>
         <div className="flex h-screen items-center justify-center">
-          <div className="text-slate-500">로딩 중...</div>
+          <div className="text-slate-500">{loadError || '로딩 중...'}</div>
         </div>
       </MainLayout>
     );
   }
 
   const totalQuestions = examData.questions.length;
-  // 문항 수에 따라 동적으로 표시 (25개 이상도 대응)
   const maxQuestions = totalQuestions;
 
-  // 학생별 오답 정보 생성
+  // 학생별 오답 정보
   const getStudentAnswerInfo = (studentId: number) => {
     const record = examData.records.find(r => r.studentId === studentId);
     if (!record) {
       return { tookExam: false, wrongAnswers: [], score: 0 };
     }
-
     const wrongAnswers = studentWrongAnswers[studentId] || [];
-
     return {
-      tookExam: true,
+      tookExam: record.isTaken ?? false,
       wrongAnswers,
       score: record.score,
     };
@@ -136,11 +150,17 @@ function ExamDetailPage() {
     const info = getStudentAnswerInfo(r.studentId);
     return info.tookExam;
   }).length;
+  const recordsWithScore = examData.records.filter(
+    r => r.scoreForAvg != null && typeof r.scoreForAvg === 'number'
+  );
   const averageScore =
-    examData.records.length > 0
+    recordsWithScore.length > 0
       ? Math.round(
-          (examData.records.reduce((sum, r) => sum + r.score, 0) /
-            examData.records.length) *
+          (recordsWithScore.reduce(
+            (sum, r) => sum + (r.scoreForAvg as number),
+            0
+          ) /
+            recordsWithScore.length) *
             10
         ) / 10
       : 0;
@@ -422,7 +442,7 @@ function ExamDetailPage() {
                             minHeight: '40px',
                           }}
                         >
-                          예비고1
+                          {record.school ?? '-'}
                         </td>
                         <td
                           className="px-3 py-2 text-center text-sm whitespace-nowrap"
@@ -434,7 +454,7 @@ function ExamDetailPage() {
                             minHeight: '40px',
                           }}
                         >
-                          {answerInfo.tookExam ? 'x' : ''}
+                          {answerInfo.tookExam ? 'O' : '-'}
                         </td>
                       </tr>
                     );

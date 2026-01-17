@@ -551,6 +551,67 @@ export const updateExam = async (
   return response.json();
 };
 
+export interface WrongAnswerQuestion {
+  examDetailId: number;
+  question: number;
+  points: number;
+}
+
+export interface WrongAnswerStudent {
+  studentId: number;
+  name: string;
+  school: string;
+  isTaken: boolean;
+  score: number | null;
+  wrongExamDetailIds: number[];
+  wrongQuestions: number[];
+}
+
+export interface WrongAnswersResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    exam: {
+      examId: number;
+      examTitle: string;
+      examDate: string;
+    };
+    questions: WrongAnswerQuestion[];
+    students: WrongAnswerStudent[];
+  };
+}
+
+/**
+ * 시험 오답 문제를 조회합니다.
+ * @param classId 클래스 ID
+ * @param examId 시험 ID
+ * @returns 시험 오답 문제 목록
+ */
+export const getWrongAnswers = async (
+  classId: number,
+  examId: number
+): Promise<WrongAnswersResponse> => {
+  const response = await fetch(
+    `${API_BASE_URL}/classes/${classId}/exams/${examId}/wrong-answers`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: '시험 오답 문제 조회에 실패했습니다.',
+    }));
+    throw new Error(errorData.message || '시험 오답 문제 조회에 실패했습니다.');
+  }
+
+  return response.json();
+};
+
 export interface DeleteExamResponse {
   statusCode: number;
   message: string;
