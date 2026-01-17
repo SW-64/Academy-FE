@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { BookOpen, ChevronRight } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { BookOpen } from 'lucide-react';
 import MainLayout from './MainLayout';
 import { getMyClasses, getMyHomeworkProgress } from '../api/students';
 import type { StudentClass, StudentHomeworkProgress } from '../api/students';
@@ -8,11 +8,10 @@ import { getClassTextbooks } from '../api/class';
 import type { ClassTextbookItem } from '../api/class';
 
 function HomeworkPage() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const classIdParam = searchParams.get('classId');
   const textbookIdParam = searchParams.get('textbookId');
-  
+
   const [classes, setClasses] = useState<StudentClass[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<number | null>(
     classIdParam ? parseInt(classIdParam, 10) : null
@@ -21,7 +20,8 @@ function HomeworkPage() {
   const [selectedTextbookId, setSelectedTextbookId] = useState<number | null>(
     textbookIdParam ? parseInt(textbookIdParam, 10) : null
   );
-  const [homeworkProgress, setHomeworkProgress] = useState<StudentHomeworkProgress | null>(null);
+  const [homeworkProgress, setHomeworkProgress] =
+    useState<StudentHomeworkProgress | null>(null);
   const [isLoadingClasses, setIsLoadingClasses] = useState(false);
   const [isLoadingTextbooks, setIsLoadingTextbooks] = useState(false);
   const [isLoadingProgress, setIsLoadingProgress] = useState(false);
@@ -76,7 +76,10 @@ function HomeworkPage() {
       const fetchProgress = async () => {
         setIsLoadingProgress(true);
         try {
-          const response = await getMyHomeworkProgress(selectedClassId, selectedTextbookId);
+          const response = await getMyHomeworkProgress(
+            selectedClassId,
+            selectedTextbookId
+          );
           setHomeworkProgress(response.data);
         } catch (error) {
           console.error('숙제 진도 조회 에러:', error);
@@ -138,7 +141,9 @@ function HomeworkPage() {
         </h2>
         {isLoadingClasses ? (
           <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-8 text-center">
-            <p className="text-sm text-slate-600">클래스 목록을 불러오는 중...</p>
+            <p className="text-sm text-slate-600">
+              클래스 목록을 불러오는 중...
+            </p>
           </div>
         ) : classes.length === 0 ? (
           <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-8 text-center">
@@ -163,7 +168,9 @@ function HomeworkPage() {
                     : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
                 }`}
               >
-                <h3 className="font-semibold text-slate-900">{cls.className}</h3>
+                <h3 className="font-semibold text-slate-900">
+                  {cls.className}
+                </h3>
               </button>
             ))}
           </div>
@@ -178,7 +185,9 @@ function HomeworkPage() {
           </h2>
           {isLoadingTextbooks ? (
             <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-8 text-center">
-              <p className="text-sm text-slate-600">교재 목록을 불러오는 중...</p>
+              <p className="text-sm text-slate-600">
+                교재 목록을 불러오는 중...
+              </p>
             </div>
           ) : textbooks.length === 0 ? (
             <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-8 text-center">
@@ -227,13 +236,19 @@ function HomeworkPage() {
           </h2>
           {isLoadingProgress ? (
             <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-12 text-center">
-              <p className="text-sm text-slate-600">숙제 진도를 불러오는 중...</p>
+              <p className="text-sm text-slate-600">
+                숙제 진도를 불러오는 중...
+              </p>
             </div>
           ) : homeworkProgress ? (
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="mb-6">
                 <h3 className="text-xl font-semibold text-slate-900">
-                  {textbooks.find(t => t.textbook.textbookId === selectedTextbookId)?.textbook.name}
+                  {
+                    textbooks.find(
+                      t => t.textbook.textbookId === selectedTextbookId
+                    )?.textbook.name
+                  }
                 </h3>
                 <p className="mt-1 text-sm text-slate-600">
                   {classes.find(c => c.classId === selectedClassId)?.className}
@@ -257,10 +272,15 @@ function HomeworkPage() {
               </div>
 
               <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-slate-900">단원별 진도</h4>
+                <h4 className="text-sm font-semibold text-slate-900">
+                  단원별 진도
+                </h4>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                   {homeworkProgress.chapters.map(chapter => {
-                    const cell = homeworkProgress.student.cells[chapter.chapterId.toString()];
+                    const cell =
+                      homeworkProgress.student.cells[
+                        chapter.chapterId.toString()
+                      ];
                     const status = cell?.status || 'NOT_STARTED';
                     const percent = cell?.percent || 0;
 
