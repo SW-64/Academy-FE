@@ -612,6 +612,104 @@ export const getWrongAnswers = async (
   return response.json();
 };
 
+export interface PatchWrongAnswersItem {
+  studentId: number;
+  wrongExamDetailIds: number[];
+}
+
+export interface PatchWrongAnswersRequest {
+  items: PatchWrongAnswersItem[];
+}
+
+/**
+ * 시험 오답 문제를 수정합니다.
+ */
+export const patchWrongAnswers = async (
+  classId: number,
+  examId: number,
+  data: PatchWrongAnswersRequest
+): Promise<{ statusCode: number; message: string }> => {
+  const response = await fetch(
+    `${API_BASE_URL}/classes/${classId}/exams/${examId}/wrong-answers`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    }
+  );
+  if (!response.ok) {
+    const err = await response
+      .json()
+      .catch(() => ({ message: '시험 오답 수정에 실패했습니다.' }));
+    throw new Error(err.message || '시험 오답 수정에 실패했습니다.');
+  }
+  return response.json();
+};
+
+export interface ErrorRateDetail {
+  question: number;
+  points: number;
+  errorRate: string;
+}
+
+export interface ErrorRatesResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    exam: { examId: number };
+    details: ErrorRateDetail[];
+  };
+}
+
+/**
+ * 시험 오답률을 조회합니다.
+ */
+export const getErrorRates = async (
+  classId: number,
+  examId: number
+): Promise<ErrorRatesResponse> => {
+  const response = await fetch(
+    `${API_BASE_URL}/classes/${classId}/exams/${examId}/error-rates`,
+    {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    }
+  );
+  if (!response.ok) {
+    const err = await response
+      .json()
+      .catch(() => ({ message: '오답률 조회에 실패했습니다.' }));
+    throw new Error(err.message || '오답률 조회에 실패했습니다.');
+  }
+  return response.json();
+};
+
+/**
+ * 시험 오답률을 계산(적용)합니다.
+ */
+export const createErrorRates = async (
+  classId: number,
+  examId: number
+): Promise<{ statusCode: number; message: string }> => {
+  const response = await fetch(
+    `${API_BASE_URL}/classes/${classId}/exams/${examId}/error-rates`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    }
+  );
+  if (!response.ok) {
+    const err = await response
+      .json()
+      .catch(() => ({ message: '오답률 계산에 실패했습니다.' }));
+    throw new Error(err.message || '오답률 계산에 실패했습니다.');
+  }
+  return response.json();
+};
+
 export interface DeleteExamResponse {
   statusCode: number;
   message: string;
