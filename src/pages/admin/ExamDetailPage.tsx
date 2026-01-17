@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import MainLayout from '../MainLayout';
-import { getWrongAnswers } from '../../api/class';
+import {
+  getWrongAnswers,
+  patchWrongAnswers,
+  getErrorRates,
+  createErrorRates,
+} from '../../api/class';
 
 // 타입 정의
 export type ExamRecord = {
@@ -30,9 +35,18 @@ function ExamDetailPage() {
   const [examData, setExamData] = useState<{
     date: string;
     name: string;
-    questions: { questionNumber: number; points: number }[];
+    questions: {
+      questionNumber: number;
+      points: number;
+      examDetailId: number;
+    }[];
     records: ExamRecord[];
   } | null>(null);
+  const [errorRatesDetails, setErrorRatesDetails] = useState<
+    { question: number; points: number; errorRate: string }[] | null
+  >(null);
+  const [isLoadingErrorRates, setIsLoadingErrorRates] = useState(false);
+  const [isPatchingWrong, setIsPatchingWrong] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showErrorRate, setShowErrorRate] = useState(false);
@@ -99,6 +113,7 @@ function ExamDetailPage() {
           questions: questions.map(q => ({
             questionNumber: q.question,
             points: q.points,
+            examDetailId: q.examDetailId,
           })),
           records,
         });
@@ -165,16 +180,6 @@ function ExamDetailPage() {
         ) / 10
       : 0;
 
-  // 오답률 계산 (각 문항별)
-  const getErrorRate = (questionNum: number) => {
-    if (tookExamCount === 0) return 0;
-    const wrongCount = examData.records.filter(r => {
-      const info = getStudentAnswerInfo(r.studentId);
-      return info.tookExam && info.wrongAnswers.includes(questionNum);
-    }).length;
-    return Math.round((wrongCount / tookExamCount) * 100 * 10) / 10;
-  };
-
   // 날짜 포맷팅
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -205,17 +210,37 @@ function ExamDetailPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
+                if (!showErrorRate && classId && examId) {
+                  setIsLoadingErrorRates(true);
+                  try {
+                    const res = await getErrorRates(
+                      Number(classId),
+                      Number(examId)
+                    );
+                    setErrorRatesDetails(res.data.details);
+                  } catch (e) {
+                    alert(
+                      e instanceof Error
+                        ? e.message
+                        : '오답률 조회에 실패했습니다.'
+                    );
+                    return;
+                  } finally {
+                    setIsLoadingErrorRates(false);
+                  }
+                }
                 setShowErrorRate(!showErrorRate);
                 setShowStudentAnswers(false);
               }}
+              disabled={isLoadingErrorRates}
               className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                 showErrorRate
                   ? 'border-[#084773] bg-[#084773] text-white'
                   : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
               }`}
             >
-              오답률 확인
+              {isLoadingErrorRates ? '로딩...' : '오답률 확인'}
             </button>
             <button
               type="button"
@@ -249,19 +274,61 @@ function ExamDetailPage() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setIsEditMode(!isEditMode);
-                setShowErrorRate(false);
-                setShowStudentAnswers(false);
-                setShowRanking(false);
+              onClick={async () => {
+                if (isEditMode) {
+                  if (!classId || !examId) return;
+                  setIsPatchingWrong(true);
+                  try {
+                    const items = examData.records.map(r => {
+                      const wrongIds = (studentWrongAnswers[r.studentId] || [])
+                        .map(
+                          qNum =>
+                            examData.questions.find(
+                              q => q.questionNumber === qNum
+                            )?.examDetailId
+                        )
+                        .filter((id): id is number => id != null);
+                      return {
+                        studentId: r.studentId,
+                        wrongExamDetailIds: wrongIds,
+                      };
+                    });
+                    await patchWrongAnswers(Number(classId), Number(examId), {
+                      items,
+                    });
+                    alert('수정되었습니다.');
+                    setIsEditMode(false);
+                    setShowErrorRate(false);
+                    setShowStudentAnswers(false);
+                    setShowRanking(false);
+                  } catch (e) {
+                    alert(
+                      e instanceof Error
+                        ? e.message
+                        : '시험 오답 수정에 실패했습니다.'
+                    );
+                  } finally {
+                    setIsPatchingWrong(false);
+                  }
+                } else {
+                  setIsEditMode(true);
+                  setShowErrorRate(false);
+                  setShowStudentAnswers(false);
+                  setShowRanking(false);
+                }
               }}
+              disabled={isPatchingWrong}
               className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                 isEditMode
                   ? 'border-green-600 bg-green-600 text-white hover:bg-green-700'
                   : 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600'
               }`}
             >
-              {isEditMode ? '수정 완료' : '성적 수정'}
+              {isPatchingWrong
+                ? '저장 중...'
+                : isEditMode
+                ? '수정 완료'
+                : '성적 수정'}
             </button>
           </div>
         </div>
@@ -556,7 +623,6 @@ function ExamDetailPage() {
                         ).map(num => {
                           const isWrong =
                             num <= totalQuestions &&
-                            answerInfo.tookExam &&
                             answerInfo.wrongAnswers.includes(num);
 
                           const handleCellClick = () => {
@@ -644,12 +710,27 @@ function ExamDetailPage() {
               <div className="mb-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    // 오답률 재계산 (실제로는 서버에 요청)
+                  onClick={async () => {
+                    if (!classId || !examId) return;
+                    try {
+                      await createErrorRates(Number(classId), Number(examId));
+                      const res = await getErrorRates(
+                        Number(classId),
+                        Number(examId)
+                      );
+                      setErrorRatesDetails(res.data.details);
+                      alert('오답률이 계산되었습니다.');
+                    } catch (e) {
+                      alert(
+                        e instanceof Error
+                          ? e.message
+                          : '오답률 계산에 실패했습니다.'
+                      );
+                    }
                   }}
                   className="rounded-lg border border-[#084773] bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063d5c]"
                 >
-                  오답률 생성
+                  오답률 계산
                 </button>
               </div>
               <h3 className="mb-3 text-lg font-semibold text-slate-900">
@@ -659,13 +740,18 @@ function ExamDetailPage() {
                 <div className="grid grid-cols-5 gap-2 text-xs">
                   {Array.from({ length: totalQuestions }, (_, i) => i + 1).map(
                     num => {
-                      const errorRate = getErrorRate(num);
+                      const detail = errorRatesDetails?.find(
+                        d => d.question === num
+                      );
+                      const rateNum = detail
+                        ? parseFloat(detail.errorRate)
+                        : NaN;
                       const getBgColorClass = () => {
-                        if (errorRate > 50) {
-                          return 'bg-red-100 border-red-300';
-                        } else if (errorRate >= 30) {
+                        if (!Number.isFinite(rateNum))
+                          return 'bg-white border-slate-200';
+                        if (rateNum > 50) return 'bg-red-100 border-red-300';
+                        if (rateNum >= 30)
                           return 'bg-orange-100 border-orange-300';
-                        }
                         return 'bg-white border-slate-200';
                       };
                       return (
@@ -675,7 +761,7 @@ function ExamDetailPage() {
                         >
                           <div className="text-slate-600">{num}</div>
                           <div className="font-semibold text-slate-900">
-                            {errorRate}%
+                            {Number.isFinite(rateNum) ? `${rateNum}%` : '-'}
                           </div>
                         </div>
                       );
