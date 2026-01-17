@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ConsentModal from '../components/ConsentModal';
+import { signup } from '../api/auth';
 
 const SignupPage = () => {
   const navigate = useNavigate();
@@ -44,36 +45,40 @@ const SignupPage = () => {
   };
 
   // 실제 회원가입 제출 로직 (동의 후 실행)
-  const doSubmit = (consent: {
+  const doSubmit = async (_consent: {
     serviceTerms: boolean;
     privacyPolicy: boolean;
     marketing: boolean;
     consentVersion: string;
     agreedAt: Date;
   }) => {
-    // 동의 정보를 포함한 회원가입 데이터
-    const signupData = {
-      email,
-      name,
-      role,
-      phone,
-      password,
-      school: role === 'student' ? school : undefined,
-      grade: role === 'student' ? grade : undefined,
-      consent: {
-        serviceTerms: consent.serviceTerms,
-        privacyPolicy: consent.privacyPolicy,
-        marketing: consent.marketing,
-        consentVersion: consent.consentVersion,
-        agreedAt: consent.agreedAt,
-      },
-    };
+    try {
+      // 회원가입 API 호출을 위한 데이터 준비
+      const signupData = {
+        email,
+        name,
+        role: role.toUpperCase() as 'STUDENT' | 'PARENT',
+        phone,
+        password,
+        passwordConfirm: confirmPassword,
+        signupSchool: role === 'student' ? school : undefined,
+        signupGrade: role === 'student' ? parseInt(grade, 10) : undefined,
+      };
 
-    // TODO: 여기서 실제 API 호출
-    console.log('회원가입 데이터:', signupData);
+      // 회원가입 API 호출
+      const response = await signup(signupData);
 
-    // 회원가입 완료 페이지로 이동
-    navigate('/signup/complete');
+      // 성공 메시지 표시 (선택사항)
+      console.log('회원가입 성공:', response);
+
+      // 회원가입 완료 페이지로 이동
+      navigate('/signup/complete');
+    } catch (error) {
+      console.error('회원가입 에러:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : '회원가입에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
   // 폼 제출 핸들러 (유효성 검사 후 모달 열기)

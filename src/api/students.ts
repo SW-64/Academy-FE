@@ -383,3 +383,74 @@ export const getMyHomeworkProgress = async (
 
   return response.json();
 };
+
+export interface LinkParentResponse {
+  statusCode: number;
+  message: string;
+  data?: {
+    studentId: number;
+    parentId: number;
+  };
+}
+
+/**
+ * 학생과 학부모를 연동합니다.
+ * @param studentId 학생 ID
+ * @param parentId 학부모 ID
+ * @returns 연동 결과
+ */
+export const linkParent = async (
+  studentId: number,
+  parentId: number
+): Promise<LinkParentResponse> => {
+  const response = await fetch(
+    `${API_BASE_URL}/students/${studentId}/parent/${parentId}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: '학부모 연동에 실패했습니다.',
+    }));
+    throw new Error(errorData.message || '학부모 연동에 실패했습니다.');
+  }
+
+  return response.json();
+};
+
+/**
+ * 학생과 학부모의 연동을 해제합니다.
+ * @param studentId 학생 ID
+ * @param parentId 학부모 ID
+ * @returns 연동 해제 결과
+ */
+export const unlinkParent = async (
+  studentId: number,
+  parentId: number
+): Promise<LinkParentResponse> => {
+  const response = await fetch(
+    `${API_BASE_URL}/students/${studentId}/parent/${parentId}`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: '학부모 연동 해제에 실패했습니다.',
+    }));
+    throw new Error(errorData.message || '학부모 연동 해제에 실패했습니다.');
+  }
+
+  return response.json();
+};
