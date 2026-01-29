@@ -437,29 +437,27 @@ export const getClassExams = async (
 /** 학생 본인 시험점수 전체조회 - 정렬: score_desc(점수순), name_asc(이름순) */
 export type MyExamGradesSort = 'score_desc' | 'name_asc';
 
+export interface MyExamGradeEntry {
+  gradeId: number;
+  studentId: number;
+  score: number;
+  level: string | null;
+  comment: string | null;
+  isTaken: boolean;
+}
+
 export interface MyExamGradeItem {
   examId: number;
   examTitle: string;
   examDate: string;
-  score: number | null;
-  studentAverage?: number | string | null;
-  createdAt?: string;
-  updatedAt?: string;
+  studentAverage: number | string | null;
+  grades: MyExamGradeEntry[];
 }
 
 export interface MyExamGradesResponse {
   statusCode: number;
   message: string;
-  data: {
-    items: MyExamGradeItem[];
-    meta?: {
-      totalItems: number;
-      itemCount: number;
-      itemsPerPage: number;
-      totalPages: number;
-      currentPage: number;
-    };
-  };
+  data: MyExamGradeItem[];
 }
 
 export const getMyExamGrades = async (
