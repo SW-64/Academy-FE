@@ -118,9 +118,7 @@ function AdminMaterialsPage() {
       console.error('학습자료 생성 실패:', error);
       // eslint-disable-next-line no-alert
       alert(
-        error instanceof Error
-          ? error.message
-          : '학습자료 생성에 실패했습니다.'
+        error instanceof Error ? error.message : '학습자료 생성에 실패했습니다.'
       );
     } finally {
       setIsLoading(false);
@@ -231,9 +229,7 @@ function AdminMaterialsPage() {
       console.error('학습자료 수정 실패:', error);
       // eslint-disable-next-line no-alert
       alert(
-        error instanceof Error
-          ? error.message
-          : '학습자료 수정에 실패했습니다.'
+        error instanceof Error ? error.message : '학습자료 수정에 실패했습니다.'
       );
     } finally {
       setIsLoading(false);
@@ -284,9 +280,7 @@ function AdminMaterialsPage() {
       console.error('학습자료 삭제 실패:', error);
       // eslint-disable-next-line no-alert
       alert(
-        error instanceof Error
-          ? error.message
-          : '학습자료 삭제에 실패했습니다.'
+        error instanceof Error ? error.message : '학습자료 삭제에 실패했습니다.'
       );
     } finally {
       setIsLoading(false);
@@ -424,9 +418,13 @@ function AdminMaterialsPage() {
         {/* 클래스 선택 */}
         <div className="mb-4 flex flex-wrap gap-2">
           {isLoading && classes.length === 0 ? (
-            <div className="text-sm text-slate-600">클래스 목록을 불러오는 중...</div>
+            <div className="text-sm text-slate-600">
+              클래스 목록을 불러오는 중...
+            </div>
           ) : classes.length === 0 ? (
-            <div className="text-sm text-slate-600">등록된 클래스가 없습니다.</div>
+            <div className="text-sm text-slate-600">
+              등록된 클래스가 없습니다.
+            </div>
           ) : (
             classes.map(classItem => (
               <button
@@ -596,17 +594,40 @@ function AdminMaterialsPage() {
                   onChange={e =>
                     setNewMaterial({ ...newMaterial, content: e.target.value })
                   }
-                  rows={15}
+                  rows={7}
                   className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                   placeholder="내용을 입력하세요"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  클래스 지정
-                </label>
-                <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-slate-700">
+                    클래스 지정
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newMaterial.classIds.length === classes.length) {
+                        setNewMaterial({
+                          ...newMaterial,
+                          classIds: [],
+                        });
+                      } else {
+                        setNewMaterial({
+                          ...newMaterial,
+                          classIds: classes.map(c => c.classId),
+                        });
+                      }
+                    }}
+                    className="text-xs text-[#084773] hover:text-[#063a5a] font-medium"
+                  >
+                    {newMaterial.classIds.length === classes.length
+                      ? '전체 해제'
+                      : '클래스 모두 선택'}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   {classes.map(classItem => (
                     <label
                       key={classItem.classId}
@@ -614,12 +635,17 @@ function AdminMaterialsPage() {
                     >
                       <input
                         type="checkbox"
-                        checked={newMaterial.classIds.includes(classItem.classId)}
+                        checked={newMaterial.classIds.includes(
+                          classItem.classId
+                        )}
                         onChange={e => {
                           if (e.target.checked) {
                             setNewMaterial({
                               ...newMaterial,
-                              classIds: [...newMaterial.classIds, classItem.classId],
+                              classIds: [
+                                ...newMaterial.classIds,
+                                classItem.classId,
+                              ],
                             });
                           } else {
                             setNewMaterial({
@@ -763,17 +789,40 @@ function AdminMaterialsPage() {
                       content: e.target.value,
                     })
                   }
-                  rows={15}
+                  rows={7}
                   className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                   placeholder="내용을 입력하세요"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  클래스 지정
-                </label>
-                <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-slate-700">
+                    클래스 지정
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editMaterial.classIds.length === classes.length) {
+                        setEditMaterial({
+                          ...editMaterial,
+                          classIds: [],
+                        });
+                      } else {
+                        setEditMaterial({
+                          ...editMaterial,
+                          classIds: classes.map(c => c.classId),
+                        });
+                      }
+                    }}
+                    className="text-xs text-[#084773] hover:text-[#063a5a] font-medium"
+                  >
+                    {editMaterial.classIds.length === classes.length
+                      ? '전체 해제'
+                      : '클래스 모두 선택'}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   {classes.map(classItem => (
                     <label
                       key={classItem.classId}
@@ -781,7 +830,9 @@ function AdminMaterialsPage() {
                     >
                       <input
                         type="checkbox"
-                        checked={editMaterial.classIds.includes(classItem.classId)}
+                        checked={editMaterial.classIds.includes(
+                          classItem.classId
+                        )}
                         onChange={e => {
                           if (e.target.checked) {
                             setEditMaterial({

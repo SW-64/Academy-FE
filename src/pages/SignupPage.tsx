@@ -435,6 +435,16 @@ const SignupPage = () => {
                   )}
                 </button>
               </div>
+              <p className="mt-1.5 text-xs sm:text-sm text-gray-500">
+                비밀번호 요구사항:
+              </p>
+              <ul className="mt-1 ml-4 text-xs sm:text-sm text-gray-500 list-disc space-y-0.5">
+                <li>최소 8자 이상</li>
+                <li>대문자 1개 이상 포함</li>
+                <li>소문자 1개 이상 포함</li>
+                <li>숫자 1개 이상 포함</li>
+                <li>특수문자 1개 이상 포함</li>
+              </ul>
               {errors.password && (
                 <p
                   id="password-error"
@@ -542,27 +552,32 @@ const SignupPage = () => {
                   >
                     학교
                   </label>
-                  <input
-                    id="school"
-                    type="text"
-                    value={school}
-                    onChange={e => {
-                      setSchool(e.target.value);
-                      if (errors.school) {
-                        setErrors({ ...errors, school: undefined });
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="school"
+                      type="text"
+                      value={school}
+                      onChange={e => {
+                        setSchool(e.target.value);
+                        if (errors.school) {
+                          setErrors({ ...errors, school: undefined });
+                        }
+                      }}
+                      className={`flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm sm:text-base ${
+                        errors.school
+                          ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                          : 'border-gray-300 hover:border-[#084773] focus:border-[#084773] focus:ring-[#084773]'
+                      } focus:outline-none focus:ring-1 transition-colors`}
+                      placeholder="학교명을 입력하세요"
+                      aria-invalid={!!errors.school}
+                      aria-describedby={
+                        errors.school ? 'school-error' : undefined
                       }
-                    }}
-                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm sm:text-base ${
-                      errors.school
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 hover:border-[#084773] focus:border-[#084773] focus:ring-[#084773]'
-                    } focus:outline-none focus:ring-1 transition-colors`}
-                    placeholder="학교명을 입력하세요"
-                    aria-invalid={!!errors.school}
-                    aria-describedby={
-                      errors.school ? 'school-error' : undefined
-                    }
-                  />
+                    />
+                    <span className="text-sm sm:text-base font-medium text-gray-700 whitespace-nowrap">
+                      고등학교
+                    </span>
+                  </div>
                   {errors.school && (
                     <p
                       id="school-error"

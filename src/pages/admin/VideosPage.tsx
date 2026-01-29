@@ -352,10 +352,38 @@ function AdminVideosPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  클래스 선택
-                </label>
-                <div className="space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-slate-700">
+                    클래스 선택
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        newVideo.selectedClasses.length === dummyClasses.length
+                      ) {
+                        setNewVideo({
+                          ...newVideo,
+                          selectedClasses: [],
+                        });
+                      } else {
+                        setNewVideo({
+                          ...newVideo,
+                          selectedClasses: dummyClasses.map(c => ({
+                            classId: c.id,
+                            studentIds: [],
+                          })),
+                        });
+                      }
+                    }}
+                    className="text-xs text-[#084773] hover:text-[#063a5a] font-medium"
+                  >
+                    {newVideo.selectedClasses.length === dummyClasses.length
+                      ? '전체 해제'
+                      : '클래스 모두 선택'}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   {dummyClasses.map(classItem => {
                     const isClassExpanded = newVideo.selectedClasses.some(
                       sc => sc.classId === classItem.id
@@ -640,10 +668,38 @@ function AdminVideosPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  클래스 선택
-                </label>
-                <div className="space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-slate-700">
+                    클래스 선택
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        editVideo.selectedClasses.length === dummyClasses.length
+                      ) {
+                        setEditVideo({
+                          ...editVideo,
+                          selectedClasses: [],
+                        });
+                      } else {
+                        setEditVideo({
+                          ...editVideo,
+                          selectedClasses: dummyClasses.map(c => ({
+                            classId: c.id,
+                            studentIds: [],
+                          })),
+                        });
+                      }
+                    }}
+                    className="text-xs text-[#084773] hover:text-[#063a5a] font-medium"
+                  >
+                    {editVideo.selectedClasses.length === dummyClasses.length
+                      ? '전체 해제'
+                      : '클래스 모두 선택'}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   {dummyClasses.map(classItem => {
                     const isClassSelected = editVideo.selectedClasses.some(
                       sc => sc.classId === classItem.id

@@ -15,6 +15,7 @@ import {
   getBlacklistUsers,
   unblacklistUser,
   updateUserInfo,
+  resetUserPassword,
   type PendingUser,
   type BlacklistUser,
 } from '../../api/users';
@@ -302,6 +303,15 @@ function AdminPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
   const [deletingParent, setDeletingParent] = useState<Parent | null>(null);
+
+  // 비밀번호 초기화 모달 상태
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] =
+    useState(false);
+  const [resetPasswordForm, setResetPasswordForm] = useState({
+    newPassword: '',
+    newPasswordConfirm: '',
+  });
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const handleApprove = async (userId: number) => {
     try {
@@ -699,15 +709,46 @@ function AdminPage() {
     }
   };
 
-  const handleResetPassword = () => {
-    if (confirm('정말 초기화할까요?')) {
-      // 실제 비밀번호 초기화 로직은 여기에 구현
-      // eslint-disable-next-line no-alert
-      alert(
-        editingStudent
-          ? `${editingStudent.name} 학생의 비밀번호가 초기화되었습니다. (데모)`
-          : `${editingParent?.name} 학부모의 비밀번호가 초기화되었습니다. (데모)`
-      );
+  const handleResetPasswordSubmit = async () => {
+    if (
+      !resetPasswordForm.newPassword ||
+      !resetPasswordForm.newPasswordConfirm
+    ) {
+      alert('새 비밀번호와 새 비밀번호 확인을 모두 입력해주세요.');
+      return;
+    }
+
+    if (
+      resetPasswordForm.newPassword !== resetPasswordForm.newPasswordConfirm
+    ) {
+      alert('새 비밀번호와 새 비밀번호 확인이 일치하지 않습니다.');
+      return;
+    }
+
+    const targetUserId = editingStudent?.userId || editingParent?.userId;
+    if (!targetUserId) {
+      alert('유저 ID를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      setIsResettingPassword(true);
+      const response = await resetUserPassword(targetUserId, {
+        newPassword: resetPasswordForm.newPassword,
+        newPasswordConfirm: resetPasswordForm.newPasswordConfirm,
+      });
+      alert(response.message);
+      setIsResetPasswordModalOpen(false);
+      setResetPasswordForm({ newPassword: '', newPasswordConfirm: '' });
+    } catch (error) {
+      console.error('비밀번호 초기화 에러:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : '비밀번호 초기화에 실패했습니다.';
+      alert(errorMessage);
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -1589,7 +1630,13 @@ function AdminPage() {
             <div className="flex-shrink-0 flex items-center justify-between gap-2 px-6 py-4 border-t border-slate-200 bg-white">
               <button
                 type="button"
-                onClick={handleResetPassword}
+                onClick={() => {
+                  setIsResetPasswordModalOpen(true);
+                  setResetPasswordForm({
+                    newPassword: '',
+                    newPasswordConfirm: '',
+                  });
+                }}
                 className="rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100"
               >
                 비밀번호 초기화
@@ -1780,19 +1827,24 @@ function AdminPage() {
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                       학교 *
                     </label>
-                    <input
-                      type="text"
-                      value={signupForm.signupSchool}
-                      onChange={e =>
-                        setSignupForm({
-                          ...signupForm,
-                          signupSchool: e.target.value,
-                        })
-                      }
-                      required
-                      placeholder="예: 서울고등학교"
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={signupForm.signupSchool}
+                        onChange={e =>
+                          setSignupForm({
+                            ...signupForm,
+                            signupSchool: e.target.value,
+                          })
+                        }
+                        required
+                        placeholder="학교명을 입력하세요"
+                        className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                      />
+                      <span className="text-sm font-medium text-slate-700 whitespace-nowrap">
+                        고등학교
+                      </span>
+                    </div>
                   </div>
 
                   <div>
@@ -1896,6 +1948,96 @@ function AdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 비밀번호 초기화 모달 */}
+      {isResetPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div
+            className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setIsResetPasswordModalOpen(false);
+                setResetPasswordForm({
+                  newPassword: '',
+                  newPasswordConfirm: '',
+                });
+              }}
+              className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h2 className="mb-6 text-xl font-semibold text-slate-900">
+              비밀번호 초기화
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  새 비밀번호
+                </label>
+                <input
+                  type="password"
+                  value={resetPasswordForm.newPassword}
+                  onChange={e =>
+                    setResetPasswordForm({
+                      ...resetPasswordForm,
+                      newPassword: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                  placeholder="새 비밀번호를 입력하세요"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  새 비밀번호 확인
+                </label>
+                <input
+                  type="password"
+                  value={resetPasswordForm.newPasswordConfirm}
+                  onChange={e =>
+                    setResetPasswordForm({
+                      ...resetPasswordForm,
+                      newPasswordConfirm: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                  placeholder="새 비밀번호를 다시 입력하세요"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsResetPasswordModalOpen(false);
+                  setResetPasswordForm({
+                    newPassword: '',
+                    newPasswordConfirm: '',
+                  });
+                }}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleResetPasswordSubmit}
+                disabled={isResettingPassword}
+                className="rounded-lg bg-[#084773] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a] disabled:opacity-50"
+              >
+                {isResettingPassword ? '처리 중...' : '초기화'}
+              </button>
+            </div>
           </div>
         </div>
       )}

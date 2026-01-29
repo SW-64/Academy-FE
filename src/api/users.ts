@@ -358,3 +358,45 @@ export const changePassword = async (
 
   return response.json();
 };
+
+export interface ResetPasswordRequest {
+  newPassword: string;
+  newPasswordConfirm: string;
+}
+
+export interface ResetPasswordResponse {
+  statusCode: number;
+  message: string;
+}
+
+/**
+ * 유저 비밀번호를 초기화합니다.
+ * @param userId 유저 ID
+ * @param data 비밀번호 초기화 데이터
+ * @returns 초기화 응답
+ */
+export const resetUserPassword = async (
+  userId: number,
+  data: ResetPasswordRequest
+): Promise<ResetPasswordResponse> => {
+  const response = await fetch(
+    `${API_BASE_URL}/users/${userId}/reset-password`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // 쿠키를 포함하여 요청
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: '비밀번호 초기화에 실패했습니다.',
+    }));
+    throw new Error(errorData.message || '비밀번호 초기화에 실패했습니다.');
+  }
+
+  return response.json();
+};
