@@ -730,6 +730,8 @@ export const getWrongAnswers = async (
 export interface PatchWrongAnswersItem {
   studentId: number;
   wrongExamDetailIds: number[];
+  /** 응시 여부. 비워두면 true(응시), 미응시 체크 시 false */
+  isTaken?: boolean;
 }
 
 export interface PatchWrongAnswersRequest {

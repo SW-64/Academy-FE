@@ -72,6 +72,10 @@ function ExamDetailPage() {
   const [studentWrongAnswers, setStudentWrongAnswers] = useState<
     Record<number, number[]>
   >({});
+  /** 학생별 응시 여부. true=응시, false=미응시. 비워두면 true로 전송 */
+  const [studentIsTaken, setStudentIsTaken] = useState<
+    Record<number, boolean>
+  >({});
 
   // 시험 오답 문제 조회 API
   useEffect(() => {
@@ -123,6 +127,12 @@ function ExamDetailPage() {
           .sort((a, b) => a.studentName.localeCompare(b.studentName, 'ko'));
 
         setStudentWrongAnswers(wrongMap);
+        setStudentIsTaken(prev => ({
+          ...prev,
+          ...Object.fromEntries(
+            records.map(r => [r.studentId, r.isTaken ?? true])
+          ),
+        }));
         setExamData({
           date: dateStr,
           name: exam.examTitle,
@@ -168,8 +178,9 @@ function ExamDetailPage() {
       return { tookExam: false, wrongAnswers: [], score: 0 };
     }
     const wrongAnswers = studentWrongAnswers[studentId] || [];
+    const isTaken = studentIsTaken[record.studentId] ?? record.isTaken ?? true;
     return {
-      tookExam: record.isTaken ?? false,
+      tookExam: isTaken,
       wrongAnswers,
       score: record.score,
     };
@@ -349,9 +360,11 @@ function ExamDetailPage() {
                             )?.examDetailId
                         )
                         .filter((id): id is number => id != null);
+                      const isTaken = studentIsTaken[r.studentId] ?? r.isTaken ?? true;
                       return {
                         studentId: r.studentId,
                         wrongExamDetailIds: wrongIds,
+                        isTaken,
                       };
                     });
                     await patchWrongAnswers(Number(classId), Number(examId), {
@@ -582,7 +595,26 @@ function ExamDetailPage() {
                             minHeight: '40px',
                           }}
                         >
-                          {answerInfo.tookExam ? 'O' : '-'}
+                          {isEditMode ? (
+                            <label className="flex items-center justify-center gap-1 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={!answerInfo.tookExam}
+                                onChange={e => {
+                                  setStudentIsTaken(prev => ({
+                                    ...prev,
+                                    [record.studentId]: !e.target.checked,
+                                  }));
+                                }}
+                                className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
+                              />
+                              <span className="text-xs text-slate-600">
+                                미응시
+                              </span>
+                            </label>
+                          ) : (
+                            answerInfo.tookExam ? 'O' : 'X'
+                          )}
                         </td>
                       </tr>
                     );
