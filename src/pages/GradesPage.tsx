@@ -57,7 +57,7 @@ function GradesPage() {
     setIsLoadingGrades(true);
     try {
       const response = await getMyExamGrades(selectedClassId, sortOption);
-      setGrades(response.data?.items ?? []);
+      setGrades(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('시험 성적 조회 에러:', error);
       const msg =
@@ -219,7 +219,9 @@ function GradesPage() {
                               {formatDate(exam.examDate)}
                             </td>
                             <td className="px-4 py-3 text-sm font-medium text-slate-900 text-right">
-                              {exam.score != null ? `${exam.score}점` : '-'}
+                              {exam.grades?.[0]?.score != null
+                                ? `${exam.grades[0].score}점`
+                                : '-'}
                             </td>
                             <td className="px-4 py-3 text-right">
                               <button
