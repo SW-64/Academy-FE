@@ -380,10 +380,33 @@ function AdminNoticePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  클래스 지정
-                </label>
-                <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-slate-700">
+                    클래스 지정
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newNotice.classIds.length === dummyClasses.length) {
+                        setNewNotice({
+                          ...newNotice,
+                          classIds: [],
+                        });
+                      } else {
+                        setNewNotice({
+                          ...newNotice,
+                          classIds: dummyClasses.map(c => c.id),
+                        });
+                      }
+                    }}
+                    className="text-xs text-[#084773] hover:text-[#063a5a] font-medium"
+                  >
+                    {newNotice.classIds.length === dummyClasses.length
+                      ? '전체 해제'
+                      : '클래스 모두 선택'}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   {dummyClasses.map(classItem => (
                     <label
                       key={classItem.id}
@@ -513,10 +536,33 @@ function AdminNoticePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  클래스 지정
-                </label>
-                <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-slate-700">
+                    클래스 지정
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editNotice.classIds.length === dummyClasses.length) {
+                        setEditNotice({
+                          ...editNotice,
+                          classIds: [],
+                        });
+                      } else {
+                        setEditNotice({
+                          ...editNotice,
+                          classIds: dummyClasses.map(c => c.id),
+                        });
+                      }
+                    }}
+                    className="text-xs text-[#084773] hover:text-[#063a5a] font-medium"
+                  >
+                    {editNotice.classIds.length === dummyClasses.length
+                      ? '전체 해제'
+                      : '클래스 모두 선택'}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   {dummyClasses.map(classItem => (
                     <label
                       key={classItem.id}

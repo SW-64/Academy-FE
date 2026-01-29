@@ -395,8 +395,8 @@ function AdminHomeworkPage() {
         error instanceof Error
           ? error.message
           : isEditMode
-          ? '교재 수정에 실패했습니다.'
-          : '교재 생성에 실패했습니다.';
+            ? '교재 수정에 실패했습니다.'
+            : '교재 생성에 실패했습니다.';
       alert(errorMessage);
     }
   };
@@ -703,10 +703,33 @@ function AdminHomeworkPage() {
 
                 {/* 클래스 선택 */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-900 mb-2">
-                    클래스 지정
-                  </label>
-                  <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-slate-900">
+                      클래스 지정
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newTextbook.classIds.length === classes.length) {
+                          setNewTextbook({
+                            ...newTextbook,
+                            classIds: [],
+                          });
+                        } else {
+                          setNewTextbook({
+                            ...newTextbook,
+                            classIds: classes.map(c => c.id),
+                          });
+                        }
+                      }}
+                      className="text-xs text-[#084773] hover:text-[#063a5a] font-medium"
+                    >
+                      {newTextbook.classIds.length === classes.length
+                        ? '전체 해제'
+                        : '클래스 모두 선택'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
                     {classes.map(classItem => (
                       <label
                         key={classItem.id}

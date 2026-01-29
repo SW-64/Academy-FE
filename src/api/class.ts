@@ -351,6 +351,37 @@ export const updateProgressCells = async (
   return response.json();
 };
 
+/**
+ * 진도 셀들을 삭제합니다.
+ * @param classId 클래스 ID
+ * @param textbookId 교재 ID
+ * @returns 삭제 응답
+ */
+export const deleteProgressCells = async (
+  classId: number,
+  textbookId: number
+): Promise<UpdateProgressCellsResponse> => {
+  const response = await fetch(
+    `${API_BASE_URL}/classes/${classId}/textbooks/${textbookId}/progress-cells`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // 쿠키를 포함하여 요청
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: '진도 셀 삭제에 실패했습니다.',
+    }));
+    throw new Error(errorData.message || '진도 셀 삭제에 실패했습니다.');
+  }
+
+  return response.json();
+};
+
 export interface ExamItem {
   examId: number;
   examTitle: string;
@@ -400,6 +431,90 @@ export const getClassExams = async (
     );
   }
 
+  return response.json();
+};
+
+/** 학생 본인 시험점수 전체조회 - 정렬: score_desc(점수순), name_asc(이름순) */
+export type MyExamGradesSort = 'score_desc' | 'name_asc';
+
+export interface MyExamGradeItem {
+  examId: number;
+  examTitle: string;
+  examDate: string;
+  score: number | null;
+  studentAverage?: number | string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MyExamGradesResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    items: MyExamGradeItem[];
+    meta?: {
+      totalItems: number;
+      itemCount: number;
+      itemsPerPage: number;
+      totalPages: number;
+      currentPage: number;
+    };
+  };
+}
+
+export const getMyExamGrades = async (
+  classId: number,
+  sort: MyExamGradesSort = 'score_desc'
+): Promise<MyExamGradesResponse> => {
+  const params = new URLSearchParams({ sort });
+  const response = await fetch(
+    `${API_BASE_URL}/classes/${classId}/exams/grades/me?${params}`,
+    {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    }
+  );
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: '시험 성적 목록을 가져오는데 실패했습니다.',
+    }));
+    throw new Error(
+      errorData.message || '시험 성적 목록을 가져오는데 실패했습니다.'
+    );
+  }
+  return response.json();
+};
+
+/** 학생 본인 시험 등수 조회 */
+export interface MyExamRankResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    rank?: number;
+    totalStudents?: number;
+    [key: string]: unknown;
+  };
+}
+
+export const getMyExamRank = async (
+  classId: number,
+  examId: number
+): Promise<MyExamRankResponse> => {
+  const response = await fetch(
+    `${API_BASE_URL}/classes/${classId}/exams/${examId}/rank/me`,
+    {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    }
+  );
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: '등수 조회에 실패했습니다.',
+    }));
+    throw new Error(errorData.message || '등수 조회에 실패했습니다.');
+  }
   return response.json();
 };
 

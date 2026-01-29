@@ -5,6 +5,7 @@ import {
   getClassTextbooks,
   getProgressGrid,
   updateProgressCells,
+  deleteProgressCells,
 } from '../../api/class';
 import type { Chapter, StudentProgress } from '../../api/class';
 
@@ -239,8 +240,8 @@ function HomeworkProgressPage() {
       percent === 100
         ? 'COMPLETED'
         : percent > 0
-        ? 'IN_PROGRESS'
-        : 'NOT_STARTED';
+          ? 'IN_PROGRESS'
+          : 'NOT_STARTED';
 
     // 초기값과 비교하여 변경된 셀만 추적
     const cellKey = `${studentId}-${chapterId}`;
@@ -293,6 +294,54 @@ function HomeworkProgressPage() {
   const handleCancelEdit = () => {
     setEditingCell(null);
     setEditPercent(0);
+  };
+
+  // 숙제 진도 삭제
+  const handleDeleteProgress = async () => {
+    if (!selectedClassId || !selectedTextbookId) {
+      alert('클래스와 교재를 선택해주세요.');
+      return;
+    }
+
+    if (
+      !confirm(
+        '정말 이 숙제 진도를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.'
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await deleteProgressCells(
+        selectedClassId,
+        selectedTextbookId
+      );
+      alert(response.message);
+
+      // 진도 데이터 초기화 및 새로고침
+      setProgressData(null);
+      initialProgressDataRef.current = null;
+      changedCellsRef.current.clear();
+
+      // 진도 그리드 다시 조회
+      const refreshResponse = await getProgressGrid(
+        selectedClassId,
+        selectedTextbookId
+      );
+      const newProgressData = {
+        chapters: refreshResponse.data.chapters,
+        students: refreshResponse.data.students,
+      };
+      setProgressData(newProgressData);
+      initialProgressDataRef.current = JSON.parse(
+        JSON.stringify(newProgressData)
+      );
+    } catch (error) {
+      console.error('진도 셀 삭제 에러:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : '진도 셀 삭제에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
   return (
@@ -384,72 +433,81 @@ function HomeworkProgressPage() {
               <h2 className="text-lg font-semibold text-slate-900">
                 숙제 진도
               </h2>
-              <button
-                type="button"
-                onClick={async () => {
-                  if (isEditMode) {
-                    // 편집 완료 - API 호출
-                    if (
-                      !selectedClassId ||
-                      !selectedTextbookId ||
-                      !progressData
-                    )
-                      return;
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDeleteProgress}
+                  className="rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100"
+                >
+                  숙제 진도 삭제
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (isEditMode) {
+                      // 편집 완료 - API 호출
+                      if (
+                        !selectedClassId ||
+                        !selectedTextbookId ||
+                        !progressData
+                      )
+                        return;
 
-                    try {
-                      // 변경된 셀만 API 요청 형식으로 변환 (성능 최적화)
-                      const items: Array<{
-                        studentId: number;
-                        chapterId: number;
-                        percent: number;
-                      }> = Array.from(changedCellsRef.current.values());
+                      try {
+                        // 변경된 셀만 API 요청 형식으로 변환 (성능 최적화)
+                        const items: Array<{
+                          studentId: number;
+                          chapterId: number;
+                          percent: number;
+                        }> = Array.from(changedCellsRef.current.values());
 
-                      // 변경된 셀이 없으면 API 호출하지 않음
-                      if (items.length === 0) {
-                        alert('변경된 내용이 없습니다.');
+                        // 변경된 셀이 없으면 API 호출하지 않음
+                        if (items.length === 0) {
+                          alert('변경된 내용이 없습니다.');
+                          setIsEditMode(false);
+                          setEditingCell(null);
+                          return;
+                        }
+
+                        const response = await updateProgressCells(
+                          selectedClassId,
+                          selectedTextbookId,
+                          { items }
+                        );
+
+                        // 성공 시 초기 데이터 업데이트 및 변경 추적 초기화
+                        if (progressData) {
+                          initialProgressDataRef.current = JSON.parse(
+                            JSON.stringify(progressData)
+                          );
+                          changedCellsRef.current.clear();
+                        }
+
+                        alert(response.message);
                         setIsEditMode(false);
                         setEditingCell(null);
-                        return;
+                      } catch (error) {
+                        console.error('진도 셀 수정 에러:', error);
+                        const errorMessage =
+                          error instanceof Error
+                            ? error.message
+                            : '진도 셀 수정에 실패했습니다.';
+                        alert(errorMessage);
                       }
-
-                      const response = await updateProgressCells(
-                        selectedClassId,
-                        selectedTextbookId,
-                        { items }
-                      );
-
-                      // 성공 시 초기 데이터 업데이트 및 변경 추적 초기화
-                      if (progressData) {
-                        initialProgressDataRef.current = JSON.parse(
-                          JSON.stringify(progressData)
-                        );
-                        changedCellsRef.current.clear();
-                      }
-
-                      alert(response.message);
-                      setIsEditMode(false);
-                      setEditingCell(null);
-                    } catch (error) {
-                      console.error('진도 셀 수정 에러:', error);
-                      const errorMessage =
-                        error instanceof Error
-                          ? error.message
-                          : '진도 셀 수정에 실패했습니다.';
-                      alert(errorMessage);
+                    } else {
+                      // 편집 모드 시작
+                      setIsEditMode(true);
                     }
-                  } else {
-                    // 편집 모드 시작
-                    setIsEditMode(true);
-                  }
-                }}
-                className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                  isEditMode
-                    ? 'border-[#084773] bg-[#084773] text-white'
-                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                {isEditMode ? '편집 완료' : '편집 모드'}
-              </button>
+                  }}
+                  className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                    isEditMode
+                      ? 'border-[#084773] bg-[#084773] text-white'
+                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  {isEditMode ? '편집 완료' : '편집 모드'}
+                </button>
+              </div>
             </div>
             {isLoadingProgress ? (
               <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-white">
@@ -595,19 +653,19 @@ function HomeworkProgressPage() {
                                       editPercent === 100
                                         ? 'bg-green-100 text-green-800'
                                         : editPercent > 0
-                                        ? editPercent <= 30
-                                          ? 'bg-yellow-100 text-yellow-800'
-                                          : editPercent <= 60
-                                          ? 'bg-orange-100 text-orange-800'
-                                          : 'bg-red-100 text-red-800'
-                                        : 'bg-slate-100 text-slate-600'
+                                          ? editPercent <= 30
+                                            ? 'bg-yellow-100 text-yellow-800'
+                                            : editPercent <= 60
+                                              ? 'bg-orange-100 text-orange-800'
+                                              : 'bg-red-100 text-red-800'
+                                          : 'bg-slate-100 text-slate-600'
                                     }`}
                                   >
                                     {editPercent === 100
                                       ? '완료'
                                       : editPercent > 0
-                                      ? '진행중'
-                                      : '미시작'}
+                                        ? '진행중'
+                                        : '미시작'}
                                   </div>
                                   {/* 저장/취소 버튼 */}
                                   <div className="flex gap-1 w-full">
@@ -646,8 +704,8 @@ function HomeworkProgressPage() {
                                     {status === 'COMPLETED'
                                       ? '완료'
                                       : status === 'IN_PROGRESS'
-                                      ? '진행중'
-                                      : '미시작'}
+                                        ? '진행중'
+                                        : '미시작'}
                                   </span>
                                 </div>
                               ) : (
