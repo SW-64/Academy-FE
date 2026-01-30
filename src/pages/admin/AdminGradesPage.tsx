@@ -329,14 +329,12 @@ function AdminGradesPage() {
         next.getMonth() + 1
       ).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
 
-      // 디버깅: 전송할 데이터 확인
       const requestData = {
         examTitle: editExamName.trim(),
         examDate: examDate,
         question: questionNumbers,
         points: points,
       };
-      console.log('시험 수정 요청 데이터:', requestData);
 
       const response = await updateExam(
         selectedClassId,
@@ -443,14 +441,12 @@ function AdminGradesPage() {
         next.getMonth() + 1
       ).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
 
-      // 디버깅: 전송할 데이터 확인
       const requestData = {
         examTitle: newExam.name.trim(),
         examDate: examDate,
         question: questionNumbers,
         points: points,
       };
-      console.log('시험 생성 요청 데이터:', requestData);
 
       const response = await createExam(selectedClassId, requestData);
 

@@ -69,10 +69,7 @@ const SignupPage = () => {
       };
 
       // 회원가입 API 호출
-      const response = await signup(signupData);
-
-      // 성공 메시지 표시 (선택사항)
-      console.log('회원가입 성공:', response);
+      await signup(signupData);
 
       // 회원가입 완료 페이지로 이동
       navigate('/signup/complete');

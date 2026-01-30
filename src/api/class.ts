@@ -38,30 +38,23 @@ export const getClasses = async (): Promise<ClassResponse> => {
   return response.json();
 };
 
+export interface ClassStudentItem {
+  studentClassId: number;
+  studentId: number;
+  grade: number;
+  school: string;
+  userId: number;
+  name: string;
+  loginId: string;
+}
+
 export interface ClassStudentsResponse {
   statusCode: number;
   message: string;
   data: {
     classId: number;
     className: string;
-    createdAt: string;
-    updatedAt: string;
-    deletedAt: string | null;
-    studentClasses: StudentClassData[];
-  };
-}
-
-export interface StudentClassData {
-  studentClassId: number;
-  student: {
-    studentId: number;
-    grade: number;
-    school: string;
-    user: {
-      userId: number;
-      email: string;
-      name: string;
-    };
+    students: ClassStudentItem[];
   };
 }
 

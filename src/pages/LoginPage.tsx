@@ -53,16 +53,12 @@ const LoginPage = () => {
     if (Object.keys(newErrors).length === 0) {
       setIsLoading(true);
       try {
-        const response = await login({ loginId, password });
-
-        // API 응답 콘솔 출력
-        console.log('로그인 API 응답:', response);
+        await login({ loginId, password });
 
         // 백엔드가 httpOnly 쿠키로 토큰을 설정하므로 프론트엔드에서 저장할 필요 없음
         // 사용자 정보 가져오기 (role 확인용)
         try {
           const meResponse = await getMe();
-          console.log('사용자 정보 API 응답:', meResponse);
 
           // role에 따라 적절한 대시보드로 이동
           const role = meResponse.data?.role?.toUpperCase();
