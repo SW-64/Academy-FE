@@ -1679,7 +1679,7 @@ function AdminPage() {
                 setIsSignupModalOpen(false);
                 setSignupForm({
                   name: '',
-                  email: '',
+                  loginId: '',
                   role: 'STUDENT',
                   phone: '',
                   password: '',
@@ -1751,7 +1751,7 @@ function AdminPage() {
                   setIsSignupModalOpen(false);
                   setSignupForm({
                     name: '',
-                    email: '',
+                    loginId: '',
                     role: 'STUDENT',
                     phone: '',
                     password: '',
