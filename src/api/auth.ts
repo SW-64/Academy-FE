@@ -1,7 +1,7 @@
 import { API_BASE_URL } from '../constants/api';
 
 export interface LoginRequest {
-  email: string;
+  loginId: string;
   password: string;
 }
 
@@ -97,7 +97,7 @@ export const logout = async (): Promise<void> => {
 
 export interface SignupRequest {
   name: string;
-  email: string;
+  loginId: string;
   role: 'STUDENT' | 'PARENT';
   phone: string;
   password: string;
@@ -120,9 +120,7 @@ export interface SignupResponse {
 /**
  * 회원가입을 수행합니다.
  */
-export const signup = async (
-  data: SignupRequest
-): Promise<SignupResponse> => {
+export const signup = async (data: SignupRequest): Promise<SignupResponse> => {
   const response = await fetch(`${API_BASE_URL}/auth/sign-up`, {
     method: 'POST',
     headers: {

@@ -6,7 +6,7 @@ import { signup } from '../api/auth';
 const SignupPage = () => {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
+  const [loginId, setLoginId] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<'student' | 'parent' | ''>('');
   const [phone, setPhone] = useState('');
@@ -17,7 +17,7 @@ const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<{
-    email?: string;
+    loginId?: string;
     name?: string;
     role?: string;
     phone?: string;
@@ -29,9 +29,12 @@ const SignupPage = () => {
   const [imageError, setImageError] = useState(false);
   const [isConsentOpen, setIsConsentOpen] = useState(false);
 
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+  const validateLoginId = (loginId: string): boolean => {
+    // 4-20자, 영문으로 시작하고 영문, 숫자만 사용 가능
+    const loginIdRegex = /^[a-zA-Z][a-zA-Z0-9]*$/;
+    return (
+      loginId.length >= 4 && loginId.length <= 20 && loginIdRegex.test(loginId)
+    );
   };
 
   const validatePhone = (phone: string): boolean => {
@@ -55,7 +58,7 @@ const SignupPage = () => {
     try {
       // 회원가입 API 호출을 위한 데이터 준비
       const signupData = {
-        email,
+        loginId,
         name,
         role: role.toUpperCase() as 'STUDENT' | 'PARENT',
         phone,
@@ -86,7 +89,7 @@ const SignupPage = () => {
     e.preventDefault();
 
     const newErrors: {
-      email?: string;
+      loginId?: string;
       name?: string;
       role?: string;
       phone?: string;
@@ -96,11 +99,18 @@ const SignupPage = () => {
       grade?: string;
     } = {};
 
-    // 이메일 유효성 검사
-    if (!email) {
-      newErrors.email = '이메일을 입력해주세요.';
-    } else if (!validateEmail(email)) {
-      newErrors.email = '올바른 이메일 형식이 아닙니다.';
+    // 아이디 유효성 검사
+    if (!loginId) {
+      newErrors.loginId = '아이디를 입력해주세요.';
+    } else if (!validateLoginId(loginId)) {
+      if (loginId.length < 4 || loginId.length > 20) {
+        newErrors.loginId = '아이디는 4-20자여야 합니다.';
+      } else if (!/^[a-zA-Z]/.test(loginId)) {
+        newErrors.loginId = '아이디는 영문으로 시작해야 합니다.';
+      } else if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(loginId)) {
+        newErrors.loginId =
+          '아이디는 영문으로 시작하고 영문, 숫자만 사용 가능합니다.';
+      }
     }
 
     // 이름 유효성 검사
@@ -195,40 +205,48 @@ const SignupPage = () => {
             onSubmit={handleSubmit}
             className="space-y-6 [&>div:last-of-type]:mb-0"
           >
-            {/* 이메일 입력 */}
+            {/* 아이디 입력 */}
             <div>
               <label
-                htmlFor="email"
+                htmlFor="loginId"
                 className="block text-sm sm:text-base font-medium text-gray-700 mb-2"
               >
-                이메일
+                아이디
               </label>
               <input
-                id="email"
-                type="email"
-                value={email}
+                id="loginId"
+                type="text"
+                value={loginId}
                 onChange={e => {
-                  setEmail(e.target.value);
-                  if (errors.email) {
-                    setErrors({ ...errors, email: undefined });
+                  setLoginId(e.target.value);
+                  if (errors.loginId) {
+                    setErrors({ ...errors, loginId: undefined });
                   }
                 }}
                 className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm sm:text-base ${
-                  errors.email
+                  errors.loginId
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
                     : 'border-gray-300 hover:border-[#084773] focus:border-[#084773] focus:ring-[#084773]'
                 } focus:outline-none focus:ring-1 transition-colors`}
-                placeholder="이메일을 입력하세요"
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? 'email-error' : undefined}
+                placeholder="아이디를 입력하세요"
+                aria-invalid={!!errors.loginId}
+                aria-describedby={errors.loginId ? 'loginId-error' : undefined}
               />
-              {errors.email && (
+              <p className="mt-1.5 text-xs sm:text-sm text-gray-500">
+                아이디 형식:
+              </p>
+              <ul className="mt-1 ml-4 text-xs sm:text-sm text-gray-500 list-disc space-y-0.5">
+                <li>4-20자</li>
+                <li>영문으로 시작</li>
+                <li>영문, 숫자만 사용 가능</li>
+              </ul>
+              {errors.loginId && (
                 <p
-                  id="email-error"
+                  id="loginId-error"
                   className="mt-1 text-xs sm:text-sm text-red-600"
                   role="alert"
                 >
-                  {errors.email}
+                  {errors.loginId}
                 </p>
               )}
             </div>
