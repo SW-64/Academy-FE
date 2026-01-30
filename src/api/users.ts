@@ -75,10 +75,19 @@ export interface BlacklistUsersResponse {
 
 /**
  * 승인 대기 중인 유저 목록을 조회합니다.
+ * @param page 페이지 번호 (1부터 시작)
+ * @param limit 한 페이지당 항목 수 (기본 10)
  * @returns 승인 대기 중인 유저 목록
  */
-export const getPendingUsers = async (): Promise<PendingUsersResponse> => {
-  const response = await fetch(`${API_BASE_URL}/users/pending`, {
+export const getPendingUsers = async (
+  page: number = 1,
+  limit: number = 10
+): Promise<PendingUsersResponse> => {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  const response = await fetch(`${API_BASE_URL}/users/pending?${params}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
