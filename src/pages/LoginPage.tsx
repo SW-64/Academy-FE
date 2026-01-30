@@ -4,31 +4,41 @@ import { login, getMe } from '../api/auth';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+  const [errors, setErrors] = useState<{ loginId?: string; password?: string }>(
     {}
   );
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+  const validateLoginId = (loginId: string): boolean => {
+    // 4-20자, 영문으로 시작하고 영문, 숫자만 사용 가능
+    const loginIdRegex = /^[a-zA-Z][a-zA-Z0-9]*$/;
+    return (
+      loginId.length >= 4 && loginId.length <= 20 && loginIdRegex.test(loginId)
+    );
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setApiError(null);
 
-    const newErrors: { email?: string; password?: string } = {};
+    const newErrors: { loginId?: string; password?: string } = {};
 
-    // 이메일 유효성 검사
-    if (!email) {
-      newErrors.email = '이메일을 입력해주세요.';
-    } else if (!validateEmail(email)) {
-      newErrors.email = '올바른 이메일 형식이 아닙니다.';
+    // 아이디 유효성 검사
+    if (!loginId) {
+      newErrors.loginId = '아이디를 입력해주세요.';
+    } else if (!validateLoginId(loginId)) {
+      if (loginId.length < 4 || loginId.length > 20) {
+        newErrors.loginId = '아이디는 4-20자여야 합니다.';
+      } else if (!/^[a-zA-Z]/.test(loginId)) {
+        newErrors.loginId = '아이디는 영문으로 시작해야 합니다.';
+      } else if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(loginId)) {
+        newErrors.loginId =
+          '아이디는 영문으로 시작하고 영문, 숫자만 사용 가능합니다.';
+      }
     }
 
     // 비밀번호 유효성 검사
@@ -42,7 +52,7 @@ const LoginPage = () => {
     if (Object.keys(newErrors).length === 0) {
       setIsLoading(true);
       try {
-        const response = await login({ email, password });
+        const response = await login({ loginId, password });
 
         // API 응답 콘솔 출력
         console.log('로그인 API 응답:', response);
@@ -123,40 +133,40 @@ const LoginPage = () => {
             onSubmit={handleSubmit}
             className="space-y-6 [&>div:last-of-type]:mb-0"
           >
-            {/* 이메일 입력 */}
+            {/* 아이디 입력 */}
             <div>
               <label
-                htmlFor="email"
+                htmlFor="loginId"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                이메일
+                아이디
               </label>
               <input
-                id="email"
-                type="email"
-                value={email}
+                id="loginId"
+                type="text"
+                value={loginId}
                 onChange={e => {
-                  setEmail(e.target.value);
-                  if (errors.email) {
-                    setErrors({ ...errors, email: undefined });
+                  setLoginId(e.target.value);
+                  if (errors.loginId) {
+                    setErrors({ ...errors, loginId: undefined });
                   }
                 }}
                 className={`w-full px-4 py-3 rounded-lg border ${
-                  errors.email
+                  errors.loginId
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
                     : 'border-gray-300 hover:border-[#084773] focus:border-[#084773] focus:ring-[#084773]'
                 } focus:outline-none focus:ring-1 transition-colors`}
-                placeholder="이메일을 입력하세요"
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? 'email-error' : undefined}
+                placeholder="아이디를 입력하세요"
+                aria-invalid={!!errors.loginId}
+                aria-describedby={errors.loginId ? 'loginId-error' : undefined}
               />
-              {errors.email && (
+              {errors.loginId && (
                 <p
-                  id="email-error"
+                  id="loginId-error"
                   className="mt-1 text-sm text-red-600"
                   role="alert"
                 >
-                  {errors.email}
+                  {errors.loginId}
                 </p>
               )}
             </div>
