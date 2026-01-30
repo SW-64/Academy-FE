@@ -12,6 +12,7 @@ const LoginPage = () => {
     {}
   );
   const [apiError, setApiError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
 
   const validateLoginId = (loginId: string): boolean => {
     // 4-20자, 영문으로 시작하고 영문, 숫자만 사용 가능
@@ -122,9 +123,23 @@ const LoginPage = () => {
       <div className="flex flex-col items-center w-full max-w-[403px] rounded-2xl">
         {/* 로고 */}
         <div className="flex justify-center pt-8 px-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-warm-brown text-center">
-            곽원근 수학연구소
-          </h1>
+          {imageError ? (
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-warm-brown text-center">
+              곽원근 수학연구소
+            </h1>
+          ) : (
+            <img
+              src="/logo1.png"
+              alt="곽원근 수학연구소"
+              className="h-auto max-w-[175px] sm:max-w-[197px] md:max-w-[219px] lg:max-w-[263px]"
+              width="263"
+              height="263"
+              style={{ aspectRatio: '1/1', maxWidth: '100%', height: 'auto' }}
+              loading="eager"
+              fetchPriority="high"
+              onError={() => setImageError(true)}
+            />
+          )}
         </div>
 
         {/* 로그인 카드 */}
