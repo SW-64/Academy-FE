@@ -73,9 +73,9 @@ function ExamDetailPage() {
     Record<number, number[]>
   >({});
   /** 학생별 응시 여부. true=응시, false=미응시. 비워두면 true로 전송 */
-  const [studentIsTaken, setStudentIsTaken] = useState<
-    Record<number, boolean>
-  >({});
+  const [studentIsTaken, setStudentIsTaken] = useState<Record<number, boolean>>(
+    {}
+  );
 
   // 시험 오답 문제 조회 API
   useEffect(() => {
@@ -360,7 +360,8 @@ function ExamDetailPage() {
                             )?.examDetailId
                         )
                         .filter((id): id is number => id != null);
-                      const isTaken = studentIsTaken[r.studentId] ?? r.isTaken ?? true;
+                      const isTaken =
+                        studentIsTaken[r.studentId] ?? r.isTaken ?? true;
                       return {
                         studentId: r.studentId,
                         wrongExamDetailIds: wrongIds,
@@ -401,8 +402,8 @@ function ExamDetailPage() {
               {isPatchingWrong
                 ? '저장 중...'
                 : isEditMode
-                ? '수정 완료'
-                : '성적 수정'}
+                  ? '수정 완료'
+                  : '성적 수정'}
             </button>
           </div>
         </div>
@@ -596,7 +597,7 @@ function ExamDetailPage() {
                           }}
                         >
                           {isEditMode ? (
-                            <label className="flex items-center justify-center gap-1 cursor-pointer">
+                            <label className="flex items-center justify-center cursor-pointer">
                               <input
                                 type="checkbox"
                                 checked={!answerInfo.tookExam}
@@ -608,12 +609,11 @@ function ExamDetailPage() {
                                 }}
                                 className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
                               />
-                              <span className="text-xs text-slate-600">
-                                미응시
-                              </span>
                             </label>
+                          ) : answerInfo.tookExam ? (
+                            'O'
                           ) : (
-                            answerInfo.tookExam ? 'O' : 'X'
+                            'X'
                           )}
                         </td>
                       </tr>
