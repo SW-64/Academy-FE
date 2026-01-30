@@ -47,6 +47,14 @@ type Parent = {
   linkedStudent: string;
 };
 
+type PendingUsersMeta = {
+  totalItems: number;
+  itemCount: number;
+  itemsPerPage: number;
+  totalPages: number;
+  currentPage: number;
+};
+
 function AdminPage() {
   const [activeTab, setActiveTab] = useState<TabType>('students');
   const [showCalendar, setShowCalendar] = useState(false);
@@ -58,13 +66,14 @@ function AdminPage() {
   const [parents, setParents] = useState<Parent[]>(initialParents);
   const [studentPage, setStudentPage] = useState(1);
   const [parentPage, setParentPage] = useState(1);
+  const [pendingPage, setPendingPage] = useState(1);
   const itemsPerPage = 10;
 
   // 데이터 캐싱 (불필요한 API 호출 방지)
   const dataCacheRef = useRef<{
     students?: { data: Student[]; meta: typeof studentsMeta; page: number };
     parents?: { data: Parent[]; meta: typeof parentsMeta; page: number };
-    pending?: PendingUser[];
+    pending?: { data: PendingUser[]; meta: PendingUsersMeta; page: number };
     blacklist?: BlacklistUser[];
   }>({});
   const [studentsMeta, setStudentsMeta] = useState<{
@@ -83,6 +92,7 @@ function AdminPage() {
     currentPage: number;
   } | null>(null);
   const [isLoadingParents, setIsLoadingParents] = useState(false);
+  const [pendingMeta, setPendingMeta] = useState<PendingUsersMeta | null>(null);
 
   // 캘린더 표시 여부 설정 (너비 1350px 이상일 때 표시)
   useEffect(() => {
@@ -99,6 +109,7 @@ function AdminPage() {
   useEffect(() => {
     setStudentPage(1);
     setParentPage(1);
+    setPendingPage(1);
   }, [activeTab]);
 
   // 학생 관리 탭 활성화 시 학생 목록 조회 (캐싱 적용)
@@ -203,25 +214,31 @@ function AdminPage() {
     }
   }, [activeTab, parentPage, itemsPerPage]);
 
-  // 미승인 유저 탭 활성화 시 미승인 유저 목록 조회 (캐싱 적용)
+  // 미승인 유저 탭 활성화 시 미승인 유저 목록 조회 (캐싱 적용, 페이지네이션)
   useEffect(() => {
     if (activeTab === 'pending') {
-      // 캐시 확인
-      if (dataCacheRef.current.pending) {
-        setPendingUsers(dataCacheRef.current.pending);
+      const cached = dataCacheRef.current.pending;
+      if (cached && cached.page === pendingPage) {
+        setPendingUsers(cached.data);
+        setPendingMeta(cached.meta);
         return;
       }
 
       const fetchPendingUsers = async () => {
         setIsLoadingPending(true);
         try {
-          const response = await getPendingUsers();
+          const response = await getPendingUsers(pendingPage, itemsPerPage);
           setPendingUsers(response.data.items);
-          // 캐시 저장
-          dataCacheRef.current.pending = response.data.items;
+          setPendingMeta(response.data.meta);
+          dataCacheRef.current.pending = {
+            data: response.data.items,
+            meta: response.data.meta,
+            page: pendingPage,
+          };
         } catch (error) {
           console.error('승인 대기 유저 목록 조회 에러:', error);
           setPendingUsers([]);
+          setPendingMeta(null);
         } finally {
           setIsLoadingPending(false);
         }
@@ -229,7 +246,7 @@ function AdminPage() {
 
       fetchPendingUsers();
     }
-  }, [activeTab]);
+  }, [activeTab, pendingPage, itemsPerPage]);
 
   // 블랙리스트 탭 활성화 시 블랙리스트 유저 목록 조회 (캐싱 적용)
   useEffect(() => {
@@ -322,13 +339,18 @@ function AdminPage() {
       const fetchPendingUsers = async () => {
         setIsLoadingPending(true);
         try {
-          const response = await getPendingUsers();
+          const response = await getPendingUsers(pendingPage, itemsPerPage);
           setPendingUsers(response.data.items);
-          // 캐시 저장
-          dataCacheRef.current.pending = response.data.items;
+          setPendingMeta(response.data.meta);
+          dataCacheRef.current.pending = {
+            data: response.data.items,
+            meta: response.data.meta,
+            page: pendingPage,
+          };
         } catch (error) {
           console.error('승인 대기 유저 목록 조회 에러:', error);
           setPendingUsers([]);
+          setPendingMeta(null);
         } finally {
           setIsLoadingPending(false);
         }
@@ -354,13 +376,18 @@ function AdminPage() {
         const fetchPendingUsers = async () => {
           setIsLoadingPending(true);
           try {
-            const response = await getPendingUsers();
+            const response = await getPendingUsers(pendingPage, itemsPerPage);
             setPendingUsers(response.data.items);
-            // 캐시 저장
-            dataCacheRef.current.pending = response.data.items;
+            setPendingMeta(response.data.meta);
+            dataCacheRef.current.pending = {
+              data: response.data.items,
+              meta: response.data.meta,
+              page: pendingPage,
+            };
           } catch (error) {
             console.error('승인 대기 유저 목록 조회 에러:', error);
             setPendingUsers([]);
+            setPendingMeta(null);
           } finally {
             setIsLoadingPending(false);
           }
@@ -1184,6 +1211,48 @@ function AdminPage() {
                 </tbody>
               </table>
             </div>
+            {/* 미승인 유저 페이지네이션 */}
+            {pendingMeta && (
+              <div className="mt-6 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPendingPage(prev => Math.max(1, prev - 1))}
+                  disabled={pendingPage === 1}
+                  className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                {Array.from(
+                  { length: pendingMeta.totalPages },
+                  (_, i) => i + 1
+                ).map(page => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setPendingPage(page)}
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                      pendingPage === page
+                        ? 'bg-[#084773] text-white'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPendingPage(prev =>
+                      Math.min(pendingMeta.totalPages, prev + 1)
+                    )
+                  }
+                  disabled={pendingPage === pendingMeta.totalPages}
+                  className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </section>
         </div>
       )}
