@@ -600,11 +600,11 @@ function ExamDetailPage() {
                             <label className="flex items-center justify-center cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={!answerInfo.tookExam}
+                                checked={answerInfo.tookExam}
                                 onChange={e => {
                                   setStudentIsTaken(prev => ({
                                     ...prev,
-                                    [record.studentId]: !e.target.checked,
+                                    [record.studentId]: e.target.checked,
                                   }));
                                 }}
                                 className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
