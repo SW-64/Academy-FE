@@ -289,7 +289,7 @@ function AdminPage() {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [signupForm, setSignupForm] = useState({
     name: '',
-    email: '',
+    loginId: '',
     role: 'STUDENT' as 'STUDENT' | 'PARENT',
     phone: '',
     password: '',
@@ -1704,7 +1704,7 @@ function AdminPage() {
                 try {
                   const signupData: {
                     name: string;
-                    email: string;
+                    loginId: string;
                     role: 'STUDENT' | 'PARENT';
                     phone: string;
                     password: string;
@@ -1713,7 +1713,7 @@ function AdminPage() {
                     signupGrade?: number;
                   } = {
                     name: signupForm.name.trim(),
-                    email: signupForm.email.trim(),
+                    loginId: signupForm.loginId.trim(),
                     role: signupForm.role,
                     phone: signupForm.phone.trim(),
                     password: signupForm.password,
@@ -1788,17 +1788,22 @@ function AdminPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  이메일 *
+                  아이디 *
                 </label>
                 <input
-                  type="email"
-                  value={signupForm.email}
+                  type="text"
+                  value={signupForm.loginId}
                   onChange={e =>
-                    setSignupForm({ ...signupForm, email: e.target.value })
+                    setSignupForm({ ...signupForm, loginId: e.target.value })
                   }
                   required
+                  placeholder="4-20자, 영문으로 시작"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                 />
+                <p className="mt-1 text-xs text-slate-500">
+                  아이디는 4-20자이며, 영문으로 시작하고 영문, 숫자만 사용
+                  가능합니다.
+                </p>
               </div>
 
               <div>
@@ -1926,7 +1931,7 @@ function AdminPage() {
                     setIsSignupModalOpen(false);
                     setSignupForm({
                       name: '',
-                      email: '',
+                      loginId: '',
                       role: 'STUDENT',
                       phone: '',
                       password: '',
