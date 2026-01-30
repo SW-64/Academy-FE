@@ -122,7 +122,7 @@ const LoginPage = () => {
       {/* 로고와 로그인 박스를 하나의 컨테이너로 묶어서 중앙 배치 */}
       <div className="flex flex-col items-center w-full max-w-[403px] rounded-2xl">
         {/* 로고 */}
-        <div className="flex justify-center pt-8 px-8">
+        <div className="flex justify-center pt-8 px-4 sm:px-6 md:px-8 w-full">
           {imageError ? (
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-warm-brown text-center">
               곽원근 수학연구소
@@ -131,10 +131,8 @@ const LoginPage = () => {
             <img
               src="/logo1.png"
               alt="곽원근 수학연구소"
-              className="h-auto max-w-[175px] sm:max-w-[197px] md:max-w-[219px] lg:max-w-[263px]"
-              width="263"
-              height="263"
-              style={{ aspectRatio: '1/1', maxWidth: '100%', height: 'auto' }}
+              className="h-auto w-full max-w-full"
+              style={{ maxWidth: '100%', height: 'auto' }}
               loading="eager"
               fetchPriority="high"
               onError={() => setImageError(true)}
