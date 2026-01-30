@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Plus, X, Trash2, Save, Upload } from 'lucide-react';
+import { Plus, X, Trash2, Save, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 import MainLayout from '../MainLayout';
+import { getStudents } from '../../api/students';
+import { uploadVideo } from '../../api/videos';
 
-// 더미 클래스 데이터 (실제로는 API에서 가져와야 함)
+// 더미 클래스 데이터 (상세/수정 모달용)
 type ClassType = {
   id: number;
   name: string;
   studentIds: number[];
 };
 
-// 타입 정의
 type Student = {
   id: number;
   name: string;
@@ -19,7 +20,6 @@ type Student = {
   grade: string;
 };
 
-// 빈 데이터
 const dummyClasses: ClassType[] = [];
 const dummyStudents: Student[] = [];
 
@@ -86,8 +86,24 @@ function AdminVideosPage() {
     title: '',
     videoFile: null as File | null,
     videoFileName: '',
-    selectedClasses: [] as { classId: number; studentIds: number[] }[],
+    studentIds: [] as number[],
   });
+  const [writeModalStudents, setWriteModalStudents] = useState<Student[]>([]);
+  const [isLoadingWriteStudents, setIsLoadingWriteStudents] = useState(false);
+  const [writeStudentPage, setWriteStudentPage] = useState(1);
+  const [writeStudentsMeta, setWriteStudentsMeta] = useState<{
+    totalItems: number;
+    itemCount: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+  } | null>(null);
+  const [writeSearchStudent, setWriteSearchStudent] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedStudentsForChips, setSelectedStudentsForChips] = useState<
+    Student[]
+  >([]);
+  const writeStudentsPerPage = 10;
   const [editVideo, setEditVideo] = useState({
     title: '',
     videoFile: null as File | null,
@@ -95,32 +111,113 @@ function AdminVideosPage() {
     selectedClasses: [] as { classId: number; studentIds: number[] }[],
   });
 
-  const handleWrite = () => {
+  // 글쓰기 모달 열릴 때 학생 목록 조회
+  useEffect(() => {
+    if (isWriteModalOpen) {
+      const fetchStudents = async () => {
+        setIsLoadingWriteStudents(true);
+        try {
+          const response = await getStudents(
+            writeStudentPage,
+            writeStudentsPerPage
+          );
+          const transformed: Student[] = response.data.items
+            .filter(item => item.student != null)
+            .map(item => ({
+              id: item.student!.studentId,
+              name: item.name,
+              email: item.email,
+              phone: item.phone,
+              school: item.student!.school,
+              grade: `${item.student!.grade}학년`,
+            }));
+          setWriteModalStudents(transformed);
+          setWriteStudentsMeta(response.data.meta);
+        } catch (error) {
+          console.error('학생 목록 조회 에러:', error);
+          setWriteModalStudents([]);
+          setWriteStudentsMeta(null);
+        } finally {
+          setIsLoadingWriteStudents(false);
+        }
+      };
+      fetchStudents();
+    } else {
+      setWriteStudentPage(1);
+      setWriteSearchStudent('');
+      setSelectedStudentsForChips([]);
+    }
+  }, [isWriteModalOpen, writeStudentPage, writeStudentsPerPage]);
+
+  const filteredWriteStudents = writeModalStudents.filter(
+    s =>
+      s.name.toLowerCase().includes(writeSearchStudent.toLowerCase()) ||
+      s.email.toLowerCase().includes(writeSearchStudent.toLowerCase())
+  );
+
+  const handleToggleWriteStudent = (student: Student) => {
+    setNewVideo(prev => ({
+      ...prev,
+      studentIds: prev.studentIds.includes(student.id)
+        ? prev.studentIds.filter(id => id !== student.id)
+        : [...prev.studentIds, student.id],
+    }));
+    setSelectedStudentsForChips(prev =>
+      prev.some(s => s.id === student.id)
+        ? prev.filter(s => s.id !== student.id)
+        : [...prev, student]
+    );
+  };
+
+  const handleWrite = async () => {
     if (!newVideo.title.trim()) {
-      // eslint-disable-next-line no-alert
       alert('제목을 입력해주세요.');
       return;
     }
+    if (!newVideo.videoFile) {
+      alert('영상 파일을 선택해주세요.');
+      return;
+    }
 
-    const video: Video = {
-      id: videos.length + 1,
-      title: newVideo.title,
-      duration: '00:00',
-      videoFile: newVideo.videoFile,
-      videoFileName:
-        newVideo.videoFileName ||
-        (newVideo.videoFile ? newVideo.videoFile.name : ''),
-      selectedClasses: newVideo.selectedClasses,
-    };
-
-    setVideos(prev => [video, ...prev]);
-    setNewVideo({
-      title: '',
-      videoFile: null,
-      videoFileName: '',
-      selectedClasses: [],
-    });
-    setIsWriteModalOpen(false);
+    try {
+      setIsUploading(true);
+      const response = await uploadVideo(
+        newVideo.videoFile,
+        newVideo.title.trim(),
+        newVideo.studentIds
+      );
+      const d = response.data;
+      const sec = Number(d.duration) || 0;
+      const durationFormatted =
+        sec >= 3600
+          ? `${Math.floor(sec / 3600)}:${String(
+              Math.floor((sec % 3600) / 60)
+            ).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`
+          : `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+      const video: Video = {
+        id: d.videoId,
+        title: d.title,
+        duration: durationFormatted,
+        selectedClasses: undefined,
+      };
+      setVideos(prev => [video, ...prev]);
+      setNewVideo({
+        title: '',
+        videoFile: null,
+        videoFileName: '',
+        studentIds: [],
+      });
+      setSelectedStudentsForChips([]);
+      setIsWriteModalOpen(false);
+      alert(response.message || '영상이 업로드되었습니다.');
+    } catch (error) {
+      console.error('영상 업로드 실패:', error);
+      alert(
+        error instanceof Error ? error.message : '영상 업로드에 실패했습니다.'
+      );
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleVideoClick = (video: Video) => {
@@ -352,158 +449,146 @@ function AdminVideosPage() {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-slate-700">
-                    클래스 선택
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (
-                        newVideo.selectedClasses.length === dummyClasses.length
-                      ) {
-                        setNewVideo({
-                          ...newVideo,
-                          selectedClasses: [],
-                        });
-                      } else {
-                        setNewVideo({
-                          ...newVideo,
-                          selectedClasses: dummyClasses.map(c => ({
-                            classId: c.id,
-                            studentIds: [],
-                          })),
-                        });
-                      }
-                    }}
-                    className="text-xs text-[#084773] hover:text-[#063a5a] font-medium"
-                  >
-                    {newVideo.selectedClasses.length === dummyClasses.length
-                      ? '전체 해제'
-                      : '클래스 모두 선택'}
-                  </button>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  학생 선택
+                </label>
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    value={writeSearchStudent}
+                    onChange={e => setWriteSearchStudent(e.target.value)}
+                    placeholder="학생 이름 또는 이메일로 검색..."
+                    className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                  />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {dummyClasses.map(classItem => {
-                    const isClassExpanded = newVideo.selectedClasses.some(
-                      sc => sc.classId === classItem.id
-                    );
-                    const selectedClassData = newVideo.selectedClasses.find(
-                      sc => sc.classId === classItem.id
-                    );
-
-                    return (
+                {selectedStudentsForChips.length > 0 && (
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    {selectedStudentsForChips.map(student => (
                       <div
-                        key={classItem.id}
-                        className="rounded-lg border border-slate-200 p-4"
+                        key={student.id}
+                        className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-sm"
                       >
+                        <span className="text-slate-900">{student.name}</span>
                         <button
                           type="button"
-                          onClick={() => {
-                            if (isClassExpanded) {
-                              setNewVideo({
-                                ...newVideo,
-                                selectedClasses:
-                                  newVideo.selectedClasses.filter(
-                                    sc => sc.classId !== classItem.id
-                                  ),
-                              });
-                            } else {
-                              setNewVideo({
-                                ...newVideo,
-                                selectedClasses: [
-                                  ...newVideo.selectedClasses,
-                                  { classId: classItem.id, studentIds: [] },
-                                ],
-                              });
-                            }
-                          }}
-                          className="flex items-center gap-2 cursor-pointer mb-3 w-full text-left"
+                          onClick={() => handleToggleWriteStudent(student)}
+                          className="text-blue-600 hover:text-blue-800"
                         >
-                          <span className="text-sm font-medium text-slate-700">
-                            {classItem.name}
-                          </span>
+                          <X className="h-4 w-4" />
                         </button>
-
-                        {isClassExpanded && (
-                          <div className="ml-0 mt-2">
-                            <label className="block text-xs font-medium text-slate-600 mb-2">
-                              학생 선택
-                            </label>
-                            <div className="max-h-60 overflow-y-auto rounded-lg border border-slate-200 p-2 space-y-1.5">
-                              {classItem.studentIds.map(studentId => {
-                                const student = dummyStudents.find(
-                                  s => s.id === studentId
-                                );
-                                if (!student) return null;
-                                return (
-                                  <label
-                                    key={studentId}
-                                    className="flex items-center gap-2 cursor-pointer"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={
-                                        selectedClassData?.studentIds.includes(
-                                          studentId
-                                        ) || false
-                                      }
-                                      onChange={e => {
-                                        const classIndex =
-                                          newVideo.selectedClasses.findIndex(
-                                            sc => sc.classId === classItem.id
-                                          );
-                                        if (classIndex === -1) return;
-
-                                        const updatedClasses = [
-                                          ...newVideo.selectedClasses,
-                                        ];
-                                        if (e.target.checked) {
-                                          updatedClasses[classIndex] = {
-                                            ...updatedClasses[classIndex],
-                                            studentIds: [
-                                              ...updatedClasses[classIndex]
-                                                .studentIds,
-                                              studentId,
-                                            ],
-                                          };
-                                        } else {
-                                          updatedClasses[classIndex] = {
-                                            ...updatedClasses[classIndex],
-                                            studentIds: updatedClasses[
-                                              classIndex
-                                            ].studentIds.filter(
-                                              id => id !== studentId
-                                            ),
-                                          };
-                                        }
-                                        setNewVideo({
-                                          ...newVideo,
-                                          selectedClasses: updatedClasses,
-                                        });
-                                      }}
-                                      className="h-3.5 w-3.5 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
-                                    />
-                                    <span className="text-xs text-slate-700">
-                                      {student.name} ({student.school}{' '}
-                                      {student.grade})
-                                    </span>
-                                  </label>
-                                );
-                              })}
-                            </div>
-                            {selectedClassData && (
-                              <p className="mt-2 text-xs text-slate-500">
-                                선택된 학생:{' '}
-                                {selectedClassData.studentIds.length}명
-                              </p>
-                            )}
-                          </div>
-                        )}
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+                )}
+                <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-200">
+                  <table className="min-w-full border-collapse">
+                    <thead className="bg-slate-50 sticky top-0">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">
+                          선택
+                        </th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">
+                          이름
+                        </th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">
+                          이메일
+                        </th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">
+                          학교
+                        </th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">
+                          학년
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {isLoadingWriteStudents ? (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="px-4 py-4 text-center text-sm text-slate-500"
+                          >
+                            학생 목록을 불러오는 중...
+                          </td>
+                        </tr>
+                      ) : filteredWriteStudents.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="px-4 py-4 text-center text-sm text-slate-500"
+                          >
+                            {writeSearchStudent
+                              ? '검색 결과가 없습니다.'
+                              : '등록된 학생이 없습니다.'}
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredWriteStudents.map(student => (
+                          <tr
+                            key={student.id}
+                            className="border-b border-slate-100 hover:bg-slate-50"
+                          >
+                            <td className="px-4 py-2">
+                              <input
+                                type="checkbox"
+                                checked={newVideo.studentIds.includes(
+                                  student.id
+                                )}
+                                onChange={() =>
+                                  handleToggleWriteStudent(student)
+                                }
+                                className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
+                              />
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-900">
+                              {student.name}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-600">
+                              {student.email}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-600">
+                              {student.school}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-600">
+                              {student.grade}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
+                {writeStudentsMeta && writeStudentsMeta.totalPages > 1 && (
+                  <div className="mt-2 flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setWriteStudentPage(prev => Math.max(1, prev - 1))
+                      }
+                      disabled={writeStudentPage === 1}
+                      className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <span className="text-sm text-slate-600">
+                      {writeStudentPage} / {writeStudentsMeta.totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setWriteStudentPage(prev =>
+                          Math.min(writeStudentsMeta.totalPages, prev + 1)
+                        )
+                      }
+                      disabled={
+                        writeStudentPage === writeStudentsMeta.totalPages
+                      }
+                      className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -562,8 +647,9 @@ function AdminVideosPage() {
                     title: '',
                     videoFile: null,
                     videoFileName: '',
-                    selectedClasses: [],
+                    studentIds: [],
                   });
+                  setSelectedStudentsForChips([]);
                 }}
                 className="rounded-lg border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
               >
@@ -572,9 +658,10 @@ function AdminVideosPage() {
               <button
                 type="button"
                 onClick={handleWrite}
-                className="rounded-lg bg-[#084773] px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
+                disabled={isUploading}
+                className="rounded-lg bg-[#084773] px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                작성하기
+                {isUploading ? '업로드 중...' : '작성하기'}
               </button>
             </div>
           </div>
