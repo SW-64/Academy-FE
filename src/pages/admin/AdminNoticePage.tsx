@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, X, Trash2, Save } from 'lucide-react';
 import MainLayout from '../MainLayout';
+import { getClasses } from '../../api/class';
 // 타입 정의
 export type Notice = {
   id: number;
@@ -16,12 +17,13 @@ export type Notice = {
 
 // 빈 데이터
 const dummyNotices: Notice[] = [];
-const dummyClasses: { id: number; name: string }[] = [];
 
 function AdminNoticePage() {
   const [notices, setNotices] = useState<Notice[]>(dummyNotices);
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(false);
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
@@ -139,6 +141,29 @@ function AdminNoticePage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // 글쓰기 또는 상세/수정 모달이 열릴 때 클래스 목록 조회
+  useEffect(() => {
+    if (isWriteModalOpen || isDetailModalOpen) {
+      const fetchClasses = async () => {
+        setIsLoadingClasses(true);
+        try {
+          const response = await getClasses();
+          const transformedClasses = response.data.map(c => ({
+            id: c.classId,
+            name: c.className,
+          }));
+          setClasses(transformedClasses);
+        } catch (error) {
+          console.error('클래스 목록 조회 에러:', error);
+          setClasses([]);
+        } finally {
+          setIsLoadingClasses(false);
+        }
+      };
+      fetchClasses();
+    }
+  }, [isWriteModalOpen, isDetailModalOpen]);
+
   useEffect(() => {
     // 공지 삭제/추가 시 현재 페이지가 범위를 벗어나지 않도록 보정
     setCurrentPage(prev => Math.min(prev, totalPages));
@@ -171,7 +196,7 @@ function AdminNoticePage() {
 
         {/* 클래스 선택 */}
         <div className="mb-4 flex flex-wrap gap-2">
-          {dummyClasses.map(classItem => (
+          {classes.map(classItem => (
             <button
               key={classItem.id}
               type="button"
@@ -387,7 +412,7 @@ function AdminNoticePage() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (newNotice.classIds.length === dummyClasses.length) {
+                      if (newNotice.classIds.length === classes.length) {
                         setNewNotice({
                           ...newNotice,
                           classIds: [],
@@ -395,48 +420,58 @@ function AdminNoticePage() {
                       } else {
                         setNewNotice({
                           ...newNotice,
-                          classIds: dummyClasses.map(c => c.id),
+                          classIds: classes.map(c => c.id),
                         });
                       }
                     }}
                     className="text-xs text-[#084773] hover:text-[#063a5a] font-medium"
                   >
-                    {newNotice.classIds.length === dummyClasses.length
+                    {newNotice.classIds.length === classes.length
                       ? '전체 해제'
                       : '클래스 모두 선택'}
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {dummyClasses.map(classItem => (
-                    <label
-                      key={classItem.id}
-                      className="flex items-center gap-2 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={newNotice.classIds.includes(classItem.id)}
-                        onChange={e => {
-                          if (e.target.checked) {
-                            setNewNotice({
-                              ...newNotice,
-                              classIds: [...newNotice.classIds, classItem.id],
-                            });
-                          } else {
-                            setNewNotice({
-                              ...newNotice,
-                              classIds: newNotice.classIds.filter(
-                                id => id !== classItem.id
-                              ),
-                            });
-                          }
-                        }}
-                        className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
-                      />
-                      <span className="text-sm text-slate-700">
-                        {classItem.name}
-                      </span>
-                    </label>
-                  ))}
+                  {isLoadingClasses ? (
+                    <p className="col-span-2 text-sm text-slate-500">
+                      클래스 목록을 불러오는 중...
+                    </p>
+                  ) : classes.length === 0 ? (
+                    <p className="col-span-2 text-sm text-slate-500">
+                      등록된 클래스가 없습니다.
+                    </p>
+                  ) : (
+                    classes.map(classItem => (
+                      <label
+                        key={classItem.id}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={newNotice.classIds.includes(classItem.id)}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setNewNotice({
+                                ...newNotice,
+                                classIds: [...newNotice.classIds, classItem.id],
+                              });
+                            } else {
+                              setNewNotice({
+                                ...newNotice,
+                                classIds: newNotice.classIds.filter(
+                                  id => id !== classItem.id
+                                ),
+                              });
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
+                        />
+                        <span className="text-sm text-slate-700">
+                          {classItem.name}
+                        </span>
+                      </label>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -543,7 +578,7 @@ function AdminNoticePage() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (editNotice.classIds.length === dummyClasses.length) {
+                      if (editNotice.classIds.length === classes.length) {
                         setEditNotice({
                           ...editNotice,
                           classIds: [],
@@ -551,19 +586,19 @@ function AdminNoticePage() {
                       } else {
                         setEditNotice({
                           ...editNotice,
-                          classIds: dummyClasses.map(c => c.id),
+                          classIds: classes.map(c => c.id),
                         });
                       }
                     }}
                     className="text-xs text-[#084773] hover:text-[#063a5a] font-medium"
                   >
-                    {editNotice.classIds.length === dummyClasses.length
+                    {editNotice.classIds.length === classes.length
                       ? '전체 해제'
                       : '클래스 모두 선택'}
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {dummyClasses.map(classItem => (
+                  {classes.map(classItem => (
                     <label
                       key={classItem.id}
                       className="flex items-center gap-2 cursor-pointer"
