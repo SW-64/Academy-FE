@@ -275,14 +275,14 @@ function AdminClassPage() {
     try {
       const response = await getClassStudents(classItem.id);
       // API 응답을 Student 형식으로 변환
-      const transformedStudents: Student[] = response.data.studentClasses.map(
-        studentClass => ({
-          id: studentClass.student.studentId,
-          name: studentClass.student.user.name,
-          email: studentClass.student.user.email,
-          phone: '', // API 응답에 phone이 없으므로 빈 문자열
-          school: studentClass.student.school,
-          grade: `${studentClass.student.grade}학년`,
+      const transformedStudents: Student[] = response.data.students.map(
+        item => ({
+          id: item.studentId,
+          name: item.name,
+          email: item.loginId,
+          phone: '',
+          school: item.school,
+          grade: `${item.grade}학년`,
         })
       );
       setClassStudents(transformedStudents);
@@ -354,13 +354,13 @@ function AdminClassPage() {
           try {
             const studentsResponse = await getClassStudents(selectedClass.id);
             const transformedStudents: Student[] =
-              studentsResponse.data.studentClasses.map(studentClass => ({
-                id: studentClass.student.studentId,
-                name: studentClass.student.user.name,
-                email: studentClass.student.user.email,
+              studentsResponse.data.students.map(item => ({
+                id: item.studentId,
+                name: item.name,
+                email: item.loginId,
                 phone: '',
-                school: studentClass.student.school,
-                grade: `${studentClass.student.grade}학년`,
+                school: item.school,
+                grade: `${item.grade}학년`,
               }));
             setClassStudents(transformedStudents);
             setEditSelectedStudentIds(transformedStudents.map(s => s.id));
