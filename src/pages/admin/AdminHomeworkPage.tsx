@@ -76,7 +76,6 @@ function AdminHomeworkPage() {
         );
         setTextbooks(transformedTextbooks);
       } catch (error) {
-        console.error('교재 목록 조회 에러:', error);
         setTextbooks([]);
       } finally {
         setIsLoading(false);
@@ -99,7 +98,6 @@ function AdminHomeworkPage() {
         );
         setClasses(transformedClasses);
       } catch (error) {
-        console.error('클래스 목록 조회 에러:', error);
         setClasses([]);
       }
     };
@@ -161,7 +159,6 @@ function AdminHomeworkPage() {
         classNames: classNames,
       });
     } catch (error) {
-      console.error('교재 상세 조회 에러:', error);
       alert('교재 상세 정보를 가져오는데 실패했습니다.');
       setIsModalOpen(false);
     } finally {
@@ -290,7 +287,6 @@ function AdminHomeworkPage() {
             );
             setTextbooks(transformedTextbooks);
           } catch (error) {
-            console.error('교재 목록 조회 에러:', error);
           } finally {
             setIsLoading(false);
           }
@@ -381,7 +377,6 @@ function AdminHomeworkPage() {
             );
             setTextbooks(transformedTextbooks);
           } catch (error) {
-            console.error('교재 목록 조회 에러:', error);
           } finally {
             setIsLoading(false);
           }
@@ -390,7 +385,6 @@ function AdminHomeworkPage() {
       }
       handleCloseModal();
     } catch (error) {
-      console.error('교재 저장 에러:', error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -428,7 +422,6 @@ function AdminHomeworkPage() {
         classNames: classNames,
       });
     } catch (error) {
-      console.error('교재 상세 조회 에러:', error);
       alert('교재 상세 정보를 가져오는데 실패했습니다.');
     } finally {
       setIsLoadingDetail(false);
@@ -457,9 +450,8 @@ function AdminHomeworkPage() {
             })
           );
           setTextbooks(transformedTextbooks);
-        } catch (error) {
-          console.error('교재 목록 조회 에러:', error);
-        } finally {
+          } catch (error) {
+          } finally {
           setIsLoading(false);
         }
       };
@@ -469,7 +461,6 @@ function AdminHomeworkPage() {
         setSelectedTextbook(null);
       }
     } catch (error) {
-      console.error('교재 삭제 에러:', error);
       const errorMessage =
         error instanceof Error ? error.message : '교재 삭제에 실패했습니다.';
       alert(errorMessage);

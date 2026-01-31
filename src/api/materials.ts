@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../constants/api';
+import { request } from './client';
 
 export interface MaterialItem {
   materialId: number;
@@ -53,28 +54,12 @@ export const getMaterials = async (
     queryParams.append('classId', params.classId.toString());
   }
 
-  const url = `${API_BASE_URL}/materials${
+  const path = `/materials${
     queryParams.toString() ? `?${queryParams.toString()}` : ''
   }`;
-
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<MaterialsResponse>(path, {
+    errorMessage: '학습자료 목록을 가져오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '학습자료 목록을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '학습자료 목록을 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 export interface CreateMaterialRequest {
@@ -110,23 +95,11 @@ export interface CreateMaterialResponse {
 export const createMaterial = async (
   data: CreateMaterialRequest
 ): Promise<CreateMaterialResponse> => {
-  const response = await fetch(`${API_BASE_URL}/materials`, {
+  return request<CreateMaterialResponse>('/materials', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
-    body: JSON.stringify(data),
+    body: data,
+    errorMessage: '학습자료 생성에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '학습자료 생성에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '학습자료 생성에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 export interface UploadMaterialFileResponse {
@@ -197,24 +170,9 @@ export interface MaterialDetailResponse {
 export const getMaterialDetail = async (
   materialId: number
 ): Promise<MaterialDetailResponse> => {
-  const response = await fetch(`${API_BASE_URL}/materials/${materialId}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<MaterialDetailResponse>(`/materials/${materialId}`, {
+    errorMessage: '학습자료를 불러오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '학습자료를 불러오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '학습자료를 불러오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 export interface DeleteMaterialResponse {
@@ -230,22 +188,10 @@ export interface DeleteMaterialResponse {
 export const deleteMaterial = async (
   materialId: number
 ): Promise<DeleteMaterialResponse> => {
-  const response = await fetch(`${API_BASE_URL}/materials/${materialId}`, {
+  return request<DeleteMaterialResponse>(`/materials/${materialId}`, {
     method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+    errorMessage: '학습자료 삭제에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '학습자료 삭제에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '학습자료 삭제에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 export interface UpdateMaterialRequest {
@@ -269,22 +215,10 @@ export const updateMaterial = async (
   materialId: number,
   data: UpdateMaterialRequest
 ): Promise<UpdateMaterialResponse> => {
-  const response = await fetch(`${API_BASE_URL}/materials/${materialId}`, {
+  return request<UpdateMaterialResponse>(`/materials/${materialId}`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
-    body: JSON.stringify(data),
+    body: data,
+    errorMessage: '학습자료 수정에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '학습자료 수정에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '학습자료 수정에 실패했습니다.');
-  }
-
-  return response.json();
 };
 

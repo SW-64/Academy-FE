@@ -152,7 +152,6 @@ function AdminPage() {
             page: studentPage,
           };
         } catch (error) {
-          console.error('학생 목록 조회 에러:', error);
           setStudents([]);
           setStudentsMeta(null);
         } finally {
@@ -202,7 +201,6 @@ function AdminPage() {
             page: parentPage,
           };
         } catch (error) {
-          console.error('학부모 목록 조회 에러:', error);
           setParents([]);
           setParentsMeta(null);
         } finally {
@@ -236,7 +234,6 @@ function AdminPage() {
             page: pendingPage,
           };
         } catch (error) {
-          console.error('승인 대기 유저 목록 조회 에러:', error);
           setPendingUsers([]);
           setPendingMeta(null);
         } finally {
@@ -265,7 +262,6 @@ function AdminPage() {
           // 캐시 저장
           dataCacheRef.current.blacklist = response.data.items;
         } catch (error) {
-          console.error('블랙리스트 유저 목록 조회 에러:', error);
           setBlacklistUsers([]);
         } finally {
           setIsLoadingBlacklist(false);
@@ -334,7 +330,7 @@ function AdminPage() {
     try {
       const response = await approveUser(userId);
       alert(response.message);
-      // 캐시 무효화 및 목록 새로고침
+      // 캐시 무효화 및 미승인 목록 새로고침
       dataCacheRef.current.pending = undefined;
       const fetchPendingUsers = async () => {
         setIsLoadingPending(true);
@@ -348,7 +344,6 @@ function AdminPage() {
             page: pendingPage,
           };
         } catch (error) {
-          console.error('승인 대기 유저 목록 조회 에러:', error);
           setPendingUsers([]);
           setPendingMeta(null);
         } finally {
@@ -356,8 +351,67 @@ function AdminPage() {
         }
       };
       fetchPendingUsers();
+
+      // 학생/학부모 목록 캐시 무효화 후 즉시 새로고침 (승인된 유저가 목록에 바로 반영되도록)
+      dataCacheRef.current.students = undefined;
+      dataCacheRef.current.parents = undefined;
+      const fetchStudentsForRefresh = async () => {
+        try {
+          const response = await getStudents(studentPage, itemsPerPage);
+          const transformedStudents: Student[] = response.data.items
+            .filter(item => item.student != null)
+            .map(item => ({
+              id: item.student!.studentId,
+              userId: item.userId,
+              name: item.name,
+              email: item.email,
+              phone: item.phone,
+              school: item.student!.school,
+              grade: `${item.student!.grade}학년`,
+              parentName:
+                item.student!.parent != null
+                  ? item.student!.parent.user.name
+                  : undefined,
+            }));
+          setStudents(transformedStudents);
+          setStudentsMeta(response.data.meta);
+          dataCacheRef.current.students = {
+            data: transformedStudents,
+            meta: response.data.meta,
+            page: studentPage,
+          };
+        } catch (error) {
+        }
+      };
+      const fetchParentsForRefresh = async () => {
+        try {
+          const response = await getParents(parentPage, itemsPerPage);
+          const transformedParents: Parent[] = response.data.items.map(
+            item => ({
+              id: item.parent.parentId,
+              userId: item.userId,
+              name: item.name,
+              email: item.email,
+              phone: item.phone,
+              linkedStudent:
+                item.parent.student.length > 0
+                  ? item.parent.student.map(s => s.user.name).join(', ')
+                  : '-',
+            })
+          );
+          setParents(transformedParents);
+          setParentsMeta(response.data.meta);
+          dataCacheRef.current.parents = {
+            data: transformedParents,
+            meta: response.data.meta,
+            page: parentPage,
+          };
+        } catch (error) {
+        }
+      };
+      fetchStudentsForRefresh();
+      fetchParentsForRefresh();
     } catch (error) {
-      console.error('유저 계정 승인 에러:', error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -371,30 +425,25 @@ function AdminPage() {
       try {
         const response = await rejectUser(userId);
         alert(response.message);
-        // 캐시 무효화 및 목록 새로고침
+        // 캐시 무효화 및 미승인 목록 즉시 새로고침
         dataCacheRef.current.pending = undefined;
-        const fetchPendingUsers = async () => {
-          setIsLoadingPending(true);
-          try {
-            const response = await getPendingUsers(pendingPage, itemsPerPage);
-            setPendingUsers(response.data.items);
-            setPendingMeta(response.data.meta);
-            dataCacheRef.current.pending = {
-              data: response.data.items,
-              meta: response.data.meta,
-              page: pendingPage,
-            };
-          } catch (error) {
-            console.error('승인 대기 유저 목록 조회 에러:', error);
-            setPendingUsers([]);
-            setPendingMeta(null);
-          } finally {
-            setIsLoadingPending(false);
-          }
-        };
-        fetchPendingUsers();
+        setIsLoadingPending(true);
+        try {
+          const res = await getPendingUsers(pendingPage, itemsPerPage);
+          setPendingUsers(res.data.items);
+          setPendingMeta(res.data.meta);
+          dataCacheRef.current.pending = {
+            data: res.data.items,
+            meta: res.data.meta,
+            page: pendingPage,
+          };
+        } catch (error) {
+          setPendingUsers([]);
+          setPendingMeta(null);
+        } finally {
+          setIsLoadingPending(false);
+        }
       } catch (error) {
-        console.error('유저 계정 거절 에러:', error);
         const errorMessage =
           error instanceof Error
             ? error.message
@@ -409,25 +458,39 @@ function AdminPage() {
       try {
         const response = await unblacklistUser(userId);
         alert(response.message);
-        // 캐시 무효화 및 목록 새로고침
+        // 블랙리스트 목록 새로고침
         dataCacheRef.current.blacklist = undefined;
-        const fetchBlacklistUsers = async () => {
-          setIsLoadingBlacklist(true);
-          try {
-            const response = await getBlacklistUsers();
-            setBlacklistUsers(response.data.items);
-            // 캐시 저장
-            dataCacheRef.current.blacklist = response.data.items;
-          } catch (error) {
-            console.error('블랙리스트 유저 목록 조회 에러:', error);
-            setBlacklistUsers([]);
-          } finally {
-            setIsLoadingBlacklist(false);
-          }
-        };
-        fetchBlacklistUsers();
+        setIsLoadingBlacklist(true);
+        try {
+          const blRes = await getBlacklistUsers();
+          setBlacklistUsers(blRes.data.items);
+          dataCacheRef.current.blacklist = blRes.data.items;
+        } catch (error) {
+          setBlacklistUsers([]);
+        } finally {
+          setIsLoadingBlacklist(false);
+        }
+
+        // 미승인 유저 캐시 무효화 후 목록 새로고침 (복구된 유저가 미승인 목록에 바로 보이도록)
+        dataCacheRef.current.pending = undefined;
+        setIsLoadingPending(true);
+        try {
+          const pendingRes = await getPendingUsers(1, itemsPerPage);
+          setPendingUsers(pendingRes.data.items);
+          setPendingMeta(pendingRes.data.meta);
+          setPendingPage(1);
+          dataCacheRef.current.pending = {
+            data: pendingRes.data.items,
+            meta: pendingRes.data.meta,
+            page: 1,
+          };
+        } catch (error) {
+          setPendingUsers([]);
+          setPendingMeta(null);
+        } finally {
+          setIsLoadingPending(false);
+        }
       } catch (error) {
-        console.error('블랙리스트 복구 에러:', error);
         const errorMessage =
           error instanceof Error
             ? error.message
@@ -489,7 +552,6 @@ function AdminPage() {
         );
         setAvailableParents(transformedParents);
       } catch (error) {
-        console.error('학부모 목록 조회 에러:', error);
         setAvailableParents([]);
       } finally {
         setIsLoadingAvailableParents(false);
@@ -510,7 +572,6 @@ function AdminPage() {
       });
       setEditModalOpen(true);
     } catch (error) {
-      console.error('학생 상세 조회 에러:', error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -578,7 +639,6 @@ function AdminPage() {
               page: studentPage,
             };
           } catch (error) {
-            console.error('학생 목록 조회 에러:', error);
             setStudents([]);
             setStudentsMeta(null);
           } finally {
@@ -633,7 +693,6 @@ function AdminPage() {
               page: parentPage,
             };
           } catch (error) {
-            console.error('학부모 목록 조회 에러:', error);
             setParents([]);
             setParentsMeta(null);
           } finally {
@@ -646,7 +705,6 @@ function AdminPage() {
       }
       setEditModalOpen(false);
     } catch (error) {
-      console.error('유저 정보 수정 에러:', error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -688,7 +746,6 @@ function AdminPage() {
       });
       setEditModalOpen(true);
     } catch (error) {
-      console.error('학부모 상세 조회 에러:', error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -727,7 +784,6 @@ function AdminPage() {
       }
       setDeleteModalOpen(false);
     } catch (error) {
-      console.error('유저 계정 거절 에러:', error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -768,7 +824,6 @@ function AdminPage() {
       setIsResetPasswordModalOpen(false);
       setResetPasswordForm({ newPassword: '', newPasswordConfirm: '' });
     } catch (error) {
-      console.error('비밀번호 초기화 에러:', error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -1566,7 +1621,6 @@ function AdminPage() {
                                     });
                                     alert('학부모 연동이 해제되었습니다.');
                                   } catch (error) {
-                                    console.error('연동 해제 에러:', error);
                                     const errorMessage =
                                       error instanceof Error
                                         ? error.message
@@ -1648,7 +1702,6 @@ function AdminPage() {
                                         alert('학부모 연동이 완료되었습니다.');
                                       }
                                     } catch (error) {
-                                      console.error('연동 에러:', error);
                                       const errorMessage =
                                         error instanceof Error
                                           ? error.message

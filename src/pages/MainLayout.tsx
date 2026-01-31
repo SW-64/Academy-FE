@@ -351,7 +351,6 @@ function MainLayout({
                 // 백엔드 로그아웃 API 호출 (httpOnly 쿠키 삭제)
                 await logout();
               } catch (error) {
-                console.error('로그아웃 에러:', error);
                 // 에러가 발생해도 로그인 페이지로 이동
               } finally {
                 navigate('/login');

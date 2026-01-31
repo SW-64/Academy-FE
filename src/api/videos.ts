@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../constants/api';
+import { request } from './client';
 
 export type VideoStatus = string;
 
@@ -84,10 +85,6 @@ export const uploadVideo = async (
   title: string,
   studentIds: number[]
 ): Promise<UploadVideoResponse> => {
-  console.log('업로드 시작');
-  console.log('file:', file);
-  console.log('title:', title);
-  console.log('studentIds:', studentIds);
 
   const formData = new FormData();
   formData.append('file', file);
@@ -112,10 +109,6 @@ export const uploadVideo = async (
   return response.json();
 };
 
-const defaultHeaders = {
-  'Content-Type': 'application/json',
-};
-
 /**
  * 영상 목록을 조회합니다.
  * @param page 페이지 (기본 1)
@@ -125,19 +118,9 @@ export const getVideos = async (
   page: number = 1,
   limit: number = 20
 ): Promise<GetVideosResponse> => {
-  const url = `${API_BASE_URL}/videos?page=${page}&limit=${limit}`;
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: defaultHeaders,
-    credentials: 'include',
+  return request<GetVideosResponse>(`/videos?page=${page}&limit=${limit}`, {
+    errorMessage: '영상 목록을 가져오는데 실패했습니다.',
   });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '영상 목록을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '영상 목록을 가져오는데 실패했습니다.');
-  }
-  return response.json();
 };
 
 /**
@@ -146,20 +129,9 @@ export const getVideos = async (
 export const getVideoDetail = async (
   videoId: number
 ): Promise<GetVideoDetailResponse> => {
-  const response = await fetch(`${API_BASE_URL}/videos/${videoId}`, {
-    method: 'GET',
-    headers: defaultHeaders,
-    credentials: 'include',
+  return request<GetVideoDetailResponse>(`/videos/${videoId}`, {
+    errorMessage: '영상 상세를 가져오는데 실패했습니다.',
   });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '영상 상세를 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '영상 상세를 가져오는데 실패했습니다.'
-    );
-  }
-  return response.json();
 };
 
 /**
@@ -168,20 +140,9 @@ export const getVideoDetail = async (
 export const getVideoPlayback = async (
   videoId: number
 ): Promise<VideoPlaybackResponse> => {
-  const response = await fetch(`${API_BASE_URL}/videos/${videoId}/playback`, {
-    method: 'GET',
-    headers: defaultHeaders,
-    credentials: 'include',
+  return request<VideoPlaybackResponse>(`/videos/${videoId}/playback`, {
+    errorMessage: '재생 URL을 가져오는데 실패했습니다.',
   });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '재생 URL을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '재생 URL을 가져오는데 실패했습니다.'
-    );
-  }
-  return response.json();
 };
 
 /**
@@ -190,14 +151,11 @@ export const getVideoPlayback = async (
 export const deleteVideo = async (
   videoId: number
 ): Promise<{ statusCode: number; message: string }> => {
-  const response = await fetch(`${API_BASE_URL}/videos/${videoId}`, {
-    method: 'DELETE',
-    headers: defaultHeaders,
-    credentials: 'include',
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || '영상 삭제에 실패했습니다.');
-  }
-  return data;
+  return request<{ statusCode: number; message: string }>(
+    `/videos/${videoId}`,
+    {
+      method: 'DELETE',
+      errorMessage: '영상 삭제에 실패했습니다.',
+    }
+  );
 };

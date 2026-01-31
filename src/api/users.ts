@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../constants/api';
+import { request } from './client';
 
 export interface RejectUserResponse {
   statusCode: number;
@@ -87,24 +87,9 @@ export const getPendingUsers = async (
     page: String(page),
     limit: String(limit),
   });
-  const response = await fetch(`${API_BASE_URL}/users/pending?${params}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<PendingUsersResponse>(`/users/pending?${params}`, {
+    errorMessage: '승인 대기 중인 유저 목록을 가져오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '승인 대기 중인 유저 목록을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '승인 대기 중인 유저 목록을 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 /**
@@ -112,24 +97,9 @@ export const getPendingUsers = async (
  * @returns 블랙리스트 유저 목록
  */
 export const getBlacklistUsers = async (): Promise<BlacklistUsersResponse> => {
-  const response = await fetch(`${API_BASE_URL}/users/blacklist`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<BlacklistUsersResponse>('/users/blacklist', {
+    errorMessage: '블랙리스트 유저 목록을 가져오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '블랙리스트 유저 목록을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '블랙리스트 유저 목록을 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 /**
@@ -140,22 +110,10 @@ export const getBlacklistUsers = async (): Promise<BlacklistUsersResponse> => {
 export const approveUser = async (
   userId: number
 ): Promise<ApproveUserResponse> => {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}/approve`, {
+  return request<ApproveUserResponse>(`/users/${userId}/approve`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+    errorMessage: '유저 계정 승인에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '유저 계정 승인에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '유저 계정 승인에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 /**
@@ -166,22 +124,10 @@ export const approveUser = async (
 export const rejectUser = async (
   userId: number
 ): Promise<RejectUserResponse> => {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}/reject`, {
+  return request<RejectUserResponse>(`/users/${userId}/reject`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+    errorMessage: '유저 계정 거절에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '유저 계정 거절에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '유저 계정 거절에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 /**
@@ -192,22 +138,10 @@ export const rejectUser = async (
 export const unblacklistUser = async (
   userId: number
 ): Promise<UnblacklistUserResponse> => {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}/unblacklist`, {
+  return request<UnblacklistUserResponse>(`/users/${userId}/unblacklist`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+    errorMessage: '블랙리스트 복구에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '블랙리스트 복구에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '블랙리스트 복구에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 export interface UpdateUserInfoDto {
@@ -233,23 +167,11 @@ export const updateUserInfo = async (
   userId: number,
   data: UpdateUserInfoDto
 ): Promise<UpdateUserInfoResponse> => {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}/info`, {
+  return request<UpdateUserInfoResponse>(`/users/${userId}/info`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
-    body: JSON.stringify(data),
+    body: data,
+    errorMessage: '유저 정보 수정에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '유저 정보 수정에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '유저 정보 수정에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 export interface MyInfoResponse {
@@ -272,22 +194,9 @@ export interface MyInfoResponse {
  * @returns 내 정보
  */
 export const getMyInfo = async (): Promise<MyInfoResponse> => {
-  const response = await fetch(`${API_BASE_URL}/users/me`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<MyInfoResponse>('/users/me', {
+    errorMessage: '내 정보를 가져오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '내 정보를 가져오는데 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '내 정보를 가져오는데 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 export interface UpdateMyInfoDto {
@@ -311,23 +220,11 @@ export interface UpdateMyInfoResponse {
 export const updateMyInfo = async (
   data: UpdateMyInfoDto
 ): Promise<UpdateMyInfoResponse> => {
-  const response = await fetch(`${API_BASE_URL}/users/me`, {
+  return request<UpdateMyInfoResponse>('/users/me', {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
-    body: JSON.stringify(data),
+    body: data,
+    errorMessage: '내 정보 수정에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '내 정보 수정에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '내 정보 수정에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 export interface ChangePasswordRequest {
@@ -349,23 +246,11 @@ export interface ChangePasswordResponse {
 export const changePassword = async (
   data: ChangePasswordRequest
 ): Promise<ChangePasswordResponse> => {
-  const response = await fetch(`${API_BASE_URL}/users/me/password`, {
+  return request<ChangePasswordResponse>('/users/me/password', {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
-    body: JSON.stringify(data),
+    body: data,
+    errorMessage: '비밀번호 변경에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '비밀번호 변경에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '비밀번호 변경에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 export interface ResetPasswordRequest {
@@ -388,24 +273,9 @@ export const resetUserPassword = async (
   userId: number,
   data: ResetPasswordRequest
 ): Promise<ResetPasswordResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/users/${userId}/reset-password`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // 쿠키를 포함하여 요청
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '비밀번호 초기화에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '비밀번호 초기화에 실패했습니다.');
-  }
-
-  return response.json();
+  return request<ResetPasswordResponse>(`/users/${userId}/reset-password`, {
+    method: 'POST',
+    body: data,
+    errorMessage: '비밀번호 초기화에 실패했습니다.',
+  });
 };

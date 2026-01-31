@@ -75,7 +75,6 @@ function HomeworkProgressPage() {
         );
         setClasses(transformedClasses);
       } catch (error) {
-        console.error('클래스 목록 조회 에러:', error);
         setClasses([]);
       } finally {
         setIsLoading(false);
@@ -103,7 +102,6 @@ function HomeworkProgressPage() {
       }));
       setTextbooks(transformedTextbooks);
     } catch (error) {
-      console.error('클래스 교재 목록 조회 에러:', error);
       setTextbooks([]);
     } finally {
       setIsLoadingTextbooks(false);
@@ -130,7 +128,6 @@ function HomeworkProgressPage() {
       // 변경 추적 초기화
       changedCellsRef.current.clear();
     } catch (error) {
-      console.error('진도 그리드 조회 에러:', error);
       setProgressData(null);
       initialProgressDataRef.current = null;
       changedCellsRef.current.clear();
@@ -337,7 +334,6 @@ function HomeworkProgressPage() {
         JSON.stringify(newProgressData)
       );
     } catch (error) {
-      console.error('진도 셀 삭제 에러:', error);
       const errorMessage =
         error instanceof Error ? error.message : '진도 셀 삭제에 실패했습니다.';
       alert(errorMessage);
@@ -487,7 +483,6 @@ function HomeworkProgressPage() {
                         setIsEditMode(false);
                         setEditingCell(null);
                       } catch (error) {
-                        console.error('진도 셀 수정 에러:', error);
                         const errorMessage =
                           error instanceof Error
                             ? error.message

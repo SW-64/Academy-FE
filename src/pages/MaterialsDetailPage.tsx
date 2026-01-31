@@ -34,7 +34,6 @@ function MaterialsDetailPage() {
         const response = await getMaterialDetail(Number(id));
         setMaterial(response.data);
       } catch (error) {
-        console.error('학습자료 상세 조회 실패:', error);
         // eslint-disable-next-line no-alert
         alert(
           error instanceof Error
@@ -80,7 +79,6 @@ function MaterialsDetailPage() {
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('다운로드 URL 발급 실패:', error);
       // eslint-disable-next-line no-alert
       alert(
         error instanceof Error

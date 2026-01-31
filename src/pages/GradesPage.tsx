@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import MainLayout from './MainLayout';
 import { getStudentClasses } from '../api/students';
 import type { StudentClassItem, StudentClass } from '../api/students';
@@ -9,7 +9,10 @@ import {
   type MyExamGradeItem,
 } from '../api/class';
 
+const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+
 function GradesPage() {
+  const currentDate = new Date();
   const [classes, setClasses] = useState<(StudentClassItem | StudentClass)[]>(
     []
   );
@@ -19,6 +22,13 @@ function GradesPage() {
   const [grades, setGrades] = useState<MyExamGradeItem[]>([]);
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const [sortOption, setSortOption] = useState<MyExamGradesSort>('score_desc');
+
+  const [selectedYear, setSelectedYear] = useState<number>(
+    () => currentDate.getFullYear()
+  );
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    () => currentDate.getMonth() + 1
+  );
 
   const [rankLoadingExamId, setRankLoadingExamId] = useState<number | null>(
     null
@@ -32,7 +42,6 @@ function GradesPage() {
       const data = response.data;
       setClasses(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('클래스 목록 조회 에러:', error);
       const msg =
         error instanceof Error
           ? error.message
@@ -59,7 +68,6 @@ function GradesPage() {
       const response = await getMyExamGrades(selectedClassId, sortOption);
       setGrades(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
-      console.error('시험 성적 조회 에러:', error);
       const msg =
         error instanceof Error
           ? error.message
@@ -93,7 +101,6 @@ function GradesPage() {
         alert(response.message || '등수 정보를 불러왔습니다.');
       }
     } catch (error) {
-      console.error('등수 조회 에러:', error);
       const msg =
         error instanceof Error ? error.message : '등수 조회에 실패했습니다.';
       alert(msg);
@@ -110,6 +117,15 @@ function GradesPage() {
       return dateStr;
     }
   };
+
+  // 선택한 년·월에 해당하는 시험만 필터링
+  const filteredGrades = useMemo(() => {
+    return grades.filter(exam => {
+      const dateStr = exam.examDate?.split('T')[0] ?? '';
+      const [y, m] = dateStr.split('-').map(Number);
+      return y === selectedYear && m === selectedMonth;
+    });
+  }, [grades, selectedYear, selectedMonth]);
 
   return (
     <MainLayout>
@@ -148,6 +164,51 @@ function GradesPage() {
         )}
       </div>
 
+      {/* 년도·월 선택 - 클래스 선택 시 */}
+      {selectedClassId && (
+        <div className="mb-4 sm:mb-6">
+          <div className="mb-3 flex flex-wrap items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-base sm:text-lg font-semibold text-slate-900">
+                {selectedYear}년
+              </span>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedYear(y => y - 1)}
+                  className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedYear(y => y + 1)}
+                  className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              {MONTHS.map(month => (
+                <button
+                  key={month}
+                  type="button"
+                  onClick={() => setSelectedMonth(month)}
+                  className={`rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
+                    selectedMonth === month
+                      ? 'bg-[#084773] text-white'
+                      : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  {month}월
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 시험 성적 목록 - 클래스 선택 시 */}
       {selectedClassId && (
         <section className="mb-4 sm:mb-6">
@@ -155,7 +216,7 @@ function GradesPage() {
             <div className="w-full max-w-[1200px]">
               <div className="mb-3 sm:mb-4 flex items-center justify-between">
                 <h2 className="text-base sm:text-lg font-semibold text-slate-900">
-                  시험 성적 목록
+                  {selectedYear}년 {selectedMonth}월 시험 성적
                 </h2>
                 <select
                   value={sortOption}
@@ -197,17 +258,17 @@ function GradesPage() {
                             시험 성적을 불러오는 중...
                           </td>
                         </tr>
-                      ) : grades.length === 0 ? (
+                      ) : filteredGrades.length === 0 ? (
                         <tr>
                           <td
                             colSpan={4}
                             className="px-4 py-8 text-center text-sm text-slate-500"
                           >
-                            시험 기록이 없습니다.
+                            {selectedYear}년 {selectedMonth}월에 시험 기록이 없습니다.
                           </td>
                         </tr>
                       ) : (
-                        grades.map(exam => (
+                        filteredGrades.map(exam => (
                           <tr
                             key={exam.examId}
                             className="border-b border-slate-100 transition-colors hover:bg-slate-50"

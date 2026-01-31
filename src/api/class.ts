@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../constants/api';
+import { request } from './client';
 
 export interface ClassResponse {
   statusCode: number;
@@ -18,24 +18,9 @@ export interface ClassData {
  * @returns 클래스 목록
  */
 export const getClasses = async (): Promise<ClassResponse> => {
-  const response = await fetch(`${API_BASE_URL}/class`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<ClassResponse>('/class', {
+    errorMessage: '클래스 목록을 가져오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '클래스 목록을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '클래스 목록을 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 export interface ClassStudentItem {
@@ -66,24 +51,9 @@ export interface ClassStudentsResponse {
 export const getClassStudents = async (
   classId: number
 ): Promise<ClassStudentsResponse> => {
-  const response = await fetch(`${API_BASE_URL}/class/${classId}/students`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<ClassStudentsResponse>(`/class/${classId}/students`, {
+    errorMessage: '학생 목록을 가져오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '학생 목록을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '학생 목록을 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 export interface CreateClassRequest {
@@ -105,23 +75,11 @@ export interface CreateClassResponse {
 export const createClass = async (
   data: CreateClassRequest
 ): Promise<CreateClassResponse> => {
-  const response = await fetch(`${API_BASE_URL}/class`, {
+  return request<CreateClassResponse>('/class', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
-    body: JSON.stringify(data),
+    body: data,
+    errorMessage: '클래스 생성에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '클래스 생성에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '클래스 생성에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 export interface UpdateClassRequest {
@@ -145,23 +103,11 @@ export const updateClass = async (
   classId: number,
   data: UpdateClassRequest
 ): Promise<UpdateClassResponse> => {
-  const response = await fetch(`${API_BASE_URL}/class/${classId}`, {
+  return request<UpdateClassResponse>(`/class/${classId}`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
-    body: JSON.stringify(data),
+    body: data,
+    errorMessage: '클래스 수정에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '클래스 수정에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '클래스 수정에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 /**
@@ -169,20 +115,10 @@ export const updateClass = async (
  * @param classId 클래스 ID
  */
 export const deleteClass = async (classId: number): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/class/${classId}`, {
+  await request<void>(`/class/${classId}`, {
     method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+    errorMessage: '클래스 삭제에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '클래스 삭제에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '클래스 삭제에 실패했습니다.');
-  }
 };
 
 export interface ClassTextbookItem {
@@ -209,24 +145,9 @@ export interface ClassTextbooksResponse {
 export const getClassTextbooks = async (
   classId: number
 ): Promise<ClassTextbooksResponse> => {
-  const response = await fetch(`${API_BASE_URL}/class/${classId}/textbooks`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<ClassTextbooksResponse>(`/class/${classId}/textbooks`, {
+    errorMessage: '클래스 교재 목록을 가져오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '클래스 교재 목록을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '클래스 교재 목록을 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 export interface Chapter {
@@ -272,27 +193,10 @@ export const getProgressGrid = async (
   classId: number,
   textbookId: number
 ): Promise<ProgressGridResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/textbooks/${textbookId}/progress-grid`,
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // 쿠키를 포함하여 요청
-    }
+  return request<ProgressGridResponse>(
+    `/classes/${classId}/textbooks/${textbookId}/progress-grid`,
+    { errorMessage: '진도 그리드를 가져오는데 실패했습니다.' }
   );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '진도 그리드를 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '진도 그리드를 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 export interface ProgressCellItem {
@@ -322,26 +226,14 @@ export const updateProgressCells = async (
   textbookId: number,
   data: UpdateProgressCellsRequest
 ): Promise<UpdateProgressCellsResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/textbooks/${textbookId}/progress-cells`,
+  return request<UpdateProgressCellsResponse>(
+    `/classes/${classId}/textbooks/${textbookId}/progress-cells`,
     {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // 쿠키를 포함하여 요청
-      body: JSON.stringify(data),
+      body: data,
+      errorMessage: '진도 셀 수정에 실패했습니다.',
     }
   );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '진도 셀 수정에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '진도 셀 수정에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 /**
@@ -354,25 +246,13 @@ export const deleteProgressCells = async (
   classId: number,
   textbookId: number
 ): Promise<UpdateProgressCellsResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/textbooks/${textbookId}/progress-cells`,
+  return request<UpdateProgressCellsResponse>(
+    `/classes/${classId}/textbooks/${textbookId}/progress-cells`,
     {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // 쿠키를 포함하여 요청
+      errorMessage: '진도 셀 삭제에 실패했습니다.',
     }
   );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '진도 셀 삭제에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '진도 셀 삭제에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 export interface ExamItem {
@@ -407,24 +287,9 @@ export interface ExamsResponse {
 export const getClassExams = async (
   classId: number
 ): Promise<ExamsResponse> => {
-  const response = await fetch(`${API_BASE_URL}/classes/${classId}/exams`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<ExamsResponse>(`/classes/${classId}/exams`, {
+    errorMessage: '시험 목록을 가져오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '시험 목록을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '시험 목록을 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 /** 학생 본인 시험점수 전체조회 - 정렬: score_desc(점수순), name_asc(이름순) */
@@ -458,23 +323,10 @@ export const getMyExamGrades = async (
   sort: MyExamGradesSort = 'score_desc'
 ): Promise<MyExamGradesResponse> => {
   const params = new URLSearchParams({ sort });
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/exams/grades/me?${params}`,
-    {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    }
+  return request<MyExamGradesResponse>(
+    `/classes/${classId}/exams/grades/me?${params}`,
+    { errorMessage: '시험 성적 목록을 가져오는데 실패했습니다.' }
   );
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '시험 성적 목록을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '시험 성적 목록을 가져오는데 실패했습니다.'
-    );
-  }
-  return response.json();
 };
 
 /** 학생 본인 시험 등수 조회 */
@@ -492,21 +344,10 @@ export const getMyExamRank = async (
   classId: number,
   examId: number
 ): Promise<MyExamRankResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/exams/${examId}/rank/me`,
-    {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    }
+  return request<MyExamRankResponse>(
+    `/classes/${classId}/exams/${examId}/rank/me`,
+    { errorMessage: '등수 조회에 실패했습니다.' }
   );
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '등수 조회에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '등수 조회에 실패했습니다.');
-  }
-  return response.json();
 };
 
 export interface ExamDetail {
@@ -539,27 +380,10 @@ export const getExamDetail = async (
   classId: number,
   examId: number
 ): Promise<ExamDetailResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/exams/${examId}`,
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // 쿠키를 포함하여 요청
-    }
+  return request<ExamDetailResponse>(
+    `/classes/${classId}/exams/${examId}`,
+    { errorMessage: '시험 상세 정보를 가져오는데 실패했습니다.' }
   );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '시험 상세 정보를 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '시험 상세 정보를 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 export interface CreateExamRequest {
@@ -592,23 +416,11 @@ export const createExam = async (
   classId: number,
   data: CreateExamRequest
 ): Promise<CreateExamResponse> => {
-  const response = await fetch(`${API_BASE_URL}/classes/${classId}/exams`, {
+  return request<CreateExamResponse>(`/classes/${classId}/exams`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
-    body: JSON.stringify(data),
+    body: data,
+    errorMessage: '시험 생성에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '시험 생성에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '시험 생성에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 export interface UpdateExamRequest {
@@ -635,26 +447,14 @@ export const updateExam = async (
   examId: number,
   data: UpdateExamRequest
 ): Promise<UpdateExamResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/exams/${examId}`,
+  return request<UpdateExamResponse>(
+    `/classes/${classId}/exams/${examId}`,
     {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // 쿠키를 포함하여 요청
-      body: JSON.stringify(data),
+      body: data,
+      errorMessage: '시험 수정에 실패했습니다.',
     }
   );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '시험 수정에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '시험 수정에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 export interface WrongAnswerQuestion {
@@ -697,25 +497,10 @@ export const getWrongAnswers = async (
   classId: number,
   examId: number
 ): Promise<WrongAnswersResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/exams/${examId}/wrong-answers`,
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    }
+  return request<WrongAnswersResponse>(
+    `/classes/${classId}/exams/${examId}/wrong-answers`,
+    { errorMessage: '시험 오답 문제 조회에 실패했습니다.' }
   );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '시험 오답 문제 조회에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '시험 오답 문제 조회에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 export interface PatchWrongAnswersItem {
@@ -737,22 +522,11 @@ export const patchWrongAnswers = async (
   examId: number,
   data: PatchWrongAnswersRequest
 ): Promise<{ statusCode: number; message: string }> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/exams/${examId}/wrong-answers`,
-    {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    }
-  );
-  if (!response.ok) {
-    const err = await response
-      .json()
-      .catch(() => ({ message: '시험 오답 수정에 실패했습니다.' }));
-    throw new Error(err.message || '시험 오답 수정에 실패했습니다.');
-  }
-  return response.json();
+  return request(`/classes/${classId}/exams/${examId}/wrong-answers`, {
+    method: 'PATCH',
+    body: data,
+    errorMessage: '시험 오답 수정에 실패했습니다.',
+  });
 };
 
 export interface ErrorRateDetail {
@@ -777,21 +551,10 @@ export const getErrorRates = async (
   classId: number,
   examId: number
 ): Promise<ErrorRatesResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/exams/${examId}/error-rates`,
-    {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    }
+  return request<ErrorRatesResponse>(
+    `/classes/${classId}/exams/${examId}/error-rates`,
+    { errorMessage: '오답률 조회에 실패했습니다.' }
   );
-  if (!response.ok) {
-    const err = await response
-      .json()
-      .catch(() => ({ message: '오답률 조회에 실패했습니다.' }));
-    throw new Error(err.message || '오답률 조회에 실패했습니다.');
-  }
-  return response.json();
 };
 
 /**
@@ -801,21 +564,10 @@ export const createErrorRates = async (
   classId: number,
   examId: number
 ): Promise<{ statusCode: number; message: string }> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/exams/${examId}/error-rates`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    }
-  );
-  if (!response.ok) {
-    const err = await response
-      .json()
-      .catch(() => ({ message: '오답률 계산에 실패했습니다.' }));
-    throw new Error(err.message || '오답률 계산에 실패했습니다.');
-  }
-  return response.json();
+  return request(`/classes/${classId}/exams/${examId}/error-rates`, {
+    method: 'POST',
+    errorMessage: '오답률 계산에 실패했습니다.',
+  });
 };
 
 export interface RankingItem {
@@ -839,21 +591,10 @@ export const getRankings = async (
   classId: number,
   examId: number
 ): Promise<RankingsResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/exams/${examId}/rankings`,
-    {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    }
+  return request<RankingsResponse>(
+    `/classes/${classId}/exams/${examId}/rankings`,
+    { errorMessage: '시험 등수 조회에 실패했습니다.' }
   );
-  if (!response.ok) {
-    const err = await response
-      .json()
-      .catch(() => ({ message: '시험 등수 조회에 실패했습니다.' }));
-    throw new Error(err.message || '시험 등수 조회에 실패했습니다.');
-  }
-  return response.json();
 };
 
 /**
@@ -863,21 +604,10 @@ export const createRankings = async (
   classId: number,
   examId: number
 ): Promise<{ statusCode: number; message: string }> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/exams/${examId}/rankings`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    }
-  );
-  if (!response.ok) {
-    const err = await response
-      .json()
-      .catch(() => ({ message: '시험 등수 계산에 실패했습니다.' }));
-    throw new Error(err.message || '시험 등수 계산에 실패했습니다.');
-  }
-  return response.json();
+  return request(`/classes/${classId}/exams/${examId}/rankings`, {
+    method: 'POST',
+    errorMessage: '시험 등수 계산에 실패했습니다.',
+  });
 };
 
 /**
@@ -887,21 +617,10 @@ export const createAverage = async (
   classId: number,
   examId: number
 ): Promise<{ statusCode: number; message: string }> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/exams/${examId}/average`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    }
-  );
-  if (!response.ok) {
-    const err = await response
-      .json()
-      .catch(() => ({ message: '평균 점수 계산에 실패했습니다.' }));
-    throw new Error(err.message || '평균 점수 계산에 실패했습니다.');
-  }
-  return response.json();
+  return request(`/classes/${classId}/exams/${examId}/average`, {
+    method: 'POST',
+    errorMessage: '평균 점수 계산에 실패했습니다.',
+  });
 };
 
 export interface DeleteExamResponse {
@@ -919,23 +638,11 @@ export const deleteExam = async (
   classId: number,
   examId: number
 ): Promise<DeleteExamResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/classes/${classId}/exams/${examId}`,
+  return request<DeleteExamResponse>(
+    `/classes/${classId}/exams/${examId}`,
     {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // 쿠키를 포함하여 요청
+      errorMessage: '시험 삭제에 실패했습니다.',
     }
   );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '시험 삭제에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '시험 삭제에 실패했습니다.');
-  }
-
-  return response.json();
 };

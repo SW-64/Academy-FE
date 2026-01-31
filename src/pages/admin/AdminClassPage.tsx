@@ -87,7 +87,6 @@ function AdminClassPage() {
         );
         setClasses(transformedClasses);
       } catch (error) {
-        console.error('클래스 목록 조회 에러:', error);
         // 에러 발생 시 빈 배열 유지
       } finally {
         setIsLoading(false);
@@ -128,7 +127,6 @@ function AdminClassPage() {
           setAllStudents(transformedStudents);
           setStudentsMeta(response.data.meta);
         } catch (error) {
-          console.error('학생 목록 조회 에러:', error);
           setAllStudents([]);
           setStudentsMeta(null);
         } finally {
@@ -163,7 +161,6 @@ function AdminClassPage() {
           setEditAllStudents(transformedStudents);
           setEditStudentsMeta(response.data.meta);
         } catch (error) {
-          console.error('학생 목록 조회 에러:', error);
           setEditAllStudents([]);
           setEditStudentsMeta(null);
         } finally {
@@ -234,7 +231,6 @@ function AdminClassPage() {
           );
           setClasses(transformedClasses);
         } catch (error) {
-          console.error('클래스 목록 조회 에러:', error);
         } finally {
           setIsLoading(false);
         }
@@ -248,7 +244,6 @@ function AdminClassPage() {
       setStudentPage(1);
       setIsAddModalOpen(false);
     } catch (error) {
-      console.error('클래스 생성 에러:', error);
       const errorMessage =
         error instanceof Error ? error.message : '클래스 생성에 실패했습니다.';
       alert(errorMessage);
@@ -308,7 +303,6 @@ function AdminClassPage() {
           : null
       );
     } catch (error) {
-      console.error('학생 목록 조회 에러:', error);
       setClassStudents([]);
       setEditSelectedStudentIds([]);
     } finally {
@@ -373,7 +367,6 @@ function AdminClassPage() {
             // editClassName도 업데이트
             setEditClassName(updatedClass.name);
           } catch (error) {
-            console.error('학생 목록 조회 에러:', error);
             // 학생 목록 조회 실패해도 클래스명은 업데이트
             setSelectedClass(updatedClass);
             setEditClassName(updatedClass.name);
@@ -382,14 +375,12 @@ function AdminClassPage() {
           }
         }
       } catch (error) {
-        console.error('클래스 목록 조회 에러:', error);
       } finally {
         setIsLoading(false);
       }
 
       setIsEditMode(false);
     } catch (error) {
-      console.error('클래스 수정 에러:', error);
       const errorMessage =
         error instanceof Error ? error.message : '클래스 수정에 실패했습니다.';
       alert(errorMessage);
@@ -408,7 +399,6 @@ function AdminClassPage() {
       setSelectedClass(null);
       alert('클래스가 삭제되었습니다.');
     } catch (error) {
-      console.error('클래스 삭제 에러:', error);
       const errorMessage =
         error instanceof Error ? error.message : '클래스 삭제에 실패했습니다.';
       alert(errorMessage);

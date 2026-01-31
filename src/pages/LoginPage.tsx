@@ -72,13 +72,10 @@ const LoginPage = () => {
             navigate('/notice');
           }
         } catch (meError) {
-          console.error('사용자 정보 가져오기 에러:', meError);
           // 사용자 정보를 가져오지 못해도 기본적으로 공지사항으로 이동
           navigate('/notice');
         }
       } catch (error) {
-        // 에러 콘솔 출력
-        console.error('로그인 API 에러:', error);
         const errorMessage =
           error instanceof Error ? error.message : '로그인에 실패했습니다.';
         setApiError(errorMessage);

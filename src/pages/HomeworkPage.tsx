@@ -34,7 +34,6 @@ function HomeworkPage() {
         const response = await getMyClasses();
         setClasses(response.data);
       } catch (error) {
-        console.error('클래스 목록 조회 에러:', error);
         setClasses([]);
       } finally {
         setIsLoadingClasses(false);
@@ -63,7 +62,6 @@ function HomeworkPage() {
           setSelectedTextbookId(null);
           setHomeworkProgress(null);
         } catch (error) {
-          console.error('교재 목록 조회 에러:', error);
           setTextbooks([]);
           setSelectedTextbookId(null);
           setHomeworkProgress(null);
@@ -96,7 +94,6 @@ function HomeworkPage() {
             setHomeworkProgress(null);
           }
         } catch (error) {
-          console.error('숙제 진도 조회 에러:', error);
           setHomeworkProgress(null);
         } finally {
           setIsLoadingProgress(false);
@@ -142,7 +139,6 @@ function HomeworkPage() {
         percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
       };
     } catch (error) {
-      console.error('진행도 계산 에러:', error);
       return {
         completed: 0,
         inProgress: 0,

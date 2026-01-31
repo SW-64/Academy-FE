@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../constants/api';
+import { request } from './client';
 
 export interface ParentsListResponse {
   statusCode: number;
@@ -71,27 +71,10 @@ export const getParents = async (
   page: number = 1,
   limit: number = 10
 ): Promise<ParentsListResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/parents?page=${page}&limit=${limit}`,
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // 쿠키를 포함하여 요청
-    }
+  return request<ParentsListResponse>(
+    `/parents?page=${page}&limit=${limit}`,
+    { errorMessage: '학부모 목록을 가져오는데 실패했습니다.' }
   );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '학부모 목록을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '학부모 목록을 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 /**
@@ -102,24 +85,9 @@ export const getParents = async (
 export const getParentDetail = async (
   parentId: number
 ): Promise<ParentDetailResponse> => {
-  const response = await fetch(`${API_BASE_URL}/parents/${parentId}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<ParentDetailResponse>(`/parents/${parentId}`, {
+    errorMessage: '학부모 정보를 가져오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '학부모 정보를 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '학부모 정보를 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 export interface ParentStudent {
@@ -143,24 +111,9 @@ export interface ParentStudentsResponse {
  * @returns 자녀 목록
  */
 export const getMyStudents = async (): Promise<ParentStudentsResponse> => {
-  const response = await fetch(`${API_BASE_URL}/parents/me/students`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<ParentStudentsResponse>('/parents/me/students', {
+    errorMessage: '자녀 목록을 가져오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '자녀 목록을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '자녀 목록을 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 export interface ParentStudentClass {
@@ -182,27 +135,10 @@ export interface ParentStudentClassesResponse {
 export const getMyStudentClasses = async (
   studentId: number
 ): Promise<ParentStudentClassesResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/parents/me/students/${studentId}/classes`,
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // 쿠키를 포함하여 요청
-    }
+  return request<ParentStudentClassesResponse>(
+    `/parents/me/students/${studentId}/classes`,
+    { errorMessage: '자녀의 클래스 목록을 가져오는데 실패했습니다.' }
   );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '자녀의 클래스 목록을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '자녀의 클래스 목록을 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 export interface Chapter {
@@ -250,25 +186,8 @@ export const getMyStudentHomeworkProgress = async (
   classId: number,
   textbookId: number
 ): Promise<ParentStudentHomeworkProgressResponse> => {
-  const response = await fetch(
-    `${API_BASE_URL}/parents/me/students/${studentId}/classes/${classId}/textbooks/${textbookId}/homework`,
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // 쿠키를 포함하여 요청
-    }
+  return request<ParentStudentHomeworkProgressResponse>(
+    `/parents/me/students/${studentId}/classes/${classId}/textbooks/${textbookId}/homework`,
+    { errorMessage: '자녀의 숙제 진도를 가져오는데 실패했습니다.' }
   );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '자녀의 숙제 진도를 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '자녀의 숙제 진도를 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };

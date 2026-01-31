@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../constants/api';
+import { request } from './client';
 
 export interface LoginRequest {
   loginId: string;
@@ -20,23 +20,11 @@ export interface LoginResponse {
 export const login = async (
   credentials: LoginRequest
 ): Promise<LoginResponse> => {
-  const response = await fetch(`${API_BASE_URL}/auth/sign-in`, {
+  return request<LoginResponse>('/auth/sign-in', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
-    body: JSON.stringify(credentials),
+    body: credentials,
+    errorMessage: '로그인에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '로그인에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '로그인에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 export interface MeResponse {
@@ -54,24 +42,9 @@ export interface MeResponse {
  * @returns 사용자 정보 (userId, role)
  */
 export const getMe = async (): Promise<MeResponse> => {
-  const response = await fetch(`${API_BASE_URL}/auth/token`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<MeResponse>('/auth/token', {
+    errorMessage: '사용자 정보를 가져오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '사용자 정보를 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '사용자 정보를 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 /**
@@ -79,20 +52,10 @@ export const getMe = async (): Promise<MeResponse> => {
  * 백엔드에서 쿠키를 삭제합니다.
  */
 export const logout = async (): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/auth/sign-out`, {
+  await request<void>('/auth/sign-out', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+    errorMessage: '로그아웃에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '로그아웃에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '로그아웃에 실패했습니다.');
-  }
 };
 
 export interface SignupRequest {
@@ -121,21 +84,9 @@ export interface SignupResponse {
  * 회원가입을 수행합니다.
  */
 export const signup = async (data: SignupRequest): Promise<SignupResponse> => {
-  const response = await fetch(`${API_BASE_URL}/auth/sign-up`, {
+  return request<SignupResponse>('/auth/sign-up', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify(data),
+    body: data,
+    errorMessage: '회원가입에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '회원가입에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '회원가입에 실패했습니다.');
-  }
-
-  return response.json();
 };
