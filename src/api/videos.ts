@@ -88,7 +88,7 @@ export const uploadVideo = async (
   formData.append('file', file);
   formData.append('title', title);
   studentIds.forEach(id => {
-    formData.append('studentIds[]', id.toString());
+    formData.append('studentIds', id.toString());
   });
 
   const response = await fetch(`${API_BASE_URL}/videos/upload`, {
