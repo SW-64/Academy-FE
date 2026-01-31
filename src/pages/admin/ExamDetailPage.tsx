@@ -129,9 +129,7 @@ function ExamDetailPage() {
         setStudentWrongAnswers(wrongMap);
         setStudentIsTaken(prev => ({
           ...prev,
-          ...Object.fromEntries(
-            records.map(r => [r.studentId, r.isTaken ?? true])
-          ),
+          ...Object.fromEntries(records.map(r => [r.studentId, true])),
         }));
         setExamData({
           date: dateStr,
