@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../constants/api';
+import { request } from './client';
 
 export interface Textbook {
   textbookId: number;
@@ -72,24 +72,9 @@ export interface UpdateTextbookResponse {
  * @returns 교재 목록
  */
 export const getTextbooks = async (): Promise<TextbooksListResponse> => {
-  const response = await fetch(`${API_BASE_URL}/textbooks`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<TextbooksListResponse>('/textbooks', {
+    errorMessage: '교재 목록을 가져오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '교재 목록을 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '교재 목록을 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 /**
@@ -100,24 +85,9 @@ export const getTextbooks = async (): Promise<TextbooksListResponse> => {
 export const getTextbookDetail = async (
   textbookId: number
 ): Promise<TextbookDetailResponse> => {
-  const response = await fetch(`${API_BASE_URL}/textbooks/${textbookId}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+  return request<TextbookDetailResponse>(`/textbooks/${textbookId}`, {
+    errorMessage: '교재 상세 정보를 가져오는데 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '교재 상세 정보를 가져오는데 실패했습니다.',
-    }));
-    throw new Error(
-      errorData.message || '교재 상세 정보를 가져오는데 실패했습니다.'
-    );
-  }
-
-  return response.json();
 };
 
 /**
@@ -128,23 +98,11 @@ export const getTextbookDetail = async (
 export const createTextbook = async (
   data: CreateTextbookRequest
 ): Promise<CreateTextbookResponse> => {
-  const response = await fetch(`${API_BASE_URL}/textbooks`, {
+  return request<CreateTextbookResponse>('/textbooks', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
-    body: JSON.stringify(data),
+    body: data,
+    errorMessage: '교재 생성에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '교재 생성에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '교재 생성에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 /**
@@ -157,23 +115,11 @@ export const updateTextbook = async (
   textbookId: number,
   data: UpdateTextbookRequest
 ): Promise<UpdateTextbookResponse> => {
-  const response = await fetch(`${API_BASE_URL}/textbooks/${textbookId}`, {
+  return request<UpdateTextbookResponse>(`/textbooks/${textbookId}`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
-    body: JSON.stringify(data),
+    body: data,
+    errorMessage: '교재 수정에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '교재 수정에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '교재 수정에 실패했습니다.');
-  }
-
-  return response.json();
 };
 
 /**
@@ -181,18 +127,8 @@ export const updateTextbook = async (
  * @param textbookId 교재 ID
  */
 export const deleteTextbook = async (textbookId: number): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/textbooks/${textbookId}`, {
+  await request<void>(`/textbooks/${textbookId}`, {
     method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include', // 쿠키를 포함하여 요청
+    errorMessage: '교재 삭제에 실패했습니다.',
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({
-      message: '교재 삭제에 실패했습니다.',
-    }));
-    throw new Error(errorData.message || '교재 삭제에 실패했습니다.');
-  }
 };

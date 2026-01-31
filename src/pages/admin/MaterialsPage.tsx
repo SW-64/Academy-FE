@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, X, Trash2, Save, Upload } from 'lucide-react';
 import MainLayout from '../MainLayout';
-import { dummyMaterials, type Material } from '../MaterialsPage';
+import { dummyMaterials, type Material } from '../../types/material';
 import { getClasses, type ClassData } from '../../api/class';
 import {
   getMaterials,
@@ -115,7 +115,6 @@ function AdminMaterialsPage() {
         setTotalPages(response.data.meta.totalPages);
       }
     } catch (error) {
-      console.error('학습자료 생성 실패:', error);
       // eslint-disable-next-line no-alert
       alert(
         error instanceof Error ? error.message : '학습자료 생성에 실패했습니다.'
@@ -154,7 +153,6 @@ function AdminMaterialsPage() {
       });
       setIsDetailModalOpen(true);
     } catch (error) {
-      console.error('학습자료 상세 조회 실패:', error);
       // eslint-disable-next-line no-alert
       alert(
         error instanceof Error
@@ -244,7 +242,6 @@ function AdminMaterialsPage() {
         setTotalPages(response.data.meta.totalPages);
       }
     } catch (error) {
-      console.error('학습자료 수정 실패:', error);
       // eslint-disable-next-line no-alert
       alert(
         error instanceof Error ? error.message : '학습자료 수정에 실패했습니다.'
@@ -295,7 +292,6 @@ function AdminMaterialsPage() {
         setMaterials([]);
       }
     } catch (error) {
-      console.error('학습자료 삭제 실패:', error);
       // eslint-disable-next-line no-alert
       alert(
         error instanceof Error ? error.message : '학습자료 삭제에 실패했습니다.'
@@ -337,7 +333,6 @@ function AdminMaterialsPage() {
         const response = await getClasses();
         setClasses(response.data);
       } catch (error) {
-        console.error('클래스 목록 조회 실패:', error);
         // eslint-disable-next-line no-alert
         alert('클래스 목록을 불러오는데 실패했습니다.');
       } finally {
@@ -381,7 +376,6 @@ function AdminMaterialsPage() {
         setMaterials(convertedMaterials);
         setTotalPages(response.data.meta.totalPages);
       } catch (error) {
-        console.error('학습자료 목록 조회 실패:', error);
         // eslint-disable-next-line no-alert
         alert('학습자료 목록을 불러오는데 실패했습니다.');
         setMaterials([]);

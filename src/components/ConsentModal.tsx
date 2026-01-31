@@ -7,7 +7,6 @@ interface ConsentModalProps {
   onConfirm: (consent: {
     serviceTerms: boolean
     privacyPolicy: boolean
-    marketing: boolean
     consentVersion: string
     agreedAt: Date
   }) => void
@@ -16,7 +15,6 @@ interface ConsentModalProps {
 const ConsentModal = ({ isOpen, onClose, onConfirm }: ConsentModalProps) => {
   const [serviceTerms, setServiceTerms] = useState(false)
   const [privacyPolicy, setPrivacyPolicy] = useState(false)
-  const [marketing, setMarketing] = useState(false)
   const [showServiceTermsDetails, setShowServiceTermsDetails] = useState(false)
   const [showPrivacyDetails, setShowPrivacyDetails] = useState(false)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -32,7 +30,6 @@ const ConsentModal = ({ isOpen, onClose, onConfirm }: ConsentModalProps) => {
       // 모달이 닫힐 때 상태 초기화
       setServiceTerms(false)
       setPrivacyPolicy(false)
-      setMarketing(false)
       setShowServiceTermsDetails(false)
       setShowPrivacyDetails(false)
     }
@@ -69,7 +66,6 @@ const ConsentModal = ({ isOpen, onClose, onConfirm }: ConsentModalProps) => {
       onConfirm({
         serviceTerms,
         privacyPolicy,
-        marketing,
         consentVersion: 'v1',
         agreedAt: new Date(),
       })
@@ -172,26 +168,6 @@ const ConsentModal = ({ isOpen, onClose, onConfirm }: ConsentModalProps) => {
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* 마케팅 정보 수신 동의 */}
-            <div>
-              <label className="flex items-start space-x-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={marketing}
-                  onChange={(e) => setMarketing(e.target.checked)}
-                  className="mt-1 w-5 h-5 text-[#084773] border-gray-300 rounded focus:ring-[#084773] focus:ring-2"
-                />
-                <div className="flex-1">
-                  <span className="text-sm sm:text-base font-medium text-gray-900">
-                    (선택) 마케팅 정보 수신 동의
-                  </span>
-                  <p className="mt-1 text-xs sm:text-sm text-gray-500">
-                    이메일 및 SMS를 통한 이벤트 및 프로모션 정보 수신
-                  </p>
-                </div>
-              </label>
             </div>
           </div>
         </div>

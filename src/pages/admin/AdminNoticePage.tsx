@@ -154,7 +154,6 @@ function AdminNoticePage() {
           }));
           setClasses(transformedClasses);
         } catch (error) {
-          console.error('클래스 목록 조회 에러:', error);
           setClasses([]);
         } finally {
           setIsLoadingClasses(false);

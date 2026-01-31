@@ -3,136 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import MainLayout from './MainLayout';
 import { getStudentClasses, getStudentMaterials } from '../api/students';
-
-// TODO: API 연결 시 이 더미 데이터를 실제 API 호출로 교체
-export interface Material {
-  id: number;
-  title: string;
-  createdAt: string;
-  author: string;
-  hasNewTag?: boolean;
-  classIds?: number[];
-}
-
-export const dummyMaterials: Material[] = []; // 더미데이터 제거
-/*
-export const dummyMaterials: Material[] = [
-  {
-    id: 16,
-    title: '미적분 I - 함수의 극한과 연속',
-    createdAt: '2026-02-28',
-    author: '곽원근',
-    hasNewTag: true,
-    classIds: [3], // 미적분1 기본 특강반
-  },
-  {
-    id: 15,
-    title: '확률과 통계 - 이항분포와 정규분포',
-    createdAt: '2026-02-27',
-    author: '곽원근',
-    hasNewTag: true,
-    classIds: [1, 2], // 예비고2 월금 정규반, 예비고2 화목 정규반
-  },
-  {
-    id: 14,
-    title: '기하와 벡터 - 공간도형의 방정식',
-    createdAt: '2026-02-26',
-    author: '곽원근',
-    classIds: [1, 2], // 예비고2 월금 정규반, 예비고2 화목 정규반
-  },
-  {
-    id: 13,
-    title: '미적분 II - 적분의 활용',
-    createdAt: '2026-02-25',
-    author: '곽원근',
-    classIds: [4], // 미적분1+2 통합 특강반
-  },
-  {
-    id: 12,
-    title: '수학 I - 지수함수와 로그함수',
-    createdAt: '2026-02-24',
-    author: '곽원근',
-    classIds: [1, 2, 3], // 예비고2 월금 정규반, 예비고2 화목 정규반, 미적분1 기본 특강반
-  },
-  {
-    id: 11,
-    title: '수학 II - 삼각함수의 성질',
-    createdAt: '2026-02-23',
-    author: '곽원근',
-    classIds: [1], // 예비고2 월금 정규반
-  },
-  {
-    id: 10,
-    title: '미적분 I - 도함수의 활용',
-    createdAt: '2026-02-22',
-    author: '곽원근',
-    classIds: [3, 4], // 미적분1 기본 특강반, 미적분1+2 통합 특강반
-  },
-  {
-    id: 9,
-    title: '확률과 통계 - 확률의 기본 성질',
-    createdAt: '2026-02-21',
-    author: '곽원근',
-    classIds: [2, 4], // 예비고2 화목 정규반, 미적분1+2 통합 특강반
-  },
-  {
-    id: 8,
-    title: '기하와 벡터 - 평면벡터의 연산',
-    createdAt: '2026-02-20',
-    author: '곽원근',
-    classIds: [2], // 예비고2 화목 정규반
-  },
-  {
-    id: 7,
-    title: '미적분 II - 여러 가지 적분법',
-    createdAt: '2026-02-19',
-    author: '곽원근',
-    classIds: [4], // 미적분1+2 통합 특강반
-  },
-  {
-    id: 6,
-    title: '수학 I - 수열의 극한',
-    createdAt: '2026-02-18',
-    author: '곽원근',
-    classIds: [1], // 예비고2 월금 정규반
-  },
-  {
-    id: 5,
-    title: '수학 II - 함수의 연속과 미분',
-    createdAt: '2026-02-17',
-    author: '곽원근',
-    classIds: [1, 2, 3], // 예비고2 월금 정규반, 예비고2 화목 정규반, 미적분1 기본 특강반
-  },
-  {
-    id: 4,
-    title: '미적분 I - 여러 가지 미분법',
-    createdAt: '2026-02-16',
-    author: '곽원근',
-    classIds: [3], // 미적분1 기본 특강반
-  },
-  {
-    id: 3,
-    title: '확률과 통계 - 조건부 확률',
-    createdAt: '2026-02-15',
-    author: '곽원근',
-    classIds: [3, 4], // 미적분1 기본 특강반, 미적분1+2 통합 특강반
-  },
-  {
-    id: 2,
-    title: '기하와 벡터 - 공간좌표와 공간벡터',
-    createdAt: '2026-02-14',
-    author: '곽원근',
-    classIds: [2, 4], // 예비고2 화목 정규반, 미적분1+2 통합 특강반
-  },
-  {
-    id: 1,
-    title: '미적분 II - 정적분의 계산',
-    createdAt: '2026-02-13',
-    author: '곽원근',
-    classIds: [4], // 미적분1+2 통합 특강반
-  },
-];
-*/
+import type { Material } from '../types/material';
 
 function MaterialsPage() {
   const navigate = useNavigate();
@@ -168,7 +39,6 @@ function MaterialsPage() {
         const response = await getStudentClasses();
         setClasses(response.data);
       } catch (error) {
-        console.error('클래스 목록 조회 실패:', error);
         const errorMessage =
           error instanceof Error
             ? error.message
@@ -228,7 +98,6 @@ function MaterialsPage() {
         setMaterials(convertedMaterials);
         setTotalPages(response.data.meta.totalPages);
       } catch (error) {
-        console.error('학습자료 목록 조회 실패:', error);
         // eslint-disable-next-line no-alert
         alert(
           error instanceof Error

@@ -77,7 +77,6 @@ function MyPage() {
           role: roleName,
         });
       } catch (error) {
-        console.error('내 정보 조회 에러:', error);
         const errorMessage =
           error instanceof Error
             ? error.message
@@ -138,7 +137,6 @@ function MyPage() {
 
       setIsEditModalOpen(false);
     } catch (error) {
-      console.error('내 정보 수정 에러:', error);
       const errorMessage =
         error instanceof Error ? error.message : '내 정보 수정에 실패했습니다.';
       alert(errorMessage);
@@ -169,7 +167,6 @@ function MyPage() {
       });
       setIsPasswordModalOpen(false);
     } catch (error) {
-      console.error('비밀번호 변경 에러:', error);
       const errorMessage =
         error instanceof Error
           ? error.message

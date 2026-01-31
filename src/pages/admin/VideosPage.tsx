@@ -108,7 +108,6 @@ function AdminVideosPage() {
         setVideos(response.data.data);
         setListMeta(response.data.meta);
       } catch (error) {
-        console.error('영상 목록 조회 에러:', error);
         setVideos([]);
         setListMeta(null);
       } finally {
@@ -141,7 +140,6 @@ function AdminVideosPage() {
           setWriteModalStudents(transformed);
           setWriteStudentsMeta(response.data.meta);
         } catch (error) {
-          console.error('학생 목록 조회 에러:', error);
           setWriteModalStudents([]);
           setWriteStudentsMeta(null);
         } finally {
@@ -208,7 +206,6 @@ function AdminVideosPage() {
       setListMeta(listRes.data.meta);
       setCurrentPage(1);
     } catch (error) {
-      console.error('영상 업로드 실패:', error);
       alert(
         error instanceof Error ? error.message : '영상 업로드에 실패했습니다.'
       );
@@ -225,7 +222,6 @@ function AdminVideosPage() {
       const response = await getVideoDetail(video.videoId);
       setSelectedVideoDetail(response.data);
     } catch (error) {
-      console.error('영상 상세 조회 에러:', error);
       alert(
         error instanceof Error ? error.message : '영상 상세를 불러오는데 실패했습니다.'
       );
@@ -249,7 +245,6 @@ function AdminVideosPage() {
         alert('재생 URL을 가져올 수 없습니다.');
       }
     } catch (error) {
-      console.error('재생 URL 조회 에러:', error);
       alert(
         error instanceof Error ? error.message : '재생 URL을 불러오는데 실패했습니다.'
       );
@@ -274,7 +269,6 @@ function AdminVideosPage() {
       setVideos(response.data.data);
       setListMeta(response.data.meta);
     } catch (error) {
-      console.error('영상 삭제 에러:', error);
       alert(
         error instanceof Error ? error.message : '영상 삭제에 실패했습니다.'
       );

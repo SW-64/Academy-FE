@@ -48,7 +48,6 @@ function ParentHomeworkProgressPage() {
         const response = await getMyStudents();
         setStudents(response.data);
       } catch (error) {
-        console.error('자녀 목록 조회 에러:', error);
         setStudents([]);
       } finally {
         setIsLoadingStudents(false);
@@ -71,7 +70,6 @@ function ParentHomeworkProgressPage() {
           setSelectedTextbookId(null);
           setHomeworkProgress(null);
         } catch (error) {
-          console.error('자녀 클래스 목록 조회 에러:', error);
           setClasses([]);
         } finally {
           setIsLoadingClasses(false);
@@ -99,7 +97,6 @@ function ParentHomeworkProgressPage() {
           setSelectedTextbookId(null);
           setHomeworkProgress(null);
         } catch (error) {
-          console.error('교재 목록 조회 에러:', error);
           setTextbooks([]);
         } finally {
           setIsLoadingTextbooks(false);
@@ -127,7 +124,6 @@ function ParentHomeworkProgressPage() {
           );
           setHomeworkProgress(response.data);
         } catch (error) {
-          console.error('자녀 숙제 진도 조회 에러:', error);
           setHomeworkProgress(null);
         } finally {
           setIsLoadingProgress(false);

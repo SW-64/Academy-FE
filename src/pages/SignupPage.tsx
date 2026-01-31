@@ -51,7 +51,6 @@ const SignupPage = () => {
   const doSubmit = async (_consent: {
     serviceTerms: boolean;
     privacyPolicy: boolean;
-    marketing: boolean;
     consentVersion: string;
     agreedAt: Date;
   }) => {
@@ -74,7 +73,6 @@ const SignupPage = () => {
       // 회원가입 완료 페이지로 이동
       navigate('/signup/complete');
     } catch (error) {
-      console.error('회원가입 에러:', error);
       const errorMessage =
         error instanceof Error ? error.message : '회원가입에 실패했습니다.';
       alert(errorMessage);
@@ -163,7 +161,6 @@ const SignupPage = () => {
   const handleConsentConfirm = (consent: {
     serviceTerms: boolean;
     privacyPolicy: boolean;
-    marketing: boolean;
     consentVersion: string;
     agreedAt: Date;
   }) => {
@@ -175,20 +172,18 @@ const SignupPage = () => {
     <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 py-4 sm:py-8 bg-white">
       {/* 로고와 회원가입 박스를 하나의 컨테이너로 묶어서 중앙 배치 */}
       <div className="flex flex-col items-center w-full max-w-[403px] rounded-2xl">
-        {/* 로고 */}
-        <div className="flex justify-center pt-4 sm:pt-6 md:pt-8 px-4 sm:px-6 md:px-8">
+        {/* 로고 (로그인과 동일) */}
+        <div className="flex justify-center pt-8 px-4 sm:px-6 md:px-8 w-full">
           {imageError ? (
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-warm-brown text-center">
               곽원근 수학연구소
             </h1>
           ) : (
             <img
-              src="/logo.webp"
+              src="/logo1.png"
               alt="곽원근 수학연구소"
-              className="h-auto max-w-[175px] sm:max-w-[197px] md:max-w-[219px] lg:max-w-[263px]"
-              width="263"
-              height="263"
-              style={{ aspectRatio: '1/1', maxWidth: '100%', height: 'auto' }}
+              className="h-auto w-full max-w-full"
+              style={{ maxWidth: '100%', height: 'auto' }}
               loading="eager"
               fetchPriority="high"
               onError={() => setImageError(true)}

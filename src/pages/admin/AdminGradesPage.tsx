@@ -60,7 +60,6 @@ function AdminGradesPage() {
         const response = await getClasses();
         setClasses(response.data);
       } catch (error) {
-        console.error('클래스 목록 조회 에러:', error);
         const errorMessage =
           error instanceof Error
             ? error.message
@@ -101,7 +100,6 @@ function AdminGradesPage() {
       const response = await getClassExams(selectedClassId);
       setExams(response.data.items);
     } catch (error) {
-      console.error('시험 목록 조회 에러:', error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -264,7 +262,6 @@ function AdminGradesPage() {
         setIsEditMode(false);
         setIsModalOpen(true);
       } catch (error) {
-        console.error('시험 상세 조회 에러:', error);
         const errorMessage =
           error instanceof Error
             ? error.message
@@ -358,11 +355,9 @@ function AdminGradesPage() {
       try {
         await refreshExams();
       } catch (refreshError) {
-        console.error('시험 목록 새로고침 에러:', refreshError);
         // 새로고침 실패해도 사용자에게는 알리지 않음 (이미 시험 수정은 성공했으므로)
       }
     } catch (error) {
-      console.error('시험 수정 에러:', error);
       const errorMessage =
         error instanceof Error ? error.message : '시험 수정에 실패했습니다.';
       alert(errorMessage);
@@ -383,7 +378,6 @@ function AdminGradesPage() {
       setIsModalOpen(false);
       setSelectedExam(null);
     } catch (error) {
-      console.error('시험 삭제 에러:', error);
       const errorMessage =
         error instanceof Error ? error.message : '시험 삭제에 실패했습니다.';
       alert(errorMessage);
@@ -460,11 +454,9 @@ function AdminGradesPage() {
       try {
         await refreshExams();
       } catch (refreshError) {
-        console.error('시험 목록 새로고침 에러:', refreshError);
         // 새로고침 실패해도 사용자에게는 알리지 않음 (이미 시험 생성은 성공했으므로)
       }
     } catch (error) {
-      console.error('시험 생성 에러:', error);
       const errorMessage =
         error instanceof Error ? error.message : '시험 생성에 실패했습니다.';
       alert(errorMessage);
