@@ -176,11 +176,11 @@ function AdminVideosPage() {
     }
   }, [isWriteModalOpen, writeStudentPage, writeStudentsPerPage]);
 
-  const filteredWriteStudents = writeModalStudents.filter(
-    s =>
-      s.name.toLowerCase().includes(writeSearchStudent.toLowerCase()) ||
-      s.email.toLowerCase().includes(writeSearchStudent.toLowerCase())
-  );
+  const filteredWriteStudents = writeModalStudents.filter(s => {
+    const q = writeSearchStudent.toLowerCase().trim();
+    if (!q) return true;
+    return s.name.toLowerCase().includes(q);
+  });
 
   // 상세 모달 수정 모드일 때 학생 목록 조회
   useEffect(() => {
@@ -223,11 +223,11 @@ function AdminVideosPage() {
     editStudentsPerPage,
   ]);
 
-  const filteredEditStudents = editModalStudents.filter(
-    s =>
-      s.name.toLowerCase().includes(editSearchStudent.toLowerCase()) ||
-      s.email.toLowerCase().includes(editSearchStudent.toLowerCase())
-  );
+  const filteredEditStudents = editModalStudents.filter(s => {
+    const q = editSearchStudent.toLowerCase().trim();
+    if (!q) return true;
+    return s.name.toLowerCase().includes(q);
+  });
 
   const handleToggleWriteStudent = (student: Student) => {
     setNewVideo(prev => ({
@@ -579,7 +579,7 @@ function AdminVideosPage() {
                     type="text"
                     value={writeSearchStudent}
                     onChange={e => setWriteSearchStudent(e.target.value)}
-                    placeholder="학생 이름 또는 이메일로 검색..."
+                    placeholder="학생 이름으로 검색..."
                     className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                   />
                 </div>
@@ -842,7 +842,7 @@ function AdminVideosPage() {
                           type="text"
                           value={editSearchStudent}
                           onChange={e => setEditSearchStudent(e.target.value)}
-                          placeholder="학생 이름 또는 이메일로 검색..."
+                          placeholder="학생 이름으로 검색..."
                           className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
                         />
                       </div>
