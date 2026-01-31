@@ -243,7 +243,6 @@ function AdminVideosPage() {
     setIsLoadingPlayback(true);
     try {
       const response = await getVideoPlayback(videoId);
-      console.log('영상 재생 URL 조회 반환값:', response);
       if (response.data.playbackUrl) {
         window.open(response.data.playbackUrl, '_blank', 'noopener,noreferrer');
       } else {
