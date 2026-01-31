@@ -1,15 +1,25 @@
 import { useEffect, useState } from 'react';
-import { Plus, X, Trash2, Save, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Plus,
+  X,
+  Trash2,
+  Save,
+  Upload,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+} from 'lucide-react';
 import MainLayout from '../MainLayout';
 import { getStudents } from '../../api/students';
-import { uploadVideo } from '../../api/videos';
-
-// 더미 클래스 데이터 (상세/수정 모달용)
-type ClassType = {
-  id: number;
-  name: string;
-  studentIds: number[];
-};
+import {
+  getVideos,
+  getVideoDetail,
+  getVideoPlayback,
+  deleteVideo,
+  uploadVideo,
+  type VideoListItem,
+  type VideoDetailItem,
+} from '../../api/videos';
 
 type Student = {
   id: number;
@@ -20,68 +30,41 @@ type Student = {
   grade: string;
 };
 
-const dummyClasses: ClassType[] = [];
-const dummyStudents: Student[] = [];
+const VIDEOS_PER_PAGE = 20;
 
-type Video = {
-  id: number;
-  title: string;
-  duration: string;
-  videoFile?: File | null;
-  videoFileName?: string;
-  selectedClasses?: { classId: number; studentIds: number[] }[];
-};
-
-const dummyVideos: Video[] = [
-  {
-    id: 1,
-    title: '미적분 I - 함수의 극한과 연속',
-    duration: '47:27',
-  },
-  {
-    id: 2,
-    title: '확률과 통계 - 이항분포와 정규분포',
-    duration: '37:05',
-  },
-  {
-    id: 3,
-    title: '기하와 벡터 - 공간도형의 방정식',
-    duration: '50:32',
-  },
-  {
-    id: 4,
-    title: '미적분 II - 적분의 활용',
-    duration: '42:18',
-  },
-  {
-    id: 5,
-    title: '수학 I - 지수함수와 로그함수',
-    duration: '38:45',
-  },
-  {
-    id: 6,
-    title: '수학 II - 삼각함수의 성질',
-    duration: '45:12',
-  },
-  {
-    id: 7,
-    title: '미적분 I - 도함수의 활용',
-    duration: '39:28',
-  },
-  {
-    id: 8,
-    title: '확률과 통계 - 확률의 기본 성질',
-    duration: '41:15',
-  },
-];
+function formatDuration(seconds: number): string {
+  const sec = Math.floor(Number(seconds) || 0);
+  if (sec >= 3600) {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    return `${h}시간 ${m}분 ${s}초`;
+  }
+  if (sec >= 60) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}분 ${s}초`;
+  }
+  return `${sec}초`;
+}
 
 function AdminVideosPage() {
-  const [videos, setVideos] = useState<Video[]>(dummyVideos);
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [videos, setVideos] = useState<VideoListItem[]>([]);
+  const [listMeta, setListMeta] = useState<{
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [selectedVideoDetail, setSelectedVideoDetail] =
+    useState<VideoDetailItem | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [isLoadingPlayback, setIsLoadingPlayback] = useState(false);
   const [newVideo, setNewVideo] = useState({
     title: '',
     videoFile: null as File | null,
@@ -104,12 +87,25 @@ function AdminVideosPage() {
     Student[]
   >([]);
   const writeStudentsPerPage = 10;
-  const [editVideo, setEditVideo] = useState({
-    title: '',
-    videoFile: null as File | null,
-    videoFileName: '',
-    selectedClasses: [] as { classId: number; studentIds: number[] }[],
-  });
+
+  // 영상 목록 조회 (페이지네이션)
+  useEffect(() => {
+    const fetchVideos = async () => {
+      setIsLoadingVideos(true);
+      try {
+        const response = await getVideos(currentPage, VIDEOS_PER_PAGE);
+        setVideos(response.data.data);
+        setListMeta(response.data.meta);
+      } catch (error) {
+        console.error('영상 목록 조회 에러:', error);
+        setVideos([]);
+        setListMeta(null);
+      } finally {
+        setIsLoadingVideos(false);
+      }
+    };
+    fetchVideos();
+  }, [currentPage]);
 
   // 글쓰기 모달 열릴 때 학생 목록 조회
   useEffect(() => {
@@ -186,21 +182,6 @@ function AdminVideosPage() {
         newVideo.title.trim(),
         newVideo.studentIds
       );
-      const d = response.data;
-      const sec = Number(d.duration) || 0;
-      const durationFormatted =
-        sec >= 3600
-          ? `${Math.floor(sec / 3600)}:${String(
-              Math.floor((sec % 3600) / 60)
-            ).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`
-          : `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-      const video: Video = {
-        id: d.videoId,
-        title: d.title,
-        duration: durationFormatted,
-        selectedClasses: undefined,
-      };
-      setVideos(prev => [video, ...prev]);
       setNewVideo({
         title: '',
         videoFile: null,
@@ -210,6 +191,11 @@ function AdminVideosPage() {
       setSelectedStudentsForChips([]);
       setIsWriteModalOpen(false);
       alert(response.message || '영상이 업로드되었습니다.');
+      // 목록 새로고침
+      const listRes = await getVideos(1, VIDEOS_PER_PAGE);
+      setVideos(listRes.data.data);
+      setListMeta(listRes.data.meta);
+      setCurrentPage(1);
     } catch (error) {
       console.error('영상 업로드 실패:', error);
       alert(
@@ -220,81 +206,80 @@ function AdminVideosPage() {
     }
   };
 
-  const handleVideoClick = (video: Video) => {
-    setSelectedVideo(video);
-    setEditVideo({
-      title: video.title,
-      videoFile: null,
-      videoFileName: video.videoFileName || '',
-      selectedClasses: video.selectedClasses || [],
-    });
+  const handleVideoClick = async (video: VideoListItem) => {
+    setIsLoadingDetail(true);
+    setSelectedVideoDetail(null);
     setIsDetailModalOpen(true);
+    try {
+      const response = await getVideoDetail(video.videoId);
+      setSelectedVideoDetail(response.data);
+    } catch (error) {
+      console.error('영상 상세 조회 에러:', error);
+      alert(
+        error instanceof Error ? error.message : '영상 상세를 불러오는데 실패했습니다.'
+      );
+      setIsDetailModalOpen(false);
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  };
+
+  const handlePlayClick = async (
+    e: React.MouseEvent,
+    videoId: number
+  ) => {
+    e.stopPropagation();
+    setIsLoadingPlayback(true);
+    try {
+      const response = await getVideoPlayback(videoId);
+      if (response.data.playbackUrl) {
+        window.open(response.data.playbackUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        alert('재생 URL을 가져올 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('재생 URL 조회 에러:', error);
+      alert(
+        error instanceof Error ? error.message : '재생 URL을 불러오는데 실패했습니다.'
+      );
+    } finally {
+      setIsLoadingPlayback(false);
+    }
   };
 
   const handleSaveEdit = () => {
-    if (!selectedVideo) return;
-    if (!editVideo.title.trim()) {
-      // eslint-disable-next-line no-alert
-      alert('제목을 입력해주세요.');
-      return;
-    }
-
-    setVideos(prev =>
-      prev.map(video =>
-        video.id === selectedVideo.id
-          ? {
-              ...video,
-              title: editVideo.title,
-              videoFile: editVideo.videoFile || video.videoFile,
-              videoFileName:
-                editVideo.videoFileName || video.videoFileName || '',
-              selectedClasses: editVideo.selectedClasses,
-            }
-          : video
-      )
-    );
-
-    setIsDetailModalOpen(false);
-    setSelectedVideo(null);
+    alert('수정 기능은 준비 중입니다.');
   };
 
-  const handleDelete = () => {
-    if (!selectedVideo) return;
+  const handleDelete = async () => {
+    if (!selectedVideoDetail) return;
     if (!confirm('정말 이 영상을 삭제하시겠습니까?')) return;
-
-    setVideos(prev => prev.filter(video => video.id !== selectedVideo.id));
-    setIsDetailModalOpen(false);
-    setSelectedVideo(null);
+    try {
+      await deleteVideo(selectedVideoDetail.videoId);
+      alert('영상이 삭제되었습니다.');
+      setIsDetailModalOpen(false);
+      setSelectedVideoDetail(null);
+      const response = await getVideos(currentPage, VIDEOS_PER_PAGE);
+      setVideos(response.data.data);
+      setListMeta(response.data.meta);
+    } catch (error) {
+      console.error('영상 삭제 에러:', error);
+      alert(
+        error instanceof Error ? error.message : '영상 삭제에 실패했습니다.'
+      );
+    }
   };
 
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    isEdit: boolean = false
-  ) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (isEdit) {
-        setEditVideo({
-          ...editVideo,
-          videoFile: file,
-          videoFileName: file.name,
-        });
-      } else {
-        setNewVideo({
-          ...newVideo,
-          videoFile: file,
-          videoFileName: file.name,
-        });
-      }
+      setNewVideo({
+        ...newVideo,
+        videoFile: file,
+        videoFileName: file.name,
+      });
     }
   };
-
-  const itemsPerPage = 10;
-  const sortedVideos = [...videos].sort((a, b) => b.id - a.id);
-  const totalPages = Math.max(1, Math.ceil(sortedVideos.length / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentVideos = sortedVideos.slice(startIndex, endIndex);
 
   useEffect(() => {
     const handleResize = () => {
@@ -306,9 +291,7 @@ function AdminVideosPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => {
-    setCurrentPage(prev => Math.min(prev, totalPages));
-  }, [totalPages]);
+  const totalPages = listMeta?.totalPages ?? 1;
 
   return (
     <MainLayout showCalendar={showCalendar} isAdmin={true}>
@@ -333,40 +316,84 @@ function AdminVideosPage() {
       <div className="space-y-6">
         <section>
           <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-blue-100/70">
-            <table className="min-w-full border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
-                    번호
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
-                    제목
-                  </th>
-                  <th className="hidden min-[431px]:table-cell px-4 py-3 text-left text-sm font-semibold text-slate-900">
-                    재생 시간
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentVideos.map(video => (
-                  <tr
-                    key={video.id}
-                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors"
-                    onClick={() => handleVideoClick(video)}
-                  >
-                    <td className="px-4 py-3 text-sm text-slate-900">
-                      {video.id}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-900">
-                      {video.title}
-                    </td>
-                    <td className="hidden min-[431px]:table-cell px-4 py-3 text-sm text-slate-600">
-                      {video.duration}
-                    </td>
+            {isLoadingVideos ? (
+              <div className="flex justify-center py-12 text-slate-600">
+                영상 목록을 불러오는 중...
+              </div>
+            ) : (
+              <table className="min-w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                      썸네일
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                      제목
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                      재생 시간
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                      상태
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {videos.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="px-4 py-8 text-center text-sm text-slate-500"
+                      >
+                        등록된 영상이 없습니다.
+                      </td>
+                    </tr>
+                  ) : (
+                    videos.map(video => (
+                      <tr
+                        key={video.videoId}
+                        className="border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors"
+                        onClick={() => handleVideoClick(video)}
+                      >
+                        <td className="px-4 py-3">
+                          <div className="relative w-24 h-14 rounded-lg overflow-hidden bg-slate-200 shrink-0">
+                            {video.thumbnailUrl ? (
+                              <img
+                                src={video.thumbnailUrl}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
+                                No
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={e => handlePlayClick(e, video.videoId)}
+                              disabled={isLoadingPlayback}
+                              className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/50 transition-colors disabled:opacity-50"
+                              title="재생"
+                            >
+                              <Play className="h-8 w-8 text-white fill-white" />
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-900">
+                          {video.title || '(제목 없음)'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {formatDuration(video.duration)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {video.status}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </section>
 
@@ -609,7 +636,7 @@ function AdminVideosPage() {
                     <input
                       type="file"
                       accept="video/*"
-                      onChange={e => handleFileChange(e, false)}
+                      onChange={e => handleFileChange(e)}
                       className="hidden"
                       id="video-upload"
                     />
@@ -668,8 +695,8 @@ function AdminVideosPage() {
         </div>
       )}
 
-      {/* 상세/수정 모달 */}
-      {isDetailModalOpen && selectedVideo && (
+      {/* 상세 모달 */}
+      {isDetailModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
             className="relative w-full max-w-4xl rounded-2xl bg-white p-8 shadow-xl max-h-[90vh] overflow-y-auto"
@@ -677,316 +704,137 @@ function AdminVideosPage() {
           >
             <button
               type="button"
-              onClick={() => setIsDetailModalOpen(false)}
+              onClick={() => {
+                setIsDetailModalOpen(false);
+                setSelectedVideoDetail(null);
+              }}
               className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
             >
               <X className="h-5 w-5" />
             </button>
 
             <h2 className="mb-6 text-2xl font-semibold text-slate-900">
-              영상 수정
+              영상 상세
             </h2>
 
-            {/* 접근 권한 정보 */}
-            {selectedVideo.selectedClasses &&
-              selectedVideo.selectedClasses.length > 0 && (
-                <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <h3 className="mb-3 text-sm font-semibold text-slate-900">
-                    접근 권한
-                  </h3>
-                  <div className="space-y-3">
-                    {selectedVideo.selectedClasses.map(classData => {
-                      const classItem = dummyClasses.find(
-                        c => c.id === classData.classId
-                      );
-                      if (!classItem) return null;
-
-                      return (
-                        <div
-                          key={classData.classId}
-                          className="rounded-lg border border-slate-200 bg-white p-3"
-                        >
-                          <p className="mb-2 text-sm font-medium text-slate-900">
-                            {classItem.name}
-                          </p>
-                          <div className="space-y-1">
-                            {classData.studentIds.length > 0 ? (
-                              classData.studentIds.map(studentId => {
-                                const student = dummyStudents.find(
-                                  s => s.id === studentId
-                                );
-                                if (!student) return null;
-                                return (
-                                  <p
-                                    key={studentId}
-                                    className="text-xs text-slate-600"
-                                  >
-                                    • {student.name} ({student.school}{' '}
-                                    {student.grade})
-                                  </p>
-                                );
-                              })
-                            ) : (
-                              <p className="text-xs text-slate-500">
-                                선택된 학생 없음
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+            {isLoadingDetail ? (
+              <div className="py-12 text-center text-slate-600">
+                상세 정보를 불러오는 중...
+              </div>
+            ) : selectedVideoDetail ? (
+              <>
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <span className="text-sm font-medium text-slate-500">
+                      제목
+                    </span>
+                    <p className="text-slate-900">
+                      {selectedVideoDetail.title || '(제목 없음)'}
+                    </p>
+                  </div>
+                  {selectedVideoDetail.thumbnailUrl && (
+                    <div>
+                      <span className="text-sm font-medium text-slate-500 block mb-2">
+                        썸네일
+                      </span>
+                      <img
+                        src={selectedVideoDetail.thumbnailUrl}
+                        alt=""
+                        className="rounded-lg max-h-48 object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    <div>
+                      <span className="text-sm font-medium text-slate-500 block">
+                        재생 시간
+                      </span>
+                      <p className="text-slate-900">
+                        {formatDuration(selectedVideoDetail.duration)}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-slate-500 block">
+                        상태
+                      </span>
+                      <p className="text-slate-900">
+                        {selectedVideoDetail.status}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-slate-500 block">
+                        조회수
+                      </span>
+                      <p className="text-slate-900">
+                        {selectedVideoDetail.viewCount}회
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-slate-500 block">
+                        생성일
+                      </span>
+                      <p className="text-slate-900 text-sm">
+                        {new Date(
+                          selectedVideoDetail.createdAt
+                        ).toLocaleString('ko-KR')}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-slate-500 block mb-2">
+                      연결된 학생
+                    </span>
+                    {selectedVideoDetail.assignedStudents?.length > 0 ? (
+                      <ul className="rounded-lg border border-slate-200 p-3 space-y-1">
+                        {selectedVideoDetail.assignedStudents.map(s => (
+                          <li
+                            key={s.studentId}
+                            className="text-sm text-slate-700"
+                          >
+                            • {s.name} (ID: {s.studentId})
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-slate-500">
+                        연결된 학생이 없습니다.
+                      </p>
+                    )}
                   </div>
                 </div>
-              )}
 
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  제목
-                </label>
-                <input
-                  type="text"
-                  value={editVideo.title}
-                  onChange={e =>
-                    setEditVideo({ ...editVideo, title: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-slate-700">
-                    클래스 선택
-                  </label>
+                <div className="mt-8 flex justify-between items-center">
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSaveEdit}
+                      className="flex items-center gap-2 rounded-lg bg-[#084773] px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
+                    >
+                      <Save className="h-4 w-4" />
+                      수정
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      className="flex items-center gap-2 rounded-lg bg-red-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                      삭제
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={() => {
-                      if (
-                        editVideo.selectedClasses.length === dummyClasses.length
-                      ) {
-                        setEditVideo({
-                          ...editVideo,
-                          selectedClasses: [],
-                        });
-                      } else {
-                        setEditVideo({
-                          ...editVideo,
-                          selectedClasses: dummyClasses.map(c => ({
-                            classId: c.id,
-                            studentIds: [],
-                          })),
-                        });
-                      }
+                      setIsDetailModalOpen(false);
+                      setSelectedVideoDetail(null);
                     }}
-                    className="text-xs text-[#084773] hover:text-[#063a5a] font-medium"
+                    className="rounded-lg border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
                   >
-                    {editVideo.selectedClasses.length === dummyClasses.length
-                      ? '전체 해제'
-                      : '클래스 모두 선택'}
+                    닫기
                   </button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {dummyClasses.map(classItem => {
-                    const isClassSelected = editVideo.selectedClasses.some(
-                      sc => sc.classId === classItem.id
-                    );
-                    const selectedClassData = editVideo.selectedClasses.find(
-                      sc => sc.classId === classItem.id
-                    );
-
-                    return (
-                      <div
-                        key={classItem.id}
-                        className="rounded-lg border border-slate-200 p-4"
-                      >
-                        <label className="flex items-center gap-2 cursor-pointer mb-3">
-                          <input
-                            type="checkbox"
-                            checked={isClassSelected}
-                            onChange={e => {
-                              if (e.target.checked) {
-                                setEditVideo({
-                                  ...editVideo,
-                                  selectedClasses: [
-                                    ...editVideo.selectedClasses,
-                                    { classId: classItem.id, studentIds: [] },
-                                  ],
-                                });
-                              } else {
-                                setEditVideo({
-                                  ...editVideo,
-                                  selectedClasses:
-                                    editVideo.selectedClasses.filter(
-                                      sc => sc.classId !== classItem.id
-                                    ),
-                                });
-                              }
-                            }}
-                            className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
-                          />
-                          <span className="text-sm font-medium text-slate-700">
-                            {classItem.name}
-                          </span>
-                        </label>
-
-                        {isClassSelected && (
-                          <div className="ml-6 mt-2">
-                            <label className="block text-xs font-medium text-slate-600 mb-2">
-                              학생 선택
-                            </label>
-                            <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 p-2 space-y-1.5">
-                              {classItem.studentIds.map(studentId => {
-                                const student = dummyStudents.find(
-                                  s => s.id === studentId
-                                );
-                                if (!student) return null;
-                                return (
-                                  <label
-                                    key={studentId}
-                                    className="flex items-center gap-2 cursor-pointer"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={
-                                        selectedClassData?.studentIds.includes(
-                                          studentId
-                                        ) || false
-                                      }
-                                      onChange={e => {
-                                        const classIndex =
-                                          editVideo.selectedClasses.findIndex(
-                                            sc => sc.classId === classItem.id
-                                          );
-                                        if (classIndex === -1) return;
-
-                                        const updatedClasses = [
-                                          ...editVideo.selectedClasses,
-                                        ];
-                                        if (e.target.checked) {
-                                          updatedClasses[classIndex] = {
-                                            ...updatedClasses[classIndex],
-                                            studentIds: [
-                                              ...updatedClasses[classIndex]
-                                                .studentIds,
-                                              studentId,
-                                            ],
-                                          };
-                                        } else {
-                                          updatedClasses[classIndex] = {
-                                            ...updatedClasses[classIndex],
-                                            studentIds: updatedClasses[
-                                              classIndex
-                                            ].studentIds.filter(
-                                              id => id !== studentId
-                                            ),
-                                          };
-                                        }
-                                        setEditVideo({
-                                          ...editVideo,
-                                          selectedClasses: updatedClasses,
-                                        });
-                                      }}
-                                      className="h-3.5 w-3.5 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
-                                    />
-                                    <span className="text-xs text-slate-700">
-                                      {student.name} ({student.school}{' '}
-                                      {student.grade})
-                                    </span>
-                                  </label>
-                                );
-                              })}
-                            </div>
-                            {selectedClassData && (
-                              <p className="mt-2 text-xs text-slate-500">
-                                선택된 학생:{' '}
-                                {selectedClassData.studentIds.length}명
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  영상 파일
-                </label>
-                <div className="space-y-3">
-                  <label className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-dashed border-slate-300 p-6 transition-colors hover:border-[#084773] hover:bg-slate-50">
-                    <Upload className="h-5 w-5 text-slate-400" />
-                    <div className="flex-1">
-                      <span className="text-sm font-medium text-slate-700">
-                        {editVideo.videoFileName ||
-                          selectedVideo.videoFileName ||
-                          '영상 파일을 선택하세요'}
-                      </span>
-                      <p className="text-xs text-slate-500 mt-1">
-                        클릭하여 파일을 선택하거나 드래그하여 업로드
-                      </p>
-                    </div>
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={e => handleFileChange(e, true)}
-                      className="hidden"
-                      id="video-edit-upload"
-                    />
-                  </label>
-                  {(editVideo.videoFileName || selectedVideo.videoFileName) && (
-                    <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2">
-                      <span className="text-sm text-slate-700">
-                        {editVideo.videoFileName || selectedVideo.videoFileName}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setEditVideo({
-                            ...editVideo,
-                            videoFile: null,
-                            videoFileName: '',
-                          })
-                        }
-                        className="ml-auto text-slate-500 hover:text-slate-700"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 flex justify-between">
-              <button
-                type="button"
-                onClick={handleDelete}
-                className="flex items-center gap-2 rounded-lg bg-red-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
-              >
-                <Trash2 className="h-4 w-4" />
-                삭제
-              </button>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsDetailModalOpen(false)}
-                  className="rounded-lg border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-                >
-                  취소
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveEdit}
-                  className="flex items-center gap-2 rounded-lg bg-[#084773] px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
-                >
-                  <Save className="h-4 w-4" />
-                  저장
-                </button>
-              </div>
-            </div>
+              </>
+            ) : null}
           </div>
         </div>
       )}
