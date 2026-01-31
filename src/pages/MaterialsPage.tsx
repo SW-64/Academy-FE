@@ -281,7 +281,7 @@ function MaterialsPage() {
     >
       <td className="pl-8 pr-1 py-3">
         <span className="text-sm text-slate-700">
-          {(currentPage - 1) * itemsPerPage + index + 1}
+          {currentMaterials.length - index}
         </span>
       </td>
       <td className="pl-1 pr-4 py-3">
