@@ -149,11 +149,8 @@ function ParentMyPage() {
                 <input
                   type="text"
                   value={editForm.email}
-                  onChange={e =>
-                    setEditForm({ ...editForm, email: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  required
+                  readOnly
+                  className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-600 focus:outline-none"
                 />
               </div>
               <div className="flex gap-3 pt-4">
