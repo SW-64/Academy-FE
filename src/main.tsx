@@ -4,7 +4,7 @@ import App from './App.tsx';
 import './index.css';
 import { logout } from './api/auth';
 
-// 401 응답 시 로그인 만료 처리 (토큰 만료 시 로그아웃 후 로그인 페이지로)
+// 401 응답 시 로그인 페이지로 이동 (메시지는 로그인 페이지에서 표시)
 const originalFetch = window.fetch;
 window.fetch = async (
   input: RequestInfo | URL,
@@ -15,12 +15,11 @@ window.fetch = async (
     const url = typeof input === 'string' ? input : (input as Request)?.url ?? '';
     if (typeof url === 'string' && url.includes('sign-out')) return response;
     try {
-      alert('로그인 유효시간이 만료되었습니다.');
       await logout();
     } catch {
       // 로그아웃 API 실패 시에도 로그인 페이지로 이동
     }
-    window.location.href = '/login';
+    window.dispatchEvent(new CustomEvent('auth:401'));
     return response;
   }
   return response;
