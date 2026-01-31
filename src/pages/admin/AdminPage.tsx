@@ -443,6 +443,21 @@ function AdminPage() {
         } finally {
           setIsLoadingPending(false);
         }
+
+        // 블랙리스트 캐시 무효화 및 블랙리스트 탭이면 즉시 새로고침
+        dataCacheRef.current.blacklist = undefined;
+        if (activeTab === 'blacklist') {
+          setIsLoadingBlacklist(true);
+          try {
+            const blRes = await getBlacklistUsers();
+            setBlacklistUsers(blRes.data.items);
+            dataCacheRef.current.blacklist = blRes.data.items;
+          } catch {
+            setBlacklistUsers([]);
+          } finally {
+            setIsLoadingBlacklist(false);
+          }
+        }
       } catch (error) {
         const errorMessage =
           error instanceof Error
@@ -783,6 +798,21 @@ function AdminPage() {
         setDeletingParent(null);
       }
       setDeleteModalOpen(false);
+
+      // 블랙리스트 캐시 무효화 및 블랙리스트 탭이면 즉시 새로고침
+      dataCacheRef.current.blacklist = undefined;
+      if (activeTab === 'blacklist') {
+        setIsLoadingBlacklist(true);
+        try {
+          const blRes = await getBlacklistUsers();
+          setBlacklistUsers(blRes.data.items);
+          dataCacheRef.current.blacklist = blRes.data.items;
+        } catch {
+          setBlacklistUsers([]);
+        } finally {
+          setIsLoadingBlacklist(false);
+        }
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error

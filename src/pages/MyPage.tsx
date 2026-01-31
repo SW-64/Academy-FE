@@ -22,6 +22,7 @@ function MyPage() {
   // 사용자 정보 상태
   const [userInfo, setUserInfo] = useState({
     name: '',
+    loginId: '',
     email: '',
     school: '',
     grade: '',
@@ -70,6 +71,7 @@ function MyPage() {
 
         setUserInfo({
           name: data.name,
+          loginId: data.loginId ?? data.email,
           email: data.email,
           phone: data.phone,
           school: data.signupSchool || '',
@@ -127,6 +129,7 @@ function MyPage() {
       setUserInfo({
         ...userInfo,
         name: editForm.name,
+        loginId: editForm.email,
         email: editForm.email,
         phone: editForm.phone,
         school: isStudent
@@ -178,7 +181,7 @@ function MyPage() {
   const openEditModal = () => {
     setEditForm({
       name: userInfo.name,
-      email: userInfo.email,
+      email: userInfo.loginId || userInfo.email,
       phone: userInfo.phone,
       school: isStudent ? getSchoolName(userInfo.school) : '',
       grade: isStudent ? userInfo.grade : '',
@@ -209,9 +212,9 @@ function MyPage() {
               </span>
             </div>
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <span className="text-sm text-slate-600">이메일</span>
+              <span className="text-sm text-slate-600">아이디</span>
               <span className="text-sm font-medium text-slate-900">
-                {userInfo.email}
+                {userInfo.loginId || userInfo.email}
               </span>
             </div>
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -297,10 +300,10 @@ function MyPage() {
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">
-                  이메일
+                  아이디
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   value={editForm.email}
                   onChange={e =>
                     setEditForm({ ...editForm, email: e.target.value })

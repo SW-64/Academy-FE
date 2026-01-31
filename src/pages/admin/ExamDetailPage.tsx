@@ -441,14 +441,14 @@ function ExamDetailPage() {
           }`}
         >
           <div className="flex">
-            {/* 고정 컬럼: 이름, 학교, 응시여부 */}
+            {/* 고정 컬럼: 이름, 학교, 미응시 */}
             <div className="flex-shrink-0 border-r-2 border-slate-400 bg-slate-50">
               <table
                 className="border-collapse"
                 style={{ tableLayout: 'fixed' }}
               >
                 <thead>
-                  {/* 첫 번째 행: 이름, 학교, 응시여부 */}
+                  {/* 첫 번째 행: 이름, 학교, 미응시 */}
                   <tr className="border-b-2 border-slate-400">
                     <th
                       className="border-r border-slate-300 px-3 py-2 text-center text-sm font-semibold text-slate-900 whitespace-nowrap"
@@ -484,7 +484,7 @@ function ExamDetailPage() {
                         minHeight: '40px',
                       }}
                     >
-                      응시여부
+                      미응시
                     </th>
                   </tr>
                   {/* 두 번째 행: 빈 행 (배점 행과 맞추기) */}
@@ -600,11 +600,11 @@ function ExamDetailPage() {
                             <label className="flex items-center justify-center cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={answerInfo.tookExam}
+                                checked={!answerInfo.tookExam}
                                 onChange={e => {
                                   setStudentIsTaken(prev => ({
                                     ...prev,
-                                    [record.studentId]: e.target.checked,
+                                    [record.studentId]: !e.target.checked,
                                   }));
                                 }}
                                 className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"

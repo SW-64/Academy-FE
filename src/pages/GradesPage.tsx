@@ -7,7 +7,9 @@ import {
   getMyExamRank,
   type MyExamGradesSort,
   type MyExamGradeItem,
+  type MyExamRankItem,
 } from '../api/class';
+import { X } from 'lucide-react';
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
@@ -23,9 +25,7 @@ function GradesPage() {
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const [sortOption, setSortOption] = useState<MyExamGradesSort>('score_desc');
 
-  const [selectedYear, setSelectedYear] = useState<number>(
-    () => currentDate.getFullYear()
-  );
+  const [selectedYear] = useState<number>(2026);
   const [selectedMonth, setSelectedMonth] = useState<number>(
     () => currentDate.getMonth() + 1
   );
@@ -33,6 +33,12 @@ function GradesPage() {
   const [rankLoadingExamId, setRankLoadingExamId] = useState<number | null>(
     null
   );
+  const [rankModalOpen, setRankModalOpen] = useState(false);
+  const [rankModalLoading, setRankModalLoading] = useState(false);
+  const [rankModalData, setRankModalData] = useState<{
+    examTitle: string;
+    myRank: MyExamRankItem | null;
+  } | null>(null);
 
   // 내 클래스 목록 조회
   const fetchClasses = useCallback(async () => {
@@ -87,24 +93,24 @@ function GradesPage() {
     setSelectedClassId(classId);
   };
 
-  const handleRankClick = async (examId: number) => {
+  const handleRankClick = async (examId: number, examTitle: string) => {
     if (!selectedClassId) return;
     setRankLoadingExamId(examId);
+    setRankModalOpen(true);
+    setRankModalLoading(true);
+    setRankModalData({ examTitle, myRank: null });
     try {
       const response = await getMyExamRank(selectedClassId, examId);
-      const d = response.data;
-      const rank = d?.rank;
-      const total = d?.totalStudents;
-      if (rank != null && total != null) {
-        alert(`등수: ${rank}위 / ${total}명`);
-      } else {
-        alert(response.message || '등수 정보를 불러왔습니다.');
-      }
+      const items = Array.isArray(response.data) ? response.data : [];
+      const myRank = items.find((item: MyExamRankItem) => item.isMe) ?? null;
+      setRankModalData({ examTitle, myRank });
     } catch (error) {
       const msg =
         error instanceof Error ? error.message : '등수 조회에 실패했습니다.';
       alert(msg);
+      setRankModalOpen(false);
     } finally {
+      setRankModalLoading(false);
       setRankLoadingExamId(null);
     }
   };
@@ -168,27 +174,9 @@ function GradesPage() {
       {selectedClassId && (
         <div className="mb-4 sm:mb-6">
           <div className="mb-3 flex flex-wrap items-center gap-3 sm:gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-base sm:text-lg font-semibold text-slate-900">
-                {selectedYear}년
-              </span>
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => setSelectedYear(y => y - 1)}
-                  className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
-                >
-                  ‹
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedYear(y => y + 1)}
-                  className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
-                >
-                  ›
-                </button>
-              </div>
-            </div>
+            <span className="text-base sm:text-lg font-semibold text-slate-900">
+              {selectedYear}년
+            </span>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {MONTHS.map(month => (
                 <button
@@ -287,7 +275,9 @@ function GradesPage() {
                             <td className="px-4 py-3 text-right">
                               <button
                                 type="button"
-                                onClick={() => handleRankClick(exam.examId)}
+                                onClick={() =>
+                                  handleRankClick(exam.examId, exam.examTitle)
+                                }
                                 disabled={rankLoadingExamId === exam.examId}
                                 className="rounded-lg bg-[#084773] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#063a5a] disabled:opacity-50"
                               >
@@ -313,6 +303,75 @@ function GradesPage() {
           <p className="text-sm text-slate-500">
             클래스를 선택하면 해당 클래스의 시험 성적을 볼 수 있습니다.
           </p>
+        </div>
+      )}
+
+      {/* 등수 조회 모달 - 본인 등수만 표시 */}
+      {rankModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">
+                내 등수 조회
+                {rankModalData?.examTitle && (
+                  <span className="ml-2 text-sm font-normal text-slate-600">
+                    ({rankModalData.examTitle})
+                  </span>
+                )}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setRankModalOpen(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {rankModalLoading ? (
+              <p className="py-6 text-center text-sm text-slate-500">
+                등수를 불러오는 중...
+              </p>
+            ) : rankModalData?.myRank == null ? (
+              <p className="py-6 text-center text-sm text-slate-500">
+                등수 정보가 없습니다.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                  <span className="text-sm text-slate-600">등수</span>
+                  <span className="text-base font-semibold text-slate-900">
+                    {rankModalData.myRank.ranking}등
+                  </span>
+                </div>
+                <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                  <span className="text-sm text-slate-600">점수</span>
+                  <span className="text-base font-semibold text-slate-900">
+                    {rankModalData.myRank.score}점
+                  </span>
+                </div>
+                {rankModalData.myRank.name != null && (
+                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                    <span className="text-sm text-slate-600">이름</span>
+                    <span className="text-base font-medium text-slate-900">
+                      {rankModalData.myRank.name}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setRankModalOpen(false)}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </MainLayout>
