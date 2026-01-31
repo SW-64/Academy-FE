@@ -1,9 +1,10 @@
-import { useState, FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, FormEvent, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { login, getMe } from '../api/auth';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -13,6 +14,13 @@ const LoginPage = () => {
   );
   const [apiError, setApiError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    const state = location.state as { apiError?: string } | null;
+    if (state?.apiError) {
+      setApiError(state.apiError);
+    }
+  }, [location.state]);
 
   const validateLoginId = (loginId: string): boolean => {
     // 4-20자, 영문으로 시작하고 영문, 숫자만 사용 가능

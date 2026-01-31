@@ -1,5 +1,20 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+
+function AuthRedirectHandler({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const handler = () => {
+      navigate('/login', {
+        replace: true,
+        state: { apiError: '아이디 혹은 비밀번호가 일치하지 않습니다.' },
+      });
+    };
+    window.addEventListener('auth:401', handler);
+    return () => window.removeEventListener('auth:401', handler);
+  }, [navigate]);
+  return <>{children}</>;
+}
 
 // 코드 스플리팅: 모든 페이지를 lazy import
 const LoginPage = lazy(() => import('./pages/LoginPage'));
@@ -39,8 +54,9 @@ const ParentMyPage = lazy(() => import('./pages/parent/ParentMyPage'));
 function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={null}>
-        <Routes>
+      <AuthRedirectHandler>
+        <Suspense fallback={null}>
+          <Routes>
           {/* 초기 진입은 /login 으로 리다이렉트 */}
           <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -103,7 +119,8 @@ function App() {
           {/* 정의되지 않은 경로는 공지사항으로 */}
           <Route path="*" element={<Navigate to="/notice" replace />} />
         </Routes>
-      </Suspense>
+        </Suspense>
+      </AuthRedirectHandler>
     </BrowserRouter>
   );
 }
