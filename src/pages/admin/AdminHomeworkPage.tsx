@@ -395,8 +395,8 @@ function AdminHomeworkPage() {
         error instanceof Error
           ? error.message
           : isEditMode
-            ? '교재 수정에 실패했습니다.'
-            : '교재 생성에 실패했습니다.';
+          ? '교재 수정에 실패했습니다.'
+          : '교재 생성에 실패했습니다.';
       alert(errorMessage);
     }
   };

@@ -8,6 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Play,
+  Clock,
+  MoreVertical,
 } from 'lucide-react';
 import MainLayout from '../MainLayout';
 import { getStudents } from '../../api/students';
@@ -46,6 +48,15 @@ function formatDuration(seconds: number): string {
     return `${m}분 ${s}초`;
   }
   return `${sec}초`;
+}
+
+/** HH:MM:SS 형식 (목록 카드용) */
+function formatDurationHMS(seconds: number): string {
+  const sec = Math.floor(Number(seconds) || 0);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  return [h, m, s].map(n => String(n).padStart(2, '0')).join(':');
 }
 
 function AdminVideosPage() {
@@ -312,89 +323,69 @@ function AdminVideosPage() {
         </div>
       </header>
 
-      {/* 영상 목록 */}
+      {/* 영상 목록 - 카드 그리드 */}
       <div className="space-y-6">
         <section>
-          <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-blue-100/70">
-            {isLoadingVideos ? (
-              <div className="flex justify-center py-12 text-slate-600">
-                영상 목록을 불러오는 중...
-              </div>
-            ) : (
-              <table className="min-w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
-                      썸네일
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
-                      제목
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
-                      재생 시간
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
-                      상태
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {videos.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="px-4 py-8 text-center text-sm text-slate-500"
+          {isLoadingVideos ? (
+            <div className="flex justify-center py-12 text-slate-600">
+              영상 목록을 불러오는 중...
+            </div>
+          ) : videos.length === 0 ? (
+            <div className="rounded-xl bg-white p-12 text-center text-slate-500 shadow-sm ring-1 ring-blue-100/70">
+              등록된 영상이 없습니다.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {videos.map(video => (
+                <article
+                  key={video.videoId}
+                  onClick={() => handleVideoClick(video)}
+                  className="cursor-pointer overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200/80 transition-shadow hover:shadow-md hover:ring-slate-300"
+                >
+                  {/* 썸네일 (크게, 재생 버튼 없음) */}
+                  <div className="relative aspect-video w-full overflow-hidden bg-slate-200">
+                    {video.thumbnailUrl ? (
+                      <img
+                        src={video.thumbnailUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-slate-400 text-sm">
+                        썸네일 없음
+                      </div>
+                    )}
+                    {/* 썸네일 우측 상단: 조회수 뱃지 + 옵션 메뉴 */}
+                    <div className="absolute right-2 top-2 flex items-center gap-1.5">
+                      <span className="rounded-full bg-white/95 px-2 py-0.5 text-xs font-medium text-slate-800 shadow-sm">
+                        {video.viewCount} views
+                      </span>
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleVideoClick(video);
+                        }}
+                        className="rounded-full p-1.5 text-slate-700 transition-colors hover:bg-white/80"
+                        aria-label="옵션"
                       >
-                        등록된 영상이 없습니다.
-                      </td>
-                    </tr>
-                  ) : (
-                    videos.map(video => (
-                      <tr
-                        key={video.videoId}
-                        className="border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors"
-                        onClick={() => handleVideoClick(video)}
-                      >
-                        <td className="px-4 py-3">
-                          <div className="relative w-24 h-14 rounded-lg overflow-hidden bg-slate-200 shrink-0">
-                            {video.thumbnailUrl ? (
-                              <img
-                                src={video.thumbnailUrl}
-                                alt=""
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
-                                No
-                              </div>
-                            )}
-                            <button
-                              type="button"
-                              onClick={e => handlePlayClick(e, video.videoId)}
-                              disabled={isLoadingPlayback}
-                              className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/50 transition-colors disabled:opacity-50"
-                              title="재생"
-                            >
-                              <Play className="h-8 w-8 text-white fill-white" />
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-slate-900">
-                          {video.title || '(제목 없음)'}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-slate-600">
-                          {formatDuration(video.duration)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-slate-600">
-                          {video.status}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            )}
-          </div>
+                        <MoreVertical className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="mb-2 text-base font-semibold text-[#084773] line-clamp-2">
+                      {video.title || '(제목 없음)'}
+                    </h3>
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Clock className="h-4 w-4 shrink-0" />
+                      <span>{formatDurationHMS(video.duration)}</span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* 페이지네이션 */}
@@ -737,11 +728,26 @@ function AdminVideosPage() {
                       <span className="text-sm font-medium text-slate-500 block mb-2">
                         썸네일
                       </span>
-                      <img
-                        src={selectedVideoDetail.thumbnailUrl}
-                        alt=""
-                        className="rounded-lg max-h-48 object-cover"
-                      />
+                      <div className="relative inline-block w-full max-w-2xl overflow-hidden rounded-lg bg-slate-200">
+                        <img
+                          src={selectedVideoDetail.thumbnailUrl}
+                          alt=""
+                          className="w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={e =>
+                            handlePlayClick(e, selectedVideoDetail.videoId)
+                          }
+                          disabled={isLoadingPlayback}
+                          className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors hover:bg-black/40 disabled:opacity-50"
+                          title="재생"
+                        >
+                          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform hover:scale-105">
+                            <Play className="h-8 w-8 text-[#084773] fill-[#084773]" />
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
