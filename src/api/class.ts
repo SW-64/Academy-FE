@@ -356,7 +356,7 @@ export const getMyExamRank = async (
 };
 
 /**
- * 학부모: 자녀의 시험 성적 목록 조회 (GET /classes/:classId/exams/grades/my-student/:studentId)
+ * 학부모: 자녀의 시험 성적 목록 조회 (GET /classes/:classId/exams/grades/my-students/:studentId)
  * @param classId 클래스 ID
  * @param studentId 자녀(학생) ID
  */
@@ -365,7 +365,7 @@ export const getMyStudentExamGrades = async (
   studentId: number
 ): Promise<MyExamGradesResponse> => {
   return request<MyExamGradesResponse>(
-    `/classes/${classId}/exams/grades/my-student/${studentId}`,
+    `/classes/${classId}/exams/grades/my-students/${studentId}`,
     { errorMessage: '자녀의 시험 성적을 가져오는데 실패했습니다.' }
   );
 };
