@@ -19,6 +19,7 @@ import {
   getVideoPlayback,
   deleteVideo,
   uploadVideo,
+  updateVideo,
   type VideoListItem,
   type VideoDetailItem,
 } from '../../api/videos';
@@ -206,9 +207,7 @@ function AdminVideosPage() {
       setListMeta(listRes.data.meta);
       setCurrentPage(1);
     } catch (error) {
-      alert(
-        error instanceof Error ? error.message : '영상 업로드에 실패했습니다.'
-      );
+      alert(error instanceof Error ? error.message : String(error));
     } finally {
       setIsUploading(false);
     }
@@ -222,9 +221,7 @@ function AdminVideosPage() {
       const response = await getVideoDetail(video.videoId);
       setSelectedVideoDetail(response.data);
     } catch (error) {
-      alert(
-        error instanceof Error ? error.message : '영상 상세를 불러오는데 실패했습니다.'
-      );
+      alert(error instanceof Error ? error.message : String(error));
       setIsDetailModalOpen(false);
     } finally {
       setIsLoadingDetail(false);
@@ -245,16 +242,28 @@ function AdminVideosPage() {
         alert('재생 URL을 가져올 수 없습니다.');
       }
     } catch (error) {
-      alert(
-        error instanceof Error ? error.message : '재생 URL을 불러오는데 실패했습니다.'
-      );
+      alert(error instanceof Error ? error.message : String(error));
     } finally {
       setIsLoadingPlayback(false);
     }
   };
 
-  const handleSaveEdit = () => {
-    alert('수정 기능은 준비 중입니다.');
+  const handleSaveEdit = async () => {
+    if (!selectedVideoDetail) return;
+    try {
+      const response = await updateVideo(selectedVideoDetail.videoId, {
+        title: selectedVideoDetail.title,
+        studentIds:
+          selectedVideoDetail.assignedStudents?.map(s => s.studentId) ?? [],
+      });
+      alert(response.message ?? '영상이 수정되었습니다.');
+      setSelectedVideoDetail(response.data);
+      const listResponse = await getVideos(currentPage, VIDEOS_PER_PAGE);
+      setVideos(listResponse.data.data);
+      setListMeta(listResponse.data.meta);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : String(error));
+    }
   };
 
   const handleDelete = async () => {
@@ -269,9 +278,7 @@ function AdminVideosPage() {
       setVideos(response.data.data);
       setListMeta(response.data.meta);
     } catch (error) {
-      alert(
-        error instanceof Error ? error.message : '영상 삭제에 실패했습니다.'
-      );
+      alert(error instanceof Error ? error.message : String(error));
     }
   };
 
@@ -717,33 +724,37 @@ function AdminVideosPage() {
                       {selectedVideoDetail.title || '(제목 없음)'}
                     </p>
                   </div>
-                  {selectedVideoDetail.thumbnailUrl && (
-                    <div>
-                      <span className="text-sm font-medium text-slate-500 block mb-2">
-                        썸네일
-                      </span>
-                      <div className="relative inline-block w-full max-w-2xl overflow-hidden rounded-lg bg-slate-200">
+                  <div>
+                    <span className="text-sm font-medium text-slate-500 block mb-2">
+                      썸네일
+                    </span>
+                    <div className="relative inline-block w-full max-w-2xl overflow-hidden rounded-lg bg-slate-200 aspect-video min-h-[200px]">
+                      {selectedVideoDetail.thumbnailUrl ? (
                         <img
                           src={selectedVideoDetail.thumbnailUrl}
                           alt=""
-                          className="w-full object-cover"
+                          className="w-full h-full object-cover"
                         />
-                        <button
-                          type="button"
-                          onClick={e =>
-                            handlePlayClick(e, selectedVideoDetail.videoId)
-                          }
-                          disabled={isLoadingPlayback}
-                          className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors hover:bg-black/40 disabled:opacity-50"
-                          title="재생"
-                        >
-                          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform hover:scale-105">
-                            <Play className="h-8 w-8 text-[#084773] fill-[#084773]" />
-                          </span>
-                        </button>
-                      </div>
+                      ) : (
+                        <div className="flex h-full w-full min-h-[200px] items-center justify-center text-slate-400 text-sm">
+                          썸네일 없음
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={e =>
+                          handlePlayClick(e, selectedVideoDetail.videoId)
+                        }
+                        disabled={isLoadingPlayback}
+                        className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors hover:bg-black/40 disabled:opacity-50"
+                        title="재생"
+                      >
+                        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform hover:scale-105">
+                          <Play className="h-8 w-8 text-[#084773] fill-[#084773]" />
+                        </span>
+                      </button>
                     </div>
-                  )}
+                  </div>
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                     <div>
                       <span className="text-sm font-medium text-slate-500 block">
