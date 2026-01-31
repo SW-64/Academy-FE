@@ -5,7 +5,6 @@ import type { ParentStudent, ParentStudentClass } from '../../api/parents';
 import {
   getMyStudentExamGrades,
   getMyStudentExamRank,
-  type MyExamGradesSort,
   type MyExamGradeItem,
   type MyExamRankItem,
 } from '../../api/class';
@@ -25,7 +24,6 @@ function ParentGradesPage() {
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
   const [grades, setGrades] = useState<MyExamGradeItem[]>([]);
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
-  const [sortOption, setSortOption] = useState<MyExamGradesSort>('score_desc');
   const [selectedYear] = useState<number>(2026);
   const [selectedMonth, setSelectedMonth] = useState<number>(
     () => currentDate.getMonth() + 1
@@ -94,8 +92,7 @@ function ParentGradesPage() {
     try {
       const response = await getMyStudentExamGrades(
         selectedClassId,
-        selectedStudentId,
-        sortOption
+        selectedStudentId
       );
       setGrades(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
@@ -108,7 +105,7 @@ function ParentGradesPage() {
     } finally {
       setIsLoadingGrades(false);
     }
-  }, [selectedClassId, selectedStudentId, sortOption]);
+  }, [selectedClassId, selectedStudentId]);
 
   useEffect(() => {
     fetchGrades();
@@ -270,21 +267,11 @@ function ParentGradesPage() {
         <section className="mb-4 sm:mb-6">
           <div className="flex justify-center">
             <div className="w-full max-w-[1200px]">
-              <div className="mb-3 sm:mb-4 flex items-center justify-between">
+              <div className="mb-3 sm:mb-4">
                 <h2 className="text-base sm:text-lg font-semibold text-slate-900">
                   {selectedStudent?.user.name} · {selectedYear}년 {selectedMonth}
                   월 시험 성적
                 </h2>
-                <select
-                  value={sortOption}
-                  onChange={e =>
-                    setSortOption(e.target.value as MyExamGradesSort)
-                  }
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                >
-                  <option value="score_desc">점수순</option>
-                  <option value="name_asc">이름순</option>
-                </select>
               </div>
               <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
                 <div className="overflow-x-auto">
