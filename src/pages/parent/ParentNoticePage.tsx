@@ -234,6 +234,14 @@ function ParentNoticePage() {
             <>
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">번호</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">제목</th>
+                      <th className="hidden min-[431px]:table-cell px-4 py-3 text-left text-sm font-semibold text-slate-900">작성일</th>
+                      <th className="hidden min-[601px]:table-cell px-4 py-3 text-left text-sm font-semibold text-slate-900">작성자</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {pinnedNotices.map(notice => (
                       <tr
@@ -241,14 +249,14 @@ function ParentNoticePage() {
                         className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50"
                         onClick={() => handleNoticeClick(notice)}
                       >
-                        <td className="pl-8 pr-1 py-3">
+                        <td className="px-4 py-3 text-sm text-slate-900">
                           <span className="inline-flex rounded bg-emerald-500 px-2 py-0.5 text-xs font-medium text-white">
                             공지
                           </span>
                         </td>
-                        <td className="pl-1 pr-4 py-3">
+                        <td className="px-4 py-3 text-sm text-slate-900">
                           <div className="flex items-center gap-2">
-                            <span className="cursor-pointer text-sm text-slate-900 hover:text-[#084773] hover:underline">
+                            <span className="cursor-pointer hover:text-[#084773] hover:underline">
                               {notice.title}
                             </span>
                             {notice.isNew && (
@@ -258,28 +266,30 @@ function ParentNoticePage() {
                             )}
                           </div>
                         </td>
-                        <td className="hidden pl-4 pr-1 py-3 text-sm text-slate-700 min-[431px]:table-cell">
+                        <td className="hidden min-[431px]:table-cell px-4 py-3 text-sm text-slate-600">
                           {notice.createdAt.slice(0, 10)}
                         </td>
-                        <td className="hidden pl-1 pr-4 py-3 text-sm text-slate-700 min-[601px]:table-cell">
+                        <td className="hidden min-[601px]:table-cell px-4 py-3 text-sm text-slate-600">
                           관리자
                         </td>
                       </tr>
                     ))}
-                    {filteredGeneral.map(notice => (
+                    {filteredGeneral.map((notice, i) => {
+                      const totalItems = listMeta?.totalItems ?? 0;
+                      const itemsPerPage = listMeta?.itemsPerPage ?? 10;
+                      const displayNumber = totalItems - (currentPage - 1) * itemsPerPage - pinnedNotices.length - i;
+                      return (
                       <tr
                         key={notice.noticeId}
                         className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50"
                         onClick={() => handleNoticeClick(notice)}
                       >
-                        <td className="pl-8 pr-1 py-3">
-                          <span className="text-sm text-slate-700">
-                            {notice.noticeId}
-                          </span>
+                        <td className="px-4 py-3 text-sm text-slate-900">
+                          {displayNumber}
                         </td>
-                        <td className="pl-1 pr-4 py-3">
+                        <td className="px-4 py-3 text-sm text-slate-900">
                           <div className="flex items-center gap-2">
-                            <span className="cursor-pointer text-sm text-slate-900 hover:text-[#084773] hover:underline">
+                            <span className="cursor-pointer hover:text-[#084773] hover:underline">
                               {notice.title}
                             </span>
                             {notice.isNew && (
@@ -289,14 +299,14 @@ function ParentNoticePage() {
                             )}
                           </div>
                         </td>
-                        <td className="hidden pl-4 pr-1 py-3 text-sm text-slate-700 min-[431px]:table-cell">
+                        <td className="hidden min-[431px]:table-cell px-4 py-3 text-sm text-slate-600">
                           {notice.createdAt.slice(0, 10)}
                         </td>
-                        <td className="hidden pl-1 pr-4 py-3 text-sm text-slate-700 min-[601px]:table-cell">
+                        <td className="hidden min-[601px]:table-cell px-4 py-3 text-sm text-slate-600">
                           관리자
                         </td>
                       </tr>
-                    ))}
+                    );})}
                   </tbody>
                 </table>
               </div>
