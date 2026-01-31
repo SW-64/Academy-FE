@@ -134,6 +134,25 @@ export const getVideoDetail = async (
   });
 };
 
+export interface UpdateVideoRequest {
+  title: string;
+  studentIds: number[];
+}
+
+/**
+ * 영상을 수정합니다. PATCH /videos/:videoId
+ */
+export const updateVideo = async (
+  videoId: number,
+  data: UpdateVideoRequest
+): Promise<GetVideoDetailResponse> => {
+  return request<GetVideoDetailResponse>(`/videos/${videoId}`, {
+    method: 'PATCH',
+    body: data,
+    errorMessage: '영상 수정에 실패했습니다.',
+  });
+};
+
 /**
  * 영상 재생 URL을 조회합니다.
  */
