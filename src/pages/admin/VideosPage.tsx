@@ -100,6 +100,27 @@ function AdminVideosPage() {
   >([]);
   const writeStudentsPerPage = 10;
 
+  // 상세 모달 수정 모드
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editStudentIds, setEditStudentIds] = useState<number[]>([]);
+  const [editSelectedStudentsChips, setEditSelectedStudentsChips] = useState<
+    { id: number; name: string }[]
+  >([]);
+  const [editModalStudents, setEditModalStudents] = useState<Student[]>([]);
+  const [editStudentsMeta, setEditStudentsMeta] = useState<{
+    totalItems: number;
+    itemCount: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+  } | null>(null);
+  const [editStudentPage, setEditStudentPage] = useState(1);
+  const [editSearchStudent, setEditSearchStudent] = useState('');
+  const [isLoadingEditStudents, setIsLoadingEditStudents] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const editStudentsPerPage = 10;
+
   // 영상 목록 조회 (페이지네이션)
   useEffect(() => {
     const fetchVideos = async () => {
@@ -159,6 +180,53 @@ function AdminVideosPage() {
     s =>
       s.name.toLowerCase().includes(writeSearchStudent.toLowerCase()) ||
       s.email.toLowerCase().includes(writeSearchStudent.toLowerCase())
+  );
+
+  // 상세 모달 수정 모드일 때 학생 목록 조회
+  useEffect(() => {
+    if (isEditMode && selectedVideoDetail) {
+      const fetchStudents = async () => {
+        setIsLoadingEditStudents(true);
+        try {
+          const response = await getStudents(
+            editStudentPage,
+            editStudentsPerPage
+          );
+          const transformed: Student[] = response.data.items
+            .filter(item => item.student != null)
+            .map(item => ({
+              id: item.student!.studentId,
+              name: item.name,
+              email: item.email,
+              phone: item.phone,
+              school: item.student!.school,
+              grade: `${item.student!.grade}학년`,
+            }));
+          setEditModalStudents(transformed);
+          setEditStudentsMeta(response.data.meta);
+        } catch (error) {
+          setEditModalStudents([]);
+          setEditStudentsMeta(null);
+        } finally {
+          setIsLoadingEditStudents(false);
+        }
+      };
+      fetchStudents();
+    } else {
+      setEditStudentPage(1);
+      setEditSearchStudent('');
+    }
+  }, [
+    isEditMode,
+    selectedVideoDetail,
+    editStudentPage,
+    editStudentsPerPage,
+  ]);
+
+  const filteredEditStudents = editModalStudents.filter(
+    s =>
+      s.name.toLowerCase().includes(editSearchStudent.toLowerCase()) ||
+      s.email.toLowerCase().includes(editSearchStudent.toLowerCase())
   );
 
   const handleToggleWriteStudent = (student: Student) => {
@@ -248,21 +316,56 @@ function AdminVideosPage() {
     }
   };
 
-  const handleSaveEdit = async () => {
+  const handleOpenEdit = () => {
     if (!selectedVideoDetail) return;
+    setIsEditMode(true);
+    setEditTitle(selectedVideoDetail.title || '');
+    setEditStudentIds(
+      selectedVideoDetail.assignedStudents?.map(s => s.studentId) ?? []
+    );
+    setEditSelectedStudentsChips(
+      selectedVideoDetail.assignedStudents?.map(s => ({
+        id: s.studentId,
+        name: s.name,
+      })) ?? []
+    );
+  };
+
+  const handleToggleEditStudent = (student: Student) => {
+    setEditStudentIds(prev =>
+      prev.includes(student.id)
+        ? prev.filter(id => id !== student.id)
+        : [...prev, student.id]
+    );
+    setEditSelectedStudentsChips(prev =>
+      prev.some(s => s.id === student.id)
+        ? prev.filter(s => s.id !== student.id)
+        : [...prev, { id: student.id, name: student.name }]
+    );
+  };
+
+  const handleConfirmEdit = async () => {
+    if (!selectedVideoDetail) return;
+    if (!editTitle.trim()) {
+      alert('제목을 입력해주세요.');
+      return;
+    }
     try {
+      setIsSavingEdit(true);
       const response = await updateVideo(selectedVideoDetail.videoId, {
-        title: selectedVideoDetail.title,
-        studentIds:
-          selectedVideoDetail.assignedStudents?.map(s => s.studentId) ?? [],
+        title: editTitle.trim(),
+        studentIds: editStudentIds,
       });
       alert(response.message ?? '영상이 수정되었습니다.');
       setSelectedVideoDetail(response.data);
+      setIsEditMode(false);
       const listResponse = await getVideos(currentPage, VIDEOS_PER_PAGE);
       setVideos(listResponse.data.data);
       setListMeta(listResponse.data.meta);
     } catch (error) {
       alert(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -699,6 +802,7 @@ function AdminVideosPage() {
               onClick={() => {
                 setIsDetailModalOpen(false);
                 setSelectedVideoDetail(null);
+                setIsEditMode(false);
               }}
               className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
             >
@@ -706,7 +810,7 @@ function AdminVideosPage() {
             </button>
 
             <h2 className="mb-6 text-2xl font-semibold text-slate-900">
-              영상 상세
+              {isEditMode ? '영상 수정' : '영상 상세'}
             </h2>
 
             {isLoadingDetail ? (
@@ -715,6 +819,196 @@ function AdminVideosPage() {
               </div>
             ) : selectedVideoDetail ? (
               <>
+                {isEditMode ? (
+                  <div className="space-y-6 mb-6">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        제목
+                      </label>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={e => setEditTitle(e.target.value)}
+                        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                        placeholder="제목을 입력하세요"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        학생 선택
+                      </label>
+                      <div className="mb-4">
+                        <input
+                          type="text"
+                          value={editSearchStudent}
+                          onChange={e => setEditSearchStudent(e.target.value)}
+                          placeholder="학생 이름 또는 이메일로 검색..."
+                          className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
+                        />
+                      </div>
+                      {editSelectedStudentsChips.length > 0 && (
+                        <div className="mb-4 flex flex-wrap gap-2">
+                          {editSelectedStudentsChips.map(student => (
+                            <div
+                              key={student.id}
+                              className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-sm"
+                            >
+                              <span className="text-slate-900">
+                                {student.name}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditStudentIds(prev =>
+                                    prev.filter(id => id !== student.id)
+                                  );
+                                  setEditSelectedStudentsChips(prev =>
+                                    prev.filter(s => s.id !== student.id)
+                                  );
+                                }}
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-200">
+                        <table className="min-w-full border-collapse">
+                          <thead className="bg-slate-50 sticky top-0">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">
+                                선택
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">
+                                이름
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">
+                                이메일
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">
+                                학교
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">
+                                학년
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {isLoadingEditStudents ? (
+                              <tr>
+                                <td
+                                  colSpan={5}
+                                  className="px-4 py-4 text-center text-sm text-slate-500"
+                                >
+                                  학생 목록을 불러오는 중...
+                                </td>
+                              </tr>
+                            ) : filteredEditStudents.length === 0 ? (
+                              <tr>
+                                <td
+                                  colSpan={5}
+                                  className="px-4 py-4 text-center text-sm text-slate-500"
+                                >
+                                  {editSearchStudent
+                                    ? '검색 결과가 없습니다.'
+                                    : '등록된 학생이 없습니다.'}
+                                </td>
+                              </tr>
+                            ) : (
+                              filteredEditStudents.map(student => (
+                                <tr
+                                  key={student.id}
+                                  className="border-b border-slate-100 hover:bg-slate-50"
+                                >
+                                  <td className="px-4 py-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={editStudentIds.includes(
+                                        student.id
+                                      )}
+                                      onChange={() =>
+                                        handleToggleEditStudent(student)
+                                      }
+                                      className="h-4 w-4 rounded border-slate-300 text-[#084773] focus:ring-[#084773]"
+                                    />
+                                  </td>
+                                  <td className="px-4 py-2 text-sm text-slate-900">
+                                    {student.name}
+                                  </td>
+                                  <td className="px-4 py-2 text-sm text-slate-600">
+                                    {student.email}
+                                  </td>
+                                  <td className="px-4 py-2 text-sm text-slate-600">
+                                    {student.school}
+                                  </td>
+                                  <td className="px-4 py-2 text-sm text-slate-600">
+                                    {student.grade}
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                      {editStudentsMeta &&
+                        editStudentsMeta.totalPages > 1 && (
+                          <div className="mt-2 flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setEditStudentPage(prev => Math.max(1, prev - 1))
+                              }
+                              disabled={editStudentPage === 1}
+                              className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </button>
+                            <span className="text-sm text-slate-600">
+                              {editStudentPage} / {editStudentsMeta.totalPages}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setEditStudentPage(prev =>
+                                  Math.min(
+                                    editStudentsMeta.totalPages,
+                                    prev + 1
+                                  )
+                                )
+                              }
+                              disabled={
+                                editStudentPage === editStudentsMeta.totalPages
+                              }
+                              className="flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
+                    </div>
+                    <div className="mt-8 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setIsEditMode(false)}
+                        className="rounded-lg border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                      >
+                        취소
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleConfirmEdit}
+                        disabled={isSavingEdit}
+                        className="flex items-center gap-2 rounded-lg bg-[#084773] px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a] disabled:opacity-50"
+                      >
+                        <Save className="h-4 w-4" />
+                        {isSavingEdit ? '저장 중...' : '저장'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
                 <div className="space-y-4 mb-6">
                   <div>
                     <span className="text-sm font-medium text-slate-500">
@@ -818,7 +1112,7 @@ function AdminVideosPage() {
                   <div className="flex gap-3">
                     <button
                       type="button"
-                      onClick={handleSaveEdit}
+                      onClick={handleOpenEdit}
                       className="flex items-center gap-2 rounded-lg bg-[#084773] px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-[#063a5a]"
                     >
                       <Save className="h-4 w-4" />
@@ -828,8 +1122,8 @@ function AdminVideosPage() {
                       type="button"
                       onClick={handleDelete}
                       className="flex items-center gap-2 rounded-lg bg-red-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
+                    >
+                      <Trash2 className="h-4 w-4" />
                       삭제
                     </button>
                   </div>
@@ -838,12 +1132,15 @@ function AdminVideosPage() {
                     onClick={() => {
                       setIsDetailModalOpen(false);
                       setSelectedVideoDetail(null);
+                      setIsEditMode(false);
                     }}
                     className="rounded-lg border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
                   >
                     닫기
                   </button>
                 </div>
+                  </>
+                )}
               </>
             ) : null}
           </div>
