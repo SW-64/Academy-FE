@@ -84,6 +84,11 @@ export const uploadVideo = async (
   title: string,
   studentIds: number[]
 ): Promise<UploadVideoResponse> => {
+  console.log('업로드 시작');
+  console.log('file:', file);
+  console.log('title:', title);
+  console.log('studentIds:', studentIds);
+
   const formData = new FormData();
   formData.append('file', file);
   formData.append('title', title);
