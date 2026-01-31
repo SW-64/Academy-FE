@@ -306,14 +306,18 @@ function AdminNoticePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {generalNotices.map(notice => (
+                    {generalNotices.map((notice, i) => {
+                      const totalItems = listMeta?.totalItems ?? 0;
+                      const itemsPerPage = listMeta?.itemsPerPage ?? 10;
+                      const displayNumber = totalItems - (currentPage - 1) * itemsPerPage - pinnedNotices.length - i;
+                      return (
                       <tr
                         key={notice.noticeId}
                         className="border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors"
                         onClick={() => handleNoticeClick(notice)}
                       >
                         <td className="px-4 py-3 text-sm text-slate-900">
-                          {notice.noticeId}
+                          {displayNumber}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-900">
                           {notice.title}
@@ -325,7 +329,7 @@ function AdminNoticePage() {
                           관리자
                         </td>
                       </tr>
-                    ))}
+                    );})}
                   </tbody>
                 </table>
               </div>
