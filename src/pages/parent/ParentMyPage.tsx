@@ -1,103 +1,165 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import MainLayout from '../MainLayout';
+import { getMyInfo, updateMyInfo, changePassword } from '../../api/users';
 
 function ParentMyPage() {
-  // 사용자 정보 상태
   const [userInfo, setUserInfo] = useState({
-    name: '홍길동',
-    email: 'parent@example.com',
+    name: '',
+    loginId: '',
+    email: '',
     role: '학부모',
+    phone: '',
   });
-
-  // 모달 상태
+  const [isLoading, setIsLoading] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-
-  // 수정 폼 상태
   const [editForm, setEditForm] = useState({
-    name: userInfo.name,
-    email: userInfo.email,
+    name: '',
+    email: '',
+    phone: '',
   });
-
-  // 비밀번호 변경 폼 상태
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchMyInfo = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getMyInfo();
+        const data = response.data;
+        const roleName =
+          data.role === 'PARENT' ? '학부모' : data.role;
+        setUserInfo({
+          name: data.name,
+          loginId: data.loginId ?? data.email,
+          email: data.email,
+          role: roleName,
+          phone: data.phone,
+        });
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : '내 정보를 가져오는데 실패했습니다.';
+        alert(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchMyInfo();
+  }, []);
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUserInfo({
-      ...userInfo,
-      name: editForm.name,
-      email: editForm.email,
-    });
-    setIsEditModalOpen(false);
+    try {
+      const updateData = {
+        name: editForm.name,
+        email: editForm.email,
+        phone: editForm.phone,
+      };
+      const response = await updateMyInfo(updateData);
+      alert(response.message);
+      setUserInfo({
+        ...userInfo,
+        name: editForm.name,
+        loginId: editForm.email,
+        email: editForm.email,
+        phone: editForm.phone,
+      });
+      setIsEditModalOpen(false);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : '내 정보 수정에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       alert('새 비밀번호가 일치하지 않습니다.');
       return;
     }
-    // 비밀번호 변경 로직
-    setPasswordForm({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
-    setIsPasswordModalOpen(false);
-    alert('비밀번호가 변경되었습니다.');
+    try {
+      const response = await changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+        newPasswordConfirm: passwordForm.confirmPassword,
+      });
+      alert(response.message);
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setIsPasswordModalOpen(false);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : '비밀번호 변경에 실패했습니다.';
+      alert(errorMessage);
+    }
   };
 
   const openEditModal = () => {
     setEditForm({
       name: userInfo.name,
-      email: userInfo.email,
+      email: userInfo.loginId || userInfo.email,
+      phone: userInfo.phone,
     });
     setIsEditModalOpen(true);
   };
 
   return (
     <MainLayout isParent={true}>
-      {/* 헤더 */}
       <header className="mb-6">
         <h1 className="text-2xl font-semibold text-slate-900">마이페이지</h1>
       </header>
 
-      {/* 사용자 정보 카드 */}
       <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-blue-100/70">
         <h2 className="mb-4 text-lg font-semibold text-slate-900">내 정보</h2>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <span className="text-sm text-slate-600">이름</span>
-            <span className="text-sm font-medium text-slate-900">
-              {userInfo.name}
-            </span>
+        {isLoading ? (
+          <p className="py-4 text-sm text-slate-500">내 정보를 불러오는 중...</p>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <span className="text-sm text-slate-600">이름</span>
+              <span className="text-sm font-medium text-slate-900">
+                {userInfo.name}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <span className="text-sm text-slate-600">아이디</span>
+              <span className="text-sm font-medium text-slate-900">
+                {userInfo.loginId || userInfo.email}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <span className="text-sm text-slate-600">연락처</span>
+              <span className="text-sm font-medium text-slate-900">
+                {userInfo.phone}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600">역할</span>
+              <span className="text-sm font-medium text-slate-900">
+                {userInfo.role}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <span className="text-sm text-slate-600">아이디</span>
-            <span className="text-sm font-medium text-slate-900">
-              {userInfo.email}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-600">역할</span>
-            <span className="text-sm font-medium text-slate-900">
-              {userInfo.role}
-            </span>
-          </div>
-        </div>
+        )}
 
-        {/* 버튼 영역 */}
         <div className="mt-6 flex gap-3">
           <button
             type="button"
             onClick={openEditModal}
-            className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            disabled={isLoading}
+            className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
           >
             수정
           </button>
@@ -111,7 +173,6 @@ function ParentMyPage() {
         </div>
       </div>
 
-      {/* 수정 모달 */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
@@ -153,6 +214,20 @@ function ParentMyPage() {
                   className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-600 focus:outline-none"
                 />
               </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  연락처
+                </label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={e =>
+                    setEditForm({ ...editForm, phone: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                />
+              </div>
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
@@ -173,7 +248,6 @@ function ParentMyPage() {
         </div>
       )}
 
-      {/* 비밀번호 변경 모달 */}
       {isPasswordModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
