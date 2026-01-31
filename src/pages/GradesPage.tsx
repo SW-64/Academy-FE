@@ -37,7 +37,7 @@ function GradesPage() {
   const [rankModalLoading, setRankModalLoading] = useState(false);
   const [rankModalData, setRankModalData] = useState<{
     examTitle: string;
-    myRank: MyExamRankItem | null;
+    rankList: MyExamRankItem[];
   } | null>(null);
 
   // 내 클래스 목록 조회
@@ -98,12 +98,11 @@ function GradesPage() {
     setRankLoadingExamId(examId);
     setRankModalOpen(true);
     setRankModalLoading(true);
-    setRankModalData({ examTitle, myRank: null });
+    setRankModalData({ examTitle, rankList: [] });
     try {
       const response = await getMyExamRank(selectedClassId, examId);
       const items = Array.isArray(response.data) ? response.data : [];
-      const myRank = items.find((item: MyExamRankItem) => item.isMe) ?? null;
-      setRankModalData({ examTitle, myRank });
+      setRankModalData({ examTitle, rankList: items });
     } catch (error) {
       const msg =
         error instanceof Error ? error.message : '등수 조회에 실패했습니다.';
@@ -334,32 +333,47 @@ function GradesPage() {
               <p className="py-6 text-center text-sm text-slate-500">
                 등수를 불러오는 중...
               </p>
-            ) : rankModalData?.myRank == null ? (
+            ) : !rankModalData?.rankList?.length ? (
               <p className="py-6 text-center text-sm text-slate-500">
                 등수 정보가 없습니다.
               </p>
             ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                  <span className="text-sm text-slate-600">등수</span>
-                  <span className="text-base font-semibold text-slate-900">
-                    {rankModalData.myRank.ranking}등
-                  </span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                  <span className="text-sm text-slate-600">점수</span>
-                  <span className="text-base font-semibold text-slate-900">
-                    {rankModalData.myRank.score}점
-                  </span>
-                </div>
-                {rankModalData.myRank.name != null && (
-                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                    <span className="text-sm text-slate-600">이름</span>
-                    <span className="text-base font-medium text-slate-900">
-                      {rankModalData.myRank.name}
-                    </span>
-                  </div>
-                )}
+              <div className="max-h-[60vh] overflow-y-auto rounded-lg border border-slate-200">
+                <table className="w-full border-collapse">
+                  <thead className="sticky top-0 bg-slate-50">
+                    <tr className="border-b border-slate-200">
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">
+                        등수
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">
+                        점수
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">
+                        이름
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rankModalData.rankList.map((item, idx) => (
+                      <tr
+                        key={idx}
+                        className={`border-b border-slate-100 ${
+                          item.isMe ? 'bg-[#084773]/10' : ''
+                        }`}
+                      >
+                        <td className="px-3 py-2 text-sm text-slate-900">
+                          {item.ranking}등
+                        </td>
+                        <td className="px-3 py-2 text-sm text-slate-900">
+                          {item.score}점
+                        </td>
+                        <td className="px-3 py-2 text-sm text-slate-900">
+                          {item.name ?? ''}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
             <div className="mt-4 flex justify-end">
