@@ -179,6 +179,7 @@ export interface MyInfoResponse {
   message: string;
   data: {
     userId: number;
+    loginId?: string;
     email: string;
     name: string;
     role: string;

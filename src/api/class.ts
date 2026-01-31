@@ -329,15 +329,20 @@ export const getMyExamGrades = async (
   );
 };
 
-/** 학생 본인 시험 등수 조회 */
+/** 학생 본인 시험 등수 조회 (GET /classes/:classId/exams/:examId/rank/me) - 본인(isMe: true)만 이름/studentId 노출 */
+export interface MyExamRankItem {
+  ranking: number;
+  score: number;
+  isTaken: boolean;
+  isMe: boolean;
+  studentId: number | null;
+  name: string | null;
+}
+
 export interface MyExamRankResponse {
   statusCode: number;
   message: string;
-  data: {
-    rank?: number;
-    totalStudents?: number;
-    [key: string]: unknown;
-  };
+  data: MyExamRankItem[];
 }
 
 export const getMyExamRank = async (

@@ -79,7 +79,7 @@ function ParentMyPage() {
             </span>
           </div>
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <span className="text-sm text-slate-600">이메일</span>
+            <span className="text-sm text-slate-600">아이디</span>
             <span className="text-sm font-medium text-slate-900">
               {userInfo.email}
             </span>
@@ -144,10 +144,10 @@ function ParentMyPage() {
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">
-                  이메일
+                  아이디
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   value={editForm.email}
                   onChange={e =>
                     setEditForm({ ...editForm, email: e.target.value })
