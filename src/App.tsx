@@ -49,6 +49,9 @@ const ParentNoticeDetailPage = lazy(
 const ParentHomeworkProgressPage = lazy(
   () => import('./pages/parent/ParentHomeworkProgressPage')
 );
+const ParentGradesPage = lazy(() =>
+  import('./pages/parent/ParentGradesPage')
+);
 const ParentMyPage = lazy(() => import('./pages/parent/ParentMyPage'));
 
 function App() {
@@ -103,6 +106,10 @@ function App() {
           <Route
             path="/parent/notice/:id"
             element={<ParentNoticeDetailPage />}
+          />
+          <Route
+            path="/parent/grades"
+            element={<ParentGradesPage />}
           />
           <Route
             path="/parent/homework-progress"
