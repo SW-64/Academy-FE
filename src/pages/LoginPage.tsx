@@ -76,9 +76,7 @@ const LoginPage = () => {
           navigate('/notice');
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : '로그인에 실패했습니다.';
-        setApiError(errorMessage);
+        setApiError('아이디 혹은 비밀번호가 틀렸습니다.');
       } finally {
         setIsLoading(false);
       }
