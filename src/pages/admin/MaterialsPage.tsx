@@ -180,18 +180,36 @@ function AdminMaterialsPage() {
       return;
     }
 
+    // 변경사항 확인
+    const hasTitleChanged = selectedMaterial.title !== editMaterial.title;
+    const hasContentChanged =
+      (selectedMaterial.content || '') !== (editMaterial.content || '');
+    const hasClassIdsChanged =
+      JSON.stringify([...(selectedMaterial.classIds || [])].sort()) !==
+      JSON.stringify([...editMaterial.classIds].sort());
+    const hasFileChanged = editMaterial.pdfFile !== null;
+
+    // 변경사항이 없으면 에러 메시지
+    if (!hasTitleChanged && !hasContentChanged && !hasClassIdsChanged && !hasFileChanged) {
+      // eslint-disable-next-line no-alert
+      alert('변경된 내용이 없습니다.');
+      return;
+    }
+
     try {
       setIsLoading(true);
 
-      // 1단계: 학습자료 수정 API 호출
-      await updateMaterial(selectedMaterial.id, {
-        title: editMaterial.title,
-        description: editMaterial.content || '',
-        classIds: editMaterial.classIds,
-      });
+      // 1단계: 메타데이터(제목, 내용, 클래스)가 변경된 경우에만 수정 API 호출
+      if (hasTitleChanged || hasContentChanged || hasClassIdsChanged) {
+        await updateMaterial(selectedMaterial.id, {
+          title: editMaterial.title,
+          description: editMaterial.content || '',
+          classIds: editMaterial.classIds,
+        });
+      }
 
-      // 2단계: 파일이 있으면 파일 업로드 API 호출
-      if (editMaterial.pdfFile) {
+      // 2단계: 파일이 변경된 경우 파일 업로드 API 호출
+      if (hasFileChanged && editMaterial.pdfFile) {
         await uploadMaterialFile(selectedMaterial.id, editMaterial.pdfFile);
       }
 
@@ -487,14 +505,14 @@ function AdminMaterialsPage() {
                     </td>
                   </tr>
                 ) : (
-                  materials.map(material => (
+                  materials.map((material, index) => (
                     <tr
                       key={material.id}
                       className="border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors"
                       onClick={() => handleMaterialClick(material)}
                     >
                       <td className="px-4 py-3 text-sm text-slate-900">
-                        {material.id}
+                        {materials.length - index}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-900">
                         {material.title}
