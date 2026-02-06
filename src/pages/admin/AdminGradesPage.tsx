@@ -98,7 +98,8 @@ function AdminGradesPage() {
     setIsLoadingExams(true);
     try {
       const response = await getClassExams(selectedClassId);
-      setExams(response.data.items);
+      const items = response.data.items;
+      setExams(items);
     } catch (error) {
       const errorMessage =
         error instanceof Error
@@ -191,11 +192,23 @@ function AdminGradesPage() {
         }
       }
 
+      // 상위 30% 평균도 백엔드에서 계산된 값을 그대로 사용
+      let top30Average: number | null = null;
+      if (exam.top30Average != null) {
+        if (typeof exam.top30Average === 'number') {
+          top30Average = !isNaN(exam.top30Average) ? exam.top30Average : null;
+        } else if (typeof exam.top30Average === 'string') {
+          const parsedTop = parseFloat(exam.top30Average);
+          top30Average = !isNaN(parsedTop) ? parsedTop : null;
+        }
+      }
+
       return {
         date,
         name: exam.examTitle,
         examId: exam.examId,
         averageScore,
+        top30Average,
       };
     });
   }, [exams]);
@@ -720,6 +733,9 @@ function AdminGradesPage() {
                           평균 점수
                         </th>
                         <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
+                          상위 30% 평균
+                        </th>
+                        <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
                           작업
                         </th>
                       </tr>
@@ -728,7 +744,7 @@ function AdminGradesPage() {
                       {isLoadingExams ? (
                         <tr>
                           <td
-                            colSpan={4}
+                            colSpan={5}
                             className="px-4 py-8 text-center text-sm text-slate-500"
                           >
                             시험 목록을 불러오는 중...
@@ -737,7 +753,7 @@ function AdminGradesPage() {
                       ) : filteredExams.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={4}
+                            colSpan={5}
                             className="px-4 py-8 text-center text-sm text-slate-500"
                           >
                             {selectedMonth}월에 시험 기록이 없습니다.
@@ -759,6 +775,12 @@ function AdminGradesPage() {
                               {exam.averageScore != null &&
                               typeof exam.averageScore === 'number'
                                 ? `${exam.averageScore.toFixed(1)}점`
+                                : '-'}
+                            </td>
+                            <td className="px-4 py-3 text-sm font-medium text-slate-900 text-right">
+                              {exam.top30Average != null &&
+                              typeof exam.top30Average === 'number'
+                                ? `${exam.top30Average.toFixed(1)}점`
                                 : '-'}
                             </td>
                             <td className="px-4 py-3 text-right">

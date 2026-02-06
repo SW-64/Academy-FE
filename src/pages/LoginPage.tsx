@@ -93,31 +93,6 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-white relative">
-      {/* 오른쪽 상단 버튼들 */}
-      <div className="absolute top-4 right-4 flex gap-2">
-        <button
-          type="button"
-          onClick={() => navigate('/parent/notice')}
-          className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-        >
-          학부모용
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate('/notice')}
-          className="px-3 py-1.5 text-sm font-medium text-white bg-[#084773] rounded-lg hover:bg-[#063a5a] transition-colors"
-        >
-          학생용
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate('/admin')}
-          className="px-3 py-1.5 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition-colors"
-        >
-          관리자용
-        </button>
-      </div>
-
       {/* 로고와 로그인 박스를 하나의 컨테이너로 묶어서 중앙 배치 */}
       <div className="flex flex-col items-center w-full max-w-[403px] rounded-2xl">
         {/* 로고 */}
