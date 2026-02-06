@@ -709,3 +709,125 @@ export const deleteExam = async (
     errorMessage: '시험 삭제에 실패했습니다.',
   });
 };
+
+/**
+ * ===========================
+ * 공지사항(Notice) 관련 타입/API
+ * ===========================
+ */
+
+export interface NoticeListItem {
+  noticeId: number;
+  title: string;
+  /** 목록에서 새 글 표시 여부 (선택적) */
+  isNew?: boolean;
+  /** 상단 고정 여부 */
+  pinned: boolean;
+  /** 생성일시 (예: 2026-02-06T06:00:00.000Z) */
+  createdAt: string;
+}
+
+export interface NoticeListMeta {
+  totalItems: number;
+  itemCount: number;
+  itemsPerPage: number;
+  totalPages: number;
+  currentPage: number;
+}
+
+export interface NoticesResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    items: NoticeListItem[];
+    meta: NoticeListMeta;
+  };
+}
+
+export interface NoticeDetailData {
+  noticeId: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NoticeDetailResponse {
+  statusCode: number;
+  message: string;
+  data: NoticeDetailData;
+}
+
+export interface CreateOrUpdateNoticeRequest {
+  title: string;
+  content: string;
+}
+
+/**
+ * 공지사항 목록 조회 (GET /classes/:classId/notices?page=:page)
+ */
+export const getNotices = async (
+  classId: number,
+  page: number
+): Promise<NoticesResponse> => {
+  const params = new URLSearchParams({ page: String(page) });
+  return request<NoticesResponse>(
+    `/classes/${classId}/notices?${params.toString()}`,
+    { errorMessage: '공지사항 목록을 가져오는데 실패했습니다.' }
+  );
+};
+
+/**
+ * 공지사항 상세 조회 (GET /classes/:classId/notices/:noticeId)
+ */
+export const getNoticeDetail = async (
+  classId: number,
+  noticeId: number
+): Promise<NoticeDetailResponse> => {
+  return request<NoticeDetailResponse>(
+    `/classes/${classId}/notices/${noticeId}`,
+    { errorMessage: '공지사항 상세를 가져오는데 실패했습니다.' }
+  );
+};
+
+/**
+ * 공지사항 생성 (POST /classes/:classId/notices)
+ */
+export const createNotice = async (
+  classId: number,
+  data: CreateOrUpdateNoticeRequest
+): Promise<{ statusCode: number; message: string }> => {
+  return request(`/classes/${classId}/notices`, {
+    method: 'POST',
+    body: data,
+    errorMessage: '공지사항 생성에 실패했습니다.',
+  });
+};
+
+/**
+ * 공지사항 수정 (PATCH /classes/:classId/notices/:noticeId)
+ */
+export const updateNotice = async (
+  classId: number,
+  noticeId: number,
+  data: CreateOrUpdateNoticeRequest
+): Promise<{ statusCode: number; message: string }> => {
+  return request(`/classes/${classId}/notices/${noticeId}`, {
+    method: 'PATCH',
+    body: data,
+    errorMessage: '공지사항 수정에 실패했습니다.',
+  });
+};
+
+/**
+ * 공지사항 삭제 (DELETE /classes/:classId/notices/:noticeId)
+ */
+export const deleteNotice = async (
+  classId: number,
+  noticeId: number
+): Promise<{ statusCode: number; message: string }> => {
+  return request(`/classes/${classId}/notices/${noticeId}`, {
+    method: 'DELETE',
+    errorMessage: '공지사항 삭제에 실패했습니다.',
+  });
+};
