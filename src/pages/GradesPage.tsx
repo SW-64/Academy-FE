@@ -368,6 +368,9 @@ function GradesPage() {
                         점수
                       </th>
                       <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">
+                        학교
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">
                         이름
                       </th>
                     </tr>
@@ -385,6 +388,9 @@ function GradesPage() {
                         </td>
                         <td className="px-3 py-2 text-sm text-slate-900">
                           {item.score}점
+                        </td>
+                        <td className="px-3 py-2 text-sm text-slate-900">
+                          {item.school ?? ''}
                         </td>
                         <td className="px-3 py-2 text-sm text-slate-900">
                           {item.name ?? ''}
