@@ -179,29 +179,22 @@ function AdminGradesPage() {
     return exams.map(exam => {
       const date = exam.examDate.split('T')[0]; // YYYY-MM-DD 형식
 
-      // studentAverage가 null이 아니면 숫자로 변환하여 사용
-      let averageScore: number | null = null;
-      if (exam.studentAverage != null) {
-        if (typeof exam.studentAverage === 'number') {
-          averageScore = !isNaN(exam.studentAverage)
-            ? exam.studentAverage
-            : null;
-        } else if (typeof exam.studentAverage === 'string') {
-          const parsed = parseFloat(exam.studentAverage);
-          averageScore = !isNaN(parsed) ? parsed : null;
+      const parseNumberOrNull = (value: unknown): number | null => {
+        if (value == null) return null;
+        if (typeof value === 'number') return isNaN(value) ? null : value;
+        if (typeof value === 'string') {
+          const parsed = parseFloat(value);
+          return isNaN(parsed) ? null : parsed;
         }
-      }
+        return null;
+      };
 
-      // 상위 30% 평균도 백엔드에서 계산된 값을 그대로 사용
-      let top30Average: number | null = null;
-      if (exam.top30Average != null) {
-        if (typeof exam.top30Average === 'number') {
-          top30Average = !isNaN(exam.top30Average) ? exam.top30Average : null;
-        } else if (typeof exam.top30Average === 'string') {
-          const parsedTop = parseFloat(exam.top30Average);
-          top30Average = !isNaN(parsedTop) ? parsedTop : null;
-        }
-      }
+      // 학생 평균: studentAverage 그대로 사용
+      const averageScore = parseNumberOrNull(exam.studentAverage);
+
+      // 상위 30% 평균: 신규 필드 topStudentAverage를 우선 사용, 없으면 기존 top30Average 사용
+      const top30Source = exam.topStudentAverage ?? exam.top30Average;
+      const top30Average = parseNumberOrNull(top30Source);
 
       return {
         date,
