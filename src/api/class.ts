@@ -259,7 +259,10 @@ export interface ExamItem {
   examId: number;
   examTitle: string;
   examDate: string;
+  /** 전체 학생 평균 점수 */
   studentAverage: number | string | null;
+  /** 상위 30% 평균 점수 (백엔드 계산 값) */
+  top30Average?: number | string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -308,7 +311,13 @@ export interface MyExamGradeItem {
   examId: number;
   examTitle: string;
   examDate: string;
+  /** 전체 학생 평균 점수 */
   studentAverage: number | string | null;
+  /**
+   * 상위권 학생 평균 점수 (백엔드 계산 값)
+   * 내 성적 목록 조회 전용 필드: topStudentAverage
+   */
+  topStudentAverage?: number | string | null;
   grades: MyExamGradeEntry[];
 }
 
@@ -335,6 +344,7 @@ export interface MyExamRankItem {
   score: number;
   isTaken: boolean;
   isMe: boolean;
+  school: string | null;
   studentId: number | null;
   name: string | null;
 }
@@ -371,14 +381,33 @@ export const getMyStudentExamGrades = async (
 };
 
 /**
+ * 학부모: 자녀의 시험 등수 조회 응답 아이템
+ * (GET /classes/:classId/exams/:examId/rank/my-student/:studentId)
+ */
+export interface MyStudentExamRankItem {
+  ranking: number;
+  score: number;
+  isTaken: boolean;
+  isMyStudent: boolean;
+  studentId: number | null;
+  name: string | null;
+}
+
+export interface MyStudentExamRankResponse {
+  statusCode: number;
+  message: string;
+  data: MyStudentExamRankItem[];
+}
+
+/**
  * 학부모: 자녀의 시험 등수 조회 (GET /classes/:classId/exams/:examId/rank/my-student/:studentId)
  */
 export const getMyStudentExamRank = async (
   classId: number,
   examId: number,
   studentId: number
-): Promise<MyExamRankResponse> => {
-  return request<MyExamRankResponse>(
+): Promise<MyStudentExamRankResponse> => {
+  return request<MyStudentExamRankResponse>(
     `/classes/${classId}/exams/${examId}/rank/my-student/${studentId}`,
     { errorMessage: '자녀의 등수 조회에 실패했습니다.' }
   );
@@ -397,7 +426,10 @@ export interface ExamDetailResponse {
     examId: number;
     examTitle: string;
     examDate: string;
+    /** 전체 학생 평균 점수 */
     studentAverage: number | string | null;
+    /** 상위 30% 평균 점수 (백엔드 계산 값) */
+    top30Average?: number | string | null;
     createdAt: string;
     updatedAt: string;
     examDetails: ExamDetail[];
@@ -414,10 +446,9 @@ export const getExamDetail = async (
   classId: number,
   examId: number
 ): Promise<ExamDetailResponse> => {
-  return request<ExamDetailResponse>(
-    `/classes/${classId}/exams/${examId}`,
-    { errorMessage: '시험 상세 정보를 가져오는데 실패했습니다.' }
-  );
+  return request<ExamDetailResponse>(`/classes/${classId}/exams/${examId}`, {
+    errorMessage: '시험 상세 정보를 가져오는데 실패했습니다.',
+  });
 };
 
 export interface CreateExamRequest {
@@ -481,14 +512,11 @@ export const updateExam = async (
   examId: number,
   data: UpdateExamRequest
 ): Promise<UpdateExamResponse> => {
-  return request<UpdateExamResponse>(
-    `/classes/${classId}/exams/${examId}`,
-    {
-      method: 'PATCH',
-      body: data,
-      errorMessage: '시험 수정에 실패했습니다.',
-    }
-  );
+  return request<UpdateExamResponse>(`/classes/${classId}/exams/${examId}`, {
+    method: 'PATCH',
+    body: data,
+    errorMessage: '시험 수정에 실패했습니다.',
+  });
 };
 
 export interface WrongAnswerQuestion {
@@ -515,6 +543,10 @@ export interface WrongAnswersResponse {
       examId: number;
       examTitle: string;
       examDate: string;
+      /** 전체 학생 평균 점수 */
+      studentAverage?: number | string | null;
+      /** 상위 30% 평균 점수 (백엔드 계산 값) */
+      top30Average?: number | string | null;
     };
     questions: WrongAnswerQuestion[];
     students: WrongAnswerStudent[];
@@ -672,145 +704,8 @@ export const deleteExam = async (
   classId: number,
   examId: number
 ): Promise<DeleteExamResponse> => {
-  return request<DeleteExamResponse>(
-    `/classes/${classId}/exams/${examId}`,
-    {
-      method: 'DELETE',
-      errorMessage: '시험 삭제에 실패했습니다.',
-    }
-  );
-};
-
-// ========== 공지사항 (Notices) ==========
-
-export interface NoticeListItem {
-  noticeId: number;
-  adminId: number;
-  title: string;
-  content: string;
-  pinned: boolean;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-  isNew: boolean;
-}
-
-export interface NoticeListMeta {
-  totalItems: number;
-  itemCount: number;
-  itemsPerPage: number;
-  totalPages: number;
-  currentPage: number;
-}
-
-export interface NoticeListResponse {
-  statusCode: number;
-  message: string;
-  data: {
-    items: NoticeListItem[];
-    meta: NoticeListMeta;
-  };
-}
-
-export interface NoticeDetailData {
-  noticeId: number;
-  adminId: number;
-  title: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-  isNew: boolean;
-}
-
-export interface NoticeDetailResponse {
-  statusCode: number;
-  message: string;
-  data: NoticeDetailData;
-}
-
-export interface CreateNoticeBody {
-  title: string;
-  content: string;
-}
-
-export interface UpdateNoticeBody {
-  title: string;
-  content: string;
-}
-
-/**
- * 특정 클래스의 공지사항 목록을 조회합니다.
- * GET /classes/:classId/notices
- */
-export const getNotices = async (
-  classId: number,
-  page = 1
-): Promise<NoticeListResponse> => {
-  const params = new URLSearchParams({ page: String(page) });
-  return request<NoticeListResponse>(
-    `/classes/${classId}/notices?${params}`,
-    { errorMessage: '공지사항 목록을 가져오는데 실패했습니다.' }
-  );
-};
-
-/**
- * 특정 클래스의 공지사항 상세를 조회합니다.
- * GET /classes/:classId/notices/:noticeId
- */
-export const getNoticeDetail = async (
-  classId: number,
-  noticeId: number
-): Promise<NoticeDetailResponse> => {
-  return request<NoticeDetailResponse>(
-    `/classes/${classId}/notices/${noticeId}`,
-    { errorMessage: '공지사항을 가져오는데 실패했습니다.' }
-  );
-};
-
-/**
- * 공지사항을 생성합니다.
- * POST /classes/:classId/notices
- */
-export const createNotice = async (
-  classId: number,
-  body: CreateNoticeBody
-): Promise<{ statusCode: number; message: string; data?: NoticeDetailData }> => {
-  return request(`/classes/${classId}/notices`, {
-    method: 'POST',
-    body,
-    errorMessage: '공지사항 생성에 실패했습니다.',
-  });
-};
-
-/**
- * 공지사항을 수정합니다.
- * PATCH /classes/:classId/notices/:noticeId
- */
-export const updateNotice = async (
-  classId: number,
-  noticeId: number,
-  body: UpdateNoticeBody
-): Promise<NoticeDetailResponse> => {
-  return request<NoticeDetailResponse>(
-    `/classes/${classId}/notices/${noticeId}`,
-    {
-      method: 'PATCH',
-      body,
-      errorMessage: '공지사항 수정에 실패했습니다.',
-    }
-  );
-};
-
-/**
- * 공지사항을 삭제합니다.
- * DELETE /classes/:classId/notices/:noticeId
- */
-export const deleteNotice = async (
-  classId: number,
-  noticeId: number
-): Promise<void> => {
-  await request(`/classes/${classId}/notices/${noticeId}`, {
+  return request<DeleteExamResponse>(`/classes/${classId}/exams/${examId}`, {
     method: 'DELETE',
-    errorMessage: '공지사항 삭제에 실패했습니다.',
+    errorMessage: '시험 삭제에 실패했습니다.',
   });
 };
