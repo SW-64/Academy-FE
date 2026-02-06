@@ -297,7 +297,6 @@ function AdminPage() {
   const [availableParents, setAvailableParents] = useState<Parent[]>([]);
   const [isLoadingAvailableParents, setIsLoadingAvailableParents] =
     useState(false);
-  const [availableParentSearch, setAvailableParentSearch] = useState('');
 
   // 회원가입 모달 상태
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
@@ -381,8 +380,7 @@ function AdminPage() {
             meta: response.data.meta,
             page: studentPage,
           };
-        } catch (error) {
-        }
+        } catch (error) {}
       };
       const fetchParentsForRefresh = async () => {
         try {
@@ -407,8 +405,7 @@ function AdminPage() {
             meta: response.data.meta,
             page: parentPage,
           };
-        } catch (error) {
-        }
+        } catch (error) {}
       };
       fetchStudentsForRefresh();
       fetchParentsForRefresh();
@@ -719,7 +716,6 @@ function AdminPage() {
 
         setEditingParent(null);
       }
-      setAvailableParentSearch('');
       setEditModalOpen(false);
     } catch (error) {
       const errorMessage =
@@ -1451,7 +1447,6 @@ function AdminPage() {
                 onClick={() => {
                   setEditModalOpen(false);
                   setEditingStudent(null);
-                  setAvailableParentSearch('');
                   setEditingParent(null);
                 }}
                 className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
@@ -1677,13 +1672,6 @@ function AdminPage() {
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       학부모 선택
                     </label>
-                    <input
-                      type="text"
-                      value={availableParentSearch}
-                      onChange={e => setAvailableParentSearch(e.target.value)}
-                      placeholder="학부모 이름, 이메일, 연락처로 검색..."
-                      className="mb-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#084773] focus:outline-none focus:ring-1 focus:ring-[#084773]"
-                    />
                     <div className="h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white">
                       {isLoadingAvailableParents ? (
                         <div className="px-3 py-4 text-center text-sm text-slate-500">
@@ -1693,23 +1681,9 @@ function AdminPage() {
                         <div className="px-3 py-4 text-center text-sm text-slate-500">
                           학부모 목록이 없습니다.
                         </div>
-                      ) : (() => {
-                        const q = availableParentSearch.trim().toLowerCase();
-                        const filtered = q
-                          ? availableParents.filter(
-                              p =>
-                                (p.name ?? '').toLowerCase().includes(q) ||
-                                (p.email ?? '').toLowerCase().includes(q) ||
-                                (p.phone ?? '').toLowerCase().replace(/-/g, '').includes(q.replace(/-/g, ''))
-                            )
-                          : availableParents;
-                        return filtered.length === 0 ? (
-                          <div className="px-3 py-4 text-center text-sm text-slate-500">
-                            검색 결과가 없습니다.
-                          </div>
-                        ) : (
+                      ) : (
                         <div className="divide-y divide-slate-200">
-                          {filtered.map(parent => {
+                          {availableParents.map(parent => {
                             const isLinked =
                               studentParentLinks[editingStudent.id] ===
                               parent.id;
@@ -1775,8 +1749,7 @@ function AdminPage() {
                             );
                           })}
                         </div>
-                        );
-                      })()}
+                      )}
                     </div>
                   </div>
                 </div>

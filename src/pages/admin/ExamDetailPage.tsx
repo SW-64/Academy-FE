@@ -9,7 +9,6 @@ import {
   createErrorRates,
   getRankings,
   createRankings,
-  createAverage,
 } from '../../api/class';
 
 // 타입 정의
@@ -44,6 +43,10 @@ function ExamDetailPage() {
       examDetailId: number;
     }[];
     records: ExamRecord[];
+    /** 전체 학생 평균 점수 (백엔드 계산 값) */
+    studentAverage: number | null;
+    /** 상위 30% 평균 점수 (백엔드 계산 값) */
+    top30Average: number | null;
   } | null>(null);
   const [errorRatesDetails, setErrorRatesDetails] = useState<
     { question: number; points: number; errorRate: string }[] | null
@@ -62,7 +65,6 @@ function ExamDetailPage() {
   >(null);
   const [isLoadingRankings, setIsLoadingRankings] = useState(false);
   const [isCreatingRankings, setIsCreatingRankings] = useState(false);
-  const [isCreatingAverage, setIsCreatingAverage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showErrorRate, setShowErrorRate] = useState(false);
@@ -126,6 +128,20 @@ function ExamDetailPage() {
           }))
           .sort((a, b) => a.studentName.localeCompare(b.studentName, 'ko'));
 
+        // 백엔드에서 내려주는 평균/상위 30% 평균 값 파싱
+        const parseNumberOrNull = (value: unknown): number | null => {
+          if (value == null) return null;
+          if (typeof value === 'number') return isNaN(value) ? null : value;
+          if (typeof value === 'string') {
+            const parsed = parseFloat(value);
+            return isNaN(parsed) ? null : parsed;
+          }
+          return null;
+        };
+
+        const studentAverage = parseNumberOrNull(exam.studentAverage);
+        const top30Average = parseNumberOrNull(exam.top30Average);
+
         setStudentWrongAnswers(wrongMap);
         setStudentIsTaken(prev => ({
           ...prev,
@@ -140,6 +156,8 @@ function ExamDetailPage() {
             examDetailId: q.examDetailId,
           })),
           records,
+          studentAverage,
+          top30Average,
         });
       } catch (err) {
         const msg =
@@ -190,20 +208,6 @@ function ExamDetailPage() {
     const info = getStudentAnswerInfo(r.studentId);
     return info.tookExam;
   }).length;
-  const recordsWithScore = examData.records.filter(
-    r => r.scoreForAvg != null && typeof r.scoreForAvg === 'number'
-  );
-  const averageScore =
-    recordsWithScore.length > 0
-      ? Math.round(
-          (recordsWithScore.reduce(
-            (sum, r) => sum + (r.scoreForAvg as number),
-            0
-          ) /
-            recordsWithScore.length) *
-            10
-        ) / 10
-      : 0;
 
   // 날짜 포맷팅
   const formatDate = (dateString: string) => {
@@ -233,31 +237,6 @@ function ExamDetailPage() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={async () => {
-                if (!classId || !examId) return;
-                setIsCreatingAverage(true);
-                try {
-                  await createAverage(Number(classId), Number(examId));
-                  alert('평균 점수가 계산되었습니다.');
-                  // 새로고침하여 같은 페이지로 다시 이동
-                  window.location.reload();
-                } catch (e) {
-                  alert(
-                    e instanceof Error
-                      ? e.message
-                      : '평균 점수 계산에 실패했습니다.'
-                  );
-                } finally {
-                  setIsCreatingAverage(false);
-                }
-              }}
-              disabled={isCreatingAverage}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
-            >
-              {isCreatingAverage ? '계산 중...' : '평균 점수 생성'}
-            </button>
             <button
               type="button"
               onClick={async () => {
@@ -414,7 +393,13 @@ function ExamDetailPage() {
           <div className="flex items-center gap-1">
             <span className="text-xs text-slate-600">학생 평균:</span>
             <span className="text-sm font-semibold text-slate-900">
-              {averageScore}점
+              {examData.studentAverage != null ? `${examData.studentAverage}점` : '-'}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-slate-600">상위 30% 평균:</span>
+            <span className="text-sm font-semibold text-slate-900">
+              {examData.top30Average != null ? `${examData.top30Average}점` : '-'}
             </span>
           </div>
           <div className="flex items-center gap-1">
