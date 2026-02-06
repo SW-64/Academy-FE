@@ -394,6 +394,7 @@ export interface MyStudentExamRankItem {
   score: number;
   isTaken: boolean;
   isMyStudent: boolean;
+  school: string | null;
   studentId: number | null;
   name: string | null;
 }
