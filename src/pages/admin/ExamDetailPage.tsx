@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import MainLayout from '../MainLayout';
@@ -79,23 +79,25 @@ function ExamDetailPage() {
     {}
   );
 
-  // 시험 오답 문제 조회 API
-  useEffect(() => {
-    if (!examId || !classId) {
-      navigate('/admin/grades');
-      return;
-    }
+  // 시험 오답 문제 조회 함수 (재사용 가능하도록 분리)
+  const fetchWrongAnswers = useCallback(
+    async (showLoading = true) => {
+      if (!examId || !classId) {
+        navigate('/admin/grades');
+        return;
+      }
 
-    const cid = Number(classId);
-    const eid = Number(examId);
-    if (isNaN(cid) || isNaN(eid)) {
-      navigate('/admin/grades');
-      return;
-    }
+      const cid = Number(classId);
+      const eid = Number(examId);
+      if (isNaN(cid) || isNaN(eid)) {
+        navigate('/admin/grades');
+        return;
+      }
 
-    const fetchWrongAnswers = async () => {
-      setIsLoading(true);
-      setLoadError(null);
+      if (showLoading) {
+        setIsLoading(true);
+        setLoadError(null);
+      }
       try {
         const res = await getWrongAnswers(cid, eid);
         const { exam, questions, students } = res.data;
@@ -168,14 +170,22 @@ function ExamDetailPage() {
             ? err.message
             : '시험 오답 문제 조회에 실패했습니다.';
         setLoadError(msg);
-        alert(msg);
+        if (showLoading) {
+          alert(msg);
+        }
       } finally {
-        setIsLoading(false);
+        if (showLoading) {
+          setIsLoading(false);
+        }
       }
-    };
+    },
+    [examId, classId, navigate]
+  );
 
+  // 시험 오답 문제 조회 API (초기 로드)
+  useEffect(() => {
     fetchWrongAnswers();
-  }, [examId, classId, navigate]);
+  }, [fetchWrongAnswers]);
 
   if (isLoading || !examData) {
     return (
@@ -351,6 +361,10 @@ function ExamDetailPage() {
                     await patchWrongAnswers(Number(classId), Number(examId), {
                       items,
                     });
+
+                    // 최신 데이터 다시 조회 (백엔드에서 자동 계산된 평균값 포함)
+                    await fetchWrongAnswers(false);
+
                     alert('수정되었습니다.');
                     setIsEditMode(false);
                     setShowErrorRate(false);
