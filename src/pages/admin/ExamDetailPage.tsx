@@ -139,8 +139,11 @@ function ExamDetailPage() {
           return null;
         };
 
+        // 학생 평균: studentAverage 그대로 사용
         const studentAverage = parseNumberOrNull(exam.studentAverage);
-        const top30Average = parseNumberOrNull(exam.top30Average);
+        // 상위 30% 평균: 신규 필드 topStudentAverage를 우선 사용, 없으면 기존 top30Average 사용
+        const top30Source = exam.topStudentAverage ?? exam.top30Average;
+        const top30Average = parseNumberOrNull(top30Source);
 
         setStudentWrongAnswers(wrongMap);
         setStudentIsTaken(prev => ({
@@ -379,8 +382,8 @@ function ExamDetailPage() {
               {isPatchingWrong
                 ? '저장 중...'
                 : isEditMode
-                  ? '수정 완료'
-                  : '성적 수정'}
+                ? '수정 완료'
+                : '성적 수정'}
             </button>
           </div>
         </div>
@@ -393,13 +396,17 @@ function ExamDetailPage() {
           <div className="flex items-center gap-1">
             <span className="text-xs text-slate-600">학생 평균:</span>
             <span className="text-sm font-semibold text-slate-900">
-              {examData.studentAverage != null ? `${examData.studentAverage}점` : '-'}
+              {examData.studentAverage != null
+                ? `${examData.studentAverage}점`
+                : '-'}
             </span>
           </div>
           <div className="flex items-center gap-1">
             <span className="text-xs text-slate-600">상위 30% 평균:</span>
             <span className="text-sm font-semibold text-slate-900">
-              {examData.top30Average != null ? `${examData.top30Average}점` : '-'}
+              {examData.top30Average != null
+                ? `${examData.top30Average}점`
+                : '-'}
             </span>
           </div>
           <div className="flex items-center gap-1">
