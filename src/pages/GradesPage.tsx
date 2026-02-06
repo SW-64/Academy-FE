@@ -228,7 +228,10 @@ function GradesPage() {
                           날짜
                         </th>
                         <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
-                          평균점수
+                          평균
+                        </th>
+                        <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
+                          상위 30% 평균
                         </th>
                         <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
                           점수
@@ -242,7 +245,7 @@ function GradesPage() {
                       {isLoadingGrades ? (
                         <tr>
                           <td
-                            colSpan={5}
+                            colSpan={6}
                             className="px-4 py-8 text-center text-sm text-slate-500"
                           >
                             시험 성적을 불러오는 중...
@@ -251,10 +254,11 @@ function GradesPage() {
                       ) : filteredGrades.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={5}
+                            colSpan={6}
                             className="px-4 py-8 text-center text-sm text-slate-500"
                           >
-                            {selectedYear}년 {selectedMonth}월에 시험 기록이 없습니다.
+                            {selectedYear}년 {selectedMonth}월에 시험 기록이
+                            없습니다.
                           </td>
                         </tr>
                       ) : (
@@ -272,12 +276,18 @@ function GradesPage() {
                             <td className="px-4 py-3 text-sm text-slate-700 text-right">
                               {exam.studentAverage != null &&
                               exam.studentAverage !== ''
-                                ? `${exam.studentAverage}점`
+                                ? exam.studentAverage
+                                : '-'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-700 text-right">
+                              {exam.topStudentAverage != null &&
+                              exam.topStudentAverage !== ''
+                                ? exam.topStudentAverage
                                 : '-'}
                             </td>
                             <td className="px-4 py-3 text-sm font-medium text-slate-900 text-right">
                               {exam.grades?.[0]?.score != null
-                                ? `${exam.grades[0].score}점`
+                                ? exam.grades[0].score
                                 : '-'}
                             </td>
                             <td className="px-4 py-3 text-right">

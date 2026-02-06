@@ -6,7 +6,7 @@ import {
   getMyStudentExamGrades,
   getMyStudentExamRank,
   type MyExamGradeItem,
-  type MyExamRankItem,
+  type MyStudentExamRankItem,
 } from '../../api/class';
 import { X } from 'lucide-react';
 
@@ -28,12 +28,14 @@ function ParentGradesPage() {
   const [selectedMonth, setSelectedMonth] = useState<number>(
     () => currentDate.getMonth() + 1
   );
-  const [rankLoadingExamId, setRankLoadingExamId] = useState<number | null>(null);
+  const [rankLoadingExamId, setRankLoadingExamId] = useState<number | null>(
+    null
+  );
   const [rankModalOpen, setRankModalOpen] = useState(false);
   const [rankModalLoading, setRankModalLoading] = useState(false);
   const [rankModalData, setRankModalData] = useState<{
     examTitle: string;
-    rankList: MyExamRankItem[];
+    rankList: MyStudentExamRankItem[];
   } | null>(null);
 
   const fetchStudents = useCallback(async () => {
@@ -269,8 +271,8 @@ function ParentGradesPage() {
             <div className="w-full max-w-[1200px]">
               <div className="mb-3 sm:mb-4">
                 <h2 className="text-base sm:text-lg font-semibold text-slate-900">
-                  {selectedStudent?.user.name} · {selectedYear}년 {selectedMonth}
-                  월 시험 성적
+                  {selectedStudent?.user.name} · {selectedYear}년{' '}
+                  {selectedMonth}월 시험 성적
                 </h2>
               </div>
               <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
@@ -285,7 +287,10 @@ function ParentGradesPage() {
                           날짜
                         </th>
                         <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
-                          평균점수
+                          평균
+                        </th>
+                        <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
+                          상위 30% 평균
                         </th>
                         <th className="px-4 py-3 text-right text-sm font-bold text-slate-900">
                           점수
@@ -299,7 +304,7 @@ function ParentGradesPage() {
                       {isLoadingGrades ? (
                         <tr>
                           <td
-                            colSpan={5}
+                            colSpan={6}
                             className="px-4 py-8 text-center text-sm text-slate-500"
                           >
                             시험 성적을 불러오는 중...
@@ -308,7 +313,7 @@ function ParentGradesPage() {
                       ) : filteredGrades.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={5}
+                            colSpan={6}
                             className="px-4 py-8 text-center text-sm text-slate-500"
                           >
                             {selectedYear}년 {selectedMonth}월에 시험 기록이
@@ -330,12 +335,18 @@ function ParentGradesPage() {
                             <td className="px-4 py-3 text-right text-sm text-slate-700">
                               {exam.studentAverage != null &&
                               exam.studentAverage !== ''
-                                ? `${exam.studentAverage}점`
+                                ? exam.studentAverage
+                                : '-'}
+                            </td>
+                            <td className="px-4 py-3 text-right text-sm text-slate-700">
+                              {exam.topStudentAverage != null &&
+                              exam.topStudentAverage !== ''
+                                ? exam.topStudentAverage
                                 : '-'}
                             </td>
                             <td className="px-4 py-3 text-right text-sm font-medium text-slate-900">
                               {exam.grades?.[0]?.score != null
-                                ? `${exam.grades[0].score}점`
+                                ? exam.grades[0].score
                                 : '-'}
                             </td>
                             <td className="px-4 py-3 text-right">
@@ -364,13 +375,16 @@ function ParentGradesPage() {
         </section>
       )}
 
-      {selectedStudentId && !selectedClassId && !isLoadingClasses && classes.length > 0 && (
-        <div className="flex h-40 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-white">
-          <p className="text-sm text-slate-500">
-            클래스를 선택하면 해당 자녀의 시험 성적을 볼 수 있습니다.
-          </p>
-        </div>
-      )}
+      {selectedStudentId &&
+        !selectedClassId &&
+        !isLoadingClasses &&
+        classes.length > 0 && (
+          <div className="flex h-40 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-white">
+            <p className="text-sm text-slate-500">
+              클래스를 선택하면 해당 자녀의 시험 성적을 볼 수 있습니다.
+            </p>
+          </div>
+        )}
 
       {/* 등수 조회 모달 */}
       {rankModalOpen && (
@@ -425,14 +439,14 @@ function ParentGradesPage() {
                       <tr
                         key={idx}
                         className={`border-b border-slate-100 ${
-                          item.isMe ? 'bg-[#084773]/10' : ''
+                          item.isMyStudent ? 'bg-[#084773]/10' : ''
                         }`}
                       >
                         <td className="px-3 py-2 text-sm text-slate-900">
                           {item.ranking}등
                         </td>
                         <td className="px-3 py-2 text-sm text-slate-900">
-                          {item.score}점
+                          {item.score}
                         </td>
                         <td className="px-3 py-2 text-sm text-slate-900">
                           {item.name ?? ''}
