@@ -261,8 +261,13 @@ export interface ExamItem {
   examDate: string;
   /** 전체 학생 평균 점수 */
   studentAverage: number | string | null;
-  /** 상위 30% 평균 점수 (백엔드 계산 값) */
+  /** 상위 30% 평균 점수 (백엔드 계산 값, 기존 필드) */
   top30Average?: number | string | null;
+  /**
+   * 상위권 학생 평균 점수 (백엔드 계산 값, 신규 필드)
+   * 관리자 시험 탭 "상위 30% 평균"에 매핑
+   */
+  topStudentAverage?: number | string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -428,8 +433,13 @@ export interface ExamDetailResponse {
     examDate: string;
     /** 전체 학생 평균 점수 */
     studentAverage: number | string | null;
-    /** 상위 30% 평균 점수 (백엔드 계산 값) */
+    /** 상위 30% 평균 점수 (백엔드 계산 값, 기존 필드) */
     top30Average?: number | string | null;
+    /**
+     * 상위권 학생 평균 점수 (백엔드 계산 값, 신규 필드)
+     * 시험 상세 조회 시 사용
+     */
+    topStudentAverage?: number | string | null;
     createdAt: string;
     updatedAt: string;
     examDetails: ExamDetail[];
@@ -545,8 +555,13 @@ export interface WrongAnswersResponse {
       examDate: string;
       /** 전체 학생 평균 점수 */
       studentAverage?: number | string | null;
-      /** 상위 30% 평균 점수 (백엔드 계산 값) */
+      /** 상위 30% 평균 점수 (백엔드 계산 값, 기존 필드) */
       top30Average?: number | string | null;
+      /**
+       * 상위권 학생 평균 점수 (백엔드 계산 값, 신규 필드)
+       * 성적 상세(ExamDetailPage) 상단 "상위 30% 평균"에 매핑
+       */
+      topStudentAverage?: number | string | null;
     };
     questions: WrongAnswerQuestion[];
     students: WrongAnswerStudent[];
