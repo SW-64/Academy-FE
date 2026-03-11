@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 
 function AuthRedirectHandler({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -59,6 +60,7 @@ function App() {
     <BrowserRouter>
       <AuthRedirectHandler>
         <Suspense fallback={null}>
+          <Analytics />
           <Routes>
           {/* 초기 진입은 /login 으로 리다이렉트 */}
           <Route path="/" element={<Navigate to="/login" replace />} />
