@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 function AuthRedirectHandler({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -128,6 +129,7 @@ function App() {
         </Routes>
         </Suspense>
       </AuthRedirectHandler>
+      <SpeedInsights />
     </BrowserRouter>
   );
 }
